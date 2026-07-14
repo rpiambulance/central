@@ -8,6 +8,7 @@ const links = [
   { href: '/events', label: 'Events' },
   { href: '/members', label: 'Members' },
   { href: '/training', label: 'My Training' },
+  { href: '/settings/calendar', label: 'Settings' },
 ];
 
 export async function SiteNav() {
