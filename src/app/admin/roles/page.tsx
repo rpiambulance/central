@@ -11,7 +11,13 @@ import {
 } from '@/components/ui/card';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
-import { assignRole, createRole, removeAssignment } from './actions';
+import {
+  assignRole,
+  createRole,
+  deleteRole,
+  removeAssignment,
+  updateRole,
+} from './actions';
 
 type Role = {
   id: number;
@@ -63,7 +69,15 @@ function MemberSelect({ members, name }: { members: Member[]; name: string }) {
   );
 }
 
-function RoleCard({ role, members }: { role: Role; members: Member[] }) {
+function RoleCard({
+  role,
+  members,
+  permissionCatalog,
+}: {
+  role: Role;
+  members: Member[];
+  permissionCatalog: string[];
+}) {
   return (
     <Card>
       <CardHeader>
@@ -154,6 +168,62 @@ function RoleCard({ role, members }: { role: Role; members: Member[] }) {
             Assign
           </Button>
         </form>
+
+        <details className="rounded-md border px-3 py-2">
+          <summary className="cursor-pointer text-sm font-medium">
+            Edit permissions
+          </summary>
+          <form action={updateRole.bind(null, role.id)} className="space-y-3 pt-3">
+            <input type="hidden" name="name" value={role.name} />
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="isOfficer"
+                defaultChecked={role.isOfficer}
+              />
+              Officer role
+            </label>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
+              {permissionCatalog.map((permission) => (
+                <label
+                  key={permission}
+                  className="flex items-center gap-2 text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    name="permissions"
+                    value={permission}
+                    defaultChecked={role.permissions.some(
+                      (p) => p.permission === permission,
+                    )}
+                  />
+                  {permission}
+                </label>
+              ))}
+            </div>
+            <Button type="submit" size="sm" variant="outline">
+              Save permissions
+            </Button>
+          </form>
+        </details>
+
+        <form
+          action={deleteRole.bind(null, role.id)}
+          className="flex items-center gap-3 border-t pt-3"
+        >
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <input type="checkbox" required />
+            I&apos;m sure
+          </label>
+          <Button
+            type="submit"
+            variant="outline"
+            size="sm"
+            className="text-destructive"
+          >
+            Delete role
+          </Button>
+        </form>
       </CardContent>
     </Card>
   );
@@ -238,7 +308,12 @@ export default async function AdminRolesPage({
 
       <div className="grid gap-4">
         {roles.map((role) => (
-          <RoleCard key={role.id} role={role} members={members} />
+          <RoleCard
+            key={role.id}
+            role={role}
+            members={members}
+            permissionCatalog={permissionCatalog}
+          />
         ))}
       </div>
     </div>

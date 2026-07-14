@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import { formatDate } from '@/lib/format';
+import { formatDate, formatDateTime } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
-import { requestPromotion } from './actions';
+import { registerForClass, requestPromotion } from './actions';
 
 type Certification = {
   id: number;
@@ -55,6 +55,34 @@ type Evaluation = {
   subject: { id: number; firstName: string; lastName: string };
 };
 
+type AnnualTraining = {
+  id: number;
+  name: string;
+  year: number;
+  myCompletion?: string | null;
+};
+
+type AttendanceStatus = 'REGISTERED' | 'ATTENDED' | 'COMPLETED' | 'NO_SHOW';
+
+type TrainingClass = {
+  id: number;
+  name: string;
+  description: string | null;
+  sessionAt: string | null;
+  location: string | null;
+  attendance?: Array<{ status: AttendanceStatus }>;
+};
+
+const ATTENDANCE_BADGE: Record<
+  AttendanceStatus,
+  { label: string; variant: 'default' | 'secondary' | 'destructive' }
+> = {
+  REGISTERED: { label: 'Registered', variant: 'secondary' },
+  ATTENDED: { label: 'Attended', variant: 'secondary' },
+  COMPLETED: { label: 'Completed', variant: 'default' },
+  NO_SHOW: { label: 'No show', variant: 'destructive' },
+};
+
 const CERT_STATUS_BADGE: Record<
   Certification['status'],
   { label: string; variant: 'default' | 'secondary' | 'destructive' }
@@ -78,12 +106,15 @@ export default async function TrainingPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  const [{ error }, certs, promotions, evals] = await Promise.all([
-    searchParams,
-    api<Certification[]>('/v1/certifications/mine'),
-    api<PromotionPath[]>('/v1/promotions/eligible'),
-    api<Evaluation[]>('/v1/evals/mine'),
-  ]);
+  const [{ error }, certs, promotions, evals, annual, classes] =
+    await Promise.all([
+      searchParams,
+      api<Certification[]>('/v1/certifications/mine'),
+      api<PromotionPath[]>('/v1/promotions/eligible'),
+      api<Evaluation[]>('/v1/evals/mine'),
+      api<AnnualTraining[]>('/v1/trainings/annual'),
+      api<TrainingClass[]>('/v1/trainings/classes'),
+    ]);
 
   return (
     <div className="space-y-8">
@@ -262,6 +293,117 @@ export default async function TrainingPage({
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">No evaluations yet.</p>
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-medium tracking-tight">
+          Annual Trainings &amp; Classes
+        </h2>
+        {annual.length ? (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Requirement</TableHead>
+                  <TableHead>Year</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {annual.map((req) => (
+                  <TableRow key={req.id}>
+                    <TableCell className="font-medium">{req.name}</TableCell>
+                    <TableCell>{req.year}</TableCell>
+                    <TableCell>
+                      {req.myCompletion ? (
+                        <Badge
+                          variant="default"
+                          title={formatDate(req.myCompletion)}
+                        >
+                          Done
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">Not done</Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No annual training requirements.
+          </p>
+        )}
+
+        {classes.length ? (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Class</TableHead>
+                  <TableHead>Session</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>My attendance</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {classes.map((cls) => {
+                  const mine = cls.attendance?.[0];
+                  return (
+                    <TableRow key={cls.id}>
+                      <TableCell className="font-medium">
+                        {cls.name}
+                        {cls.description ? (
+                          <span className="block text-xs text-muted-foreground">
+                            {cls.description}
+                          </span>
+                        ) : null}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {cls.sessionAt ? (
+                          formatDateTime(cls.sessionAt)
+                        ) : (
+                          <span className="text-muted-foreground">TBD</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {cls.location ?? (
+                          <span className="text-muted-foreground">
+                            &mdash;
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {mine ? (
+                          <Badge variant={ATTENDANCE_BADGE[mine.status].variant}>
+                            {ATTENDANCE_BADGE[mine.status].label}
+                          </Badge>
+                        ) : (
+                          <form action={registerForClass.bind(null, cls.id)}>
+                            <Button
+                              type="submit"
+                              variant="outline"
+                              size="sm"
+                              className="h-7"
+                            >
+                              Register
+                            </Button>
+                          </form>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No classes scheduled.
+          </p>
         )}
       </section>
     </div>

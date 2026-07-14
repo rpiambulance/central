@@ -8,6 +8,9 @@ const links = [
   { href: '/events', label: 'Events' },
   { href: '/members', label: 'Members' },
   { href: '/training', label: 'My Training' },
+  { href: '/evals', label: 'Evals' },
+  { href: '/promotions', label: 'Promotions' },
+  { href: '/ops/fuel', label: 'Fuel Log' },
   { href: '/settings/calendar', label: 'Settings' },
 ];
 
@@ -15,6 +18,11 @@ const adminLinks = [
   { href: '/admin/roles', label: 'Roles' },
   { href: '/admin/schedule', label: 'Schedule' },
   { href: '/admin/certifications', label: 'Certifications' },
+  { href: '/admin/members', label: 'Members' },
+  { href: '/admin/trainings', label: 'Trainings' },
+  { href: '/admin/settings', label: 'Settings' },
+  { href: '/admin/radios', label: 'Radios' },
+  { href: '/admin/tokens', label: 'Tokens' },
 ];
 
 export async function SiteNav() {
@@ -22,11 +30,11 @@ export async function SiteNav() {
 
   return (
     <header className="border-b bg-background">
-      <div className="container mx-auto max-w-6xl px-4 h-14 flex items-center gap-6">
+      <div className="container mx-auto max-w-6xl px-4 min-h-14 py-2 flex items-center gap-6 flex-wrap">
         <Link href="/" className="font-semibold tracking-tight">
           RPI Ambulance
         </Link>
-        <nav className="flex items-center gap-4 text-sm text-muted-foreground">
+        <nav className="flex items-center gap-x-4 gap-y-1 text-sm text-muted-foreground flex-wrap">
           {links.map((link) => (
             <Link
               key={link.href}

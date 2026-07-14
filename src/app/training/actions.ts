@@ -16,3 +16,14 @@ export async function requestPromotion(credentialTypeId: number) {
   }
   revalidatePath('/training');
 }
+
+export async function registerForClass(classId: number) {
+  try {
+    await api(`/v1/trainings/classes/${classId}/register`, {
+      method: 'POST',
+    });
+  } catch (error) {
+    redirect(`/training?error=${encodeURIComponent(apiErrorMessage(error))}`);
+  }
+  revalidatePath('/training');
+}
