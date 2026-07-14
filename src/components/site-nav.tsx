@@ -11,6 +11,12 @@ const links = [
   { href: '/settings/calendar', label: 'Settings' },
 ];
 
+const adminLinks = [
+  { href: '/admin/roles', label: 'Roles' },
+  { href: '/admin/schedule', label: 'Schedule' },
+  { href: '/admin/certifications', label: 'Certifications' },
+];
+
 export async function SiteNav() {
   const session = await auth();
 
@@ -22,6 +28,22 @@ export async function SiteNav() {
         </Link>
         <nav className="flex items-center gap-4 text-sm text-muted-foreground">
           {links.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="hover:text-foreground transition-colors"
+            >
+              {link.label}
+            </Link>
+          ))}
+          <span
+            aria-hidden
+            className="h-4 w-px bg-border"
+          />
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground/70">
+            Admin
+          </span>
+          {adminLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
