@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { auth, signIn, signOut } from '@/auth';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const links = [
   { href: '/', label: 'Dashboard' },
@@ -34,7 +35,7 @@ export async function SiteNav() {
   return (
     <header className="border-b bg-background">
       <div className="container mx-auto max-w-6xl px-4 min-h-14 py-2 flex items-center gap-6 flex-wrap">
-        <Link href="/" className="font-semibold tracking-tight">
+        <Link href="/" className="font-heading font-semibold tracking-tight">
           RPI Ambulance
         </Link>
         <nav className="flex items-center gap-x-4 gap-y-1 text-sm text-muted-foreground flex-wrap">
@@ -64,7 +65,8 @@ export async function SiteNav() {
             </Link>
           ))}
         </nav>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-1">
+          <ThemeToggle />
           {session?.user ? (
             <form
               action={async () => {

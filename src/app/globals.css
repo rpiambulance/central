@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-plex-sans);
+  --font-mono: var(--font-plex-mono);
+  --font-heading: var(--font-poppins);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -48,73 +48,79 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * RPI Ambulance brand palette (brand guide):
+ *   Primary:   RPIA Red #e21f26 · RPIA Black #221f1f · Mid Gray #6b6c70 · Light Gray #c7c7ca
+ *   Secondary: EMS Blue #206fb7 · Dark Red #711013 · Priority Green #15d448
+ *   Tints:     EMS Blue 25/50/75 #5793c9/#8fb7db/#c7dbed · Dark Red 25 #944b4e · Green 50 #8ae9a3
+ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --background: #ffffff;
+  --foreground: #221f1f;
+  --card: #ffffff;
+  --card-foreground: #221f1f;
+  --popover: #ffffff;
+  --popover-foreground: #221f1f;
+  --primary: #e21f26;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f1f2;
+  --secondary-foreground: #221f1f;
+  --muted: #f1f1f2;
+  --muted-foreground: #6b6c70;
+  --accent: #c7dbed;
+  --accent-foreground: #16548c;
+  --destructive: #711013;
+  --border: #d8d8da;
+  --input: #d8d8da;
+  --ring: #e21f26;
+  --chart-1: #e21f26;
+  --chart-2: #206fb7;
+  --chart-3: #15d448;
+  --chart-4: #6b6c70;
+  --chart-5: #711013;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #f7f7f8;
+  --sidebar-foreground: #221f1f;
+  --sidebar-primary: #e21f26;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f1f2;
+  --sidebar-accent-foreground: #221f1f;
+  --sidebar-border: #d8d8da;
+  --sidebar-ring: #e21f26;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #191717;
+  --foreground: #f2f2f3;
+  --card: #221f1f;
+  --card-foreground: #f2f2f3;
+  --popover: #221f1f;
+  --popover-foreground: #f2f2f3;
+  --primary: #e21f26;
+  --primary-foreground: #ffffff;
+  --secondary: #2e2b2b;
+  --secondary-foreground: #f2f2f3;
+  --muted: #2e2b2b;
+  --muted-foreground: #a7a7ab;
+  --accent: #1b3a5c;
+  --accent-foreground: #c7dbed;
+  --destructive: #944b4e;
+  --border: rgba(255, 255, 255, 0.12);
+  --input: rgba(255, 255, 255, 0.16);
+  --ring: #e21f26;
+  --chart-1: #e21f26;
+  --chart-2: #5793c9;
+  --chart-3: #15d448;
+  --chart-4: #c7c7ca;
+  --chart-5: #944b4e;
+  --sidebar: #221f1f;
+  --sidebar-foreground: #f2f2f3;
+  --sidebar-primary: #e21f26;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2e2b2b;
+  --sidebar-accent-foreground: #f2f2f3;
+  --sidebar-border: rgba(255, 255, 255, 0.12);
+  --sidebar-ring: #e21f26;
 }
 
 @layer base {
@@ -126,5 +132,9 @@
   }
   html {
     @apply font-sans;
+  }
+  /* Large headings and hero text use Poppins; everything else IBM Plex Sans. */
+  h1 {
+    @apply font-heading;
   }
 }
