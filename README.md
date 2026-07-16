@@ -8,7 +8,20 @@ The RPI Ambulance member portal frontend (members.rpiambulance.com). Next.js (Ap
 
 Keycloak OIDC via Auth.js (`src/auth.ts`) — authentication only. The Keycloak access token is kept in the session and forwarded to the API by the server-side client in [`src/lib/api.ts`](src/lib/api.ts); the API decides authorization from its roles/permissions model. Inactive members get a "contact an officer" screen (the API returns 403 `INACTIVE_MEMBER`).
 
-## Development
+## Run locally — the whole platform in Docker
+
+With `rampart-api` checked out as a sibling directory (its compose stack is
+`include:`d by this repo's [docker-compose.yml](docker-compose.yml)):
+
+```bash
+docker compose up -d --build   # web :3000, API :3001, Keycloak :8080, Postgres :5433
+docker compose run --rm seed   # reference data + dev member
+```
+
+One-time host setup: add `127.0.0.1 keycloak` to `/etc/hosts`, then open
+http://localhost:3000 and sign in as `dev` / `dev`.
+
+## Development (web on the host)
 
 ```bash
 cp .env.example .env          # fill in Keycloak client + AUTH_SECRET (npx auth secret)

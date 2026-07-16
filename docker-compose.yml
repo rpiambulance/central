@@ -1,0 +1,28 @@
+# Full platform in Docker: this file includes the rampart-api stack
+# (Postgres + Keycloak + API) and adds the web app on :3000.
+# Requires rampart-api checked out as a sibling directory.
+#
+#   docker compose up -d --build
+#   docker compose run --rm seed        # seed reference data + dev member
+#
+# One-time host setup for browser logins: add `127.0.0.1 keycloak` to
+# /etc/hosts, then sign in at http://localhost:3000 as dev / dev.
+include:
+  - path: ../rampart-api/docker-compose.yml
+
+services:
+  web:
+    build: .
+    ports:
+      - '3000:3000'
+    environment:
+      AUTH_SECRET: ${AUTH_SECRET:-dev-only-secret-change-me}
+      AUTH_URL: http://localhost:3000
+      AUTH_TRUST_HOST: 'true'
+      AUTH_KEYCLOAK_ID: ${AUTH_KEYCLOAK_ID:-rampart-web}
+      AUTH_KEYCLOAK_SECRET: ${AUTH_KEYCLOAK_SECRET:-dev-secret}
+      AUTH_KEYCLOAK_ISSUER: ${AUTH_KEYCLOAK_ISSUER:-http://keycloak:8080/realms/rampart}
+      RAMPART_API_URL: http://api:3001
+    depends_on:
+      - api
+      - keycloak
