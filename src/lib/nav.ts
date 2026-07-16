@@ -1,10 +1,15 @@
 /**
  * Single source of truth for navigation. Rendered as sidebar groups (default)
  * or top-navbar dropdowns, per the member's navLayout preference.
+ *
+ * `permissions` = show the item when the member holds ANY of the listed
+ * permissions (from GET /v1/members/me). Omitted = visible to every member.
+ * This is presentation only — the API enforces authorization regardless.
  */
 export interface NavItem {
   href: string;
   label: string;
+  permissions?: string[];
 }
 
 export interface NavGroup {
@@ -32,24 +37,32 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Membership',
     items: [
-      { href: '/members', label: 'Member Directory' },
+      { href: '/members', label: 'Member Directory', permissions: ['members:read'] },
       { href: '/ops/fuel', label: 'Fuel Log' },
     ],
   },
   {
     label: 'Administration',
     items: [
-      { href: '/admin/schedule', label: 'Schedule' },
-      { href: '/admin/availability', label: 'Availability Polls' },
-      { href: '/admin/coverage', label: 'Coverage Requests' },
-      { href: '/admin/certifications', label: 'Certifications' },
-      { href: '/admin/members', label: 'Members' },
-      { href: '/admin/roles', label: 'Roles' },
-      { href: '/admin/trainings', label: 'Trainings' },
-      { href: '/admin/evals', label: 'Eval Templates' },
-      { href: '/admin/radios', label: 'Radios' },
-      { href: '/admin/tokens', label: 'API Tokens' },
-      { href: '/admin/settings', label: 'App Settings' },
+      { href: '/admin/schedule', label: 'Schedule', permissions: ['schedule:crews:assign'] },
+      {
+        href: '/admin/availability',
+        label: 'Availability Polls',
+        permissions: ['schedule:crews:manage-defaults'],
+      },
+      { href: '/admin/coverage', label: 'Coverage Requests', permissions: ['events:create'] },
+      { href: '/admin/certifications', label: 'Certifications', permissions: ['certs:verify'] },
+      { href: '/admin/members', label: 'Members', permissions: ['members:write'] },
+      { href: '/admin/roles', label: 'Roles', permissions: ['roles:manage'] },
+      { href: '/admin/trainings', label: 'Trainings', permissions: ['trainings:manage'] },
+      { href: '/admin/evals', label: 'Eval Templates', permissions: ['evals:manage-forms'] },
+      { href: '/admin/radios', label: 'Radios', permissions: ['radios:manage'] },
+      { href: '/admin/tokens', label: 'API Tokens', permissions: ['tokens:manage'] },
+      {
+        href: '/admin/settings',
+        label: 'App Settings',
+        permissions: ['settings:write', 'schedule:settings'],
+      },
     ],
   },
   {
@@ -60,3 +73,15 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
 ];
+
+/** Groups visible to a member holding `permissions`; empty groups drop out. */
+export function filterNavGroups(permissions: Set<string>): NavGroup[] {
+  return NAV_GROUPS.map((group) => ({
+    label: group.label,
+    items: group.items.filter(
+      (item) =>
+        !item.permissions ||
+        item.permissions.some((permission) => permissions.has(permission)),
+    ),
+  })).filter((group) => group.items.length > 0);
+}

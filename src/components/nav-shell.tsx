@@ -6,6 +6,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { TopNavMenus } from '@/components/top-nav-menus';
 import { Button } from '@/components/ui/button';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { filterNavGroups } from '@/lib/nav';
 
 function SignOutButton({ name }: { name: string }) {
   return (
@@ -68,12 +69,17 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
   }
 
   let navLayout = 'sidebar';
+  let permissions = new Set<string>();
   try {
-    const me = await api<{ navLayout?: string }>('/v1/members/me');
+    const me = await api<{ navLayout?: string; permissions?: string[] }>(
+      '/v1/members/me',
+    );
     if (me?.navLayout) navLayout = me.navLayout;
+    permissions = new Set(me?.permissions ?? []);
   } catch {
     // inactive/unlinked members fall back to the default chrome
   }
+  const groups = filterNavGroups(permissions);
   const name = session.user.name ?? '';
 
   if (navLayout === 'topnav') {
@@ -84,7 +90,7 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
             <Link href="/" className="font-heading font-semibold tracking-tight">
               RPI Ambulance
             </Link>
-            <TopNavMenus />
+            <TopNavMenus groups={groups} />
             <div className="ml-auto flex items-center gap-1">
               <ThemeToggle />
               <SignOutButton name={name} />
@@ -98,7 +104,7 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar groups={groups} />
       <SidebarInset>
         <header className="flex h-14 items-center gap-2 border-b px-4">
           <SidebarTrigger />

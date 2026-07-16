@@ -9,11 +9,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { NAV_GROUPS } from '@/lib/nav';
+import type { NavGroup } from '@/lib/nav';
 import { cn } from '@/lib/utils';
 
 /** Grouped top-navbar variant: one dropdown per section. */
-export function TopNavMenus() {
+export function TopNavMenus({ groups }: { groups: NavGroup[] }) {
   const pathname = usePathname();
 
   return (
@@ -26,7 +26,7 @@ export function TopNavMenus() {
       >
         Dashboard
       </Button>
-      {NAV_GROUPS.map((group) => {
+      {groups.map((group) => {
         const active = group.items.some(
           (item) =>
             pathname === item.href || pathname.startsWith(`${item.href}/`),

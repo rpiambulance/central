@@ -13,9 +13,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { NAV_GROUPS } from '@/lib/nav';
+import type { NavGroup } from '@/lib/nav';
 
-export function AppSidebar() {
+export function AppSidebar({ groups }: { groups: NavGroup[] }) {
   const pathname = usePathname();
 
   return (
@@ -43,7 +43,7 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        {NAV_GROUPS.map((group) => (
+        {groups.map((group) => (
           <SidebarGroup key={group.label}>
             <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>
