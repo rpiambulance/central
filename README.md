@@ -18,8 +18,14 @@ docker compose up -d --build   # web :3000, API :3001, Keycloak :8080, Postgres 
 docker compose run --rm seed   # reference data + dev member
 ```
 
-One-time host setup: add `127.0.0.1 keycloak` to `/etc/hosts`, then open
-http://localhost:3000 and sign in as `dev` / `dev`.
+**Signing in without touching Keycloak:** the compose stack sets
+`AUTH_DEV_LOGIN=true`, which puts a username/password form on the dashboard
+(default `dev` / `dev`). It exchanges credentials for a real Keycloak token
+server-side over the container network — no browser redirect, no `/etc/hosts`
+entry. Never enable in production.
+
+The full OIDC redirect flow also works if you want to exercise it: add
+`127.0.0.1 keycloak` to `/etc/hosts`, then use the header "Sign in" button.
 
 ## Development (web on the host)
 

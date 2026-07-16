@@ -22,6 +22,9 @@ services:
       AUTH_KEYCLOAK_ID: ${AUTH_KEYCLOAK_ID:-rampart-web}
       AUTH_KEYCLOAK_SECRET: ${AUTH_KEYCLOAK_SECRET:-dev-secret}
       AUTH_KEYCLOAK_ISSUER: ${AUTH_KEYCLOAK_ISSUER:-http://keycloak:8080/realms/rampart}
+      # Username/password form on the dashboard (server-side token exchange —
+      # no browser trip to Keycloak, no /etc/hosts entry). Local dev only.
+      AUTH_DEV_LOGIN: ${AUTH_DEV_LOGIN:-true}
       RAMPART_API_URL: http://api:3001
     depends_on:
       - api

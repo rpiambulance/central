@@ -1,5 +1,6 @@
-import { auth } from '@/auth';
+import { auth, devLoginEnabled, signIn } from '@/auth';
 import { api, ApiError } from '@/lib/api';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -24,6 +25,39 @@ export default async function Dashboard() {
           <CardTitle>RPI Ambulance Member Portal</CardTitle>
           <CardDescription>Sign in with your RPIA account.</CardDescription>
         </CardHeader>
+        {devLoginEnabled ? (
+          <CardContent>
+            <form
+              action={async (formData: FormData) => {
+                'use server';
+                await signIn('dev-login', {
+                  username: formData.get('username'),
+                  password: formData.get('password'),
+                  redirectTo: '/',
+                });
+              }}
+              className="space-y-2 border-t pt-4"
+            >
+              <p className="text-xs text-muted-foreground">
+                Dev login (local only) — default dev / dev
+              </p>
+              <input
+                name="username"
+                placeholder="Username"
+                className="w-full rounded-md border bg-transparent px-3 py-1.5 text-sm"
+              />
+              <input
+                name="password"
+                type="password"
+                placeholder="Password"
+                className="w-full rounded-md border bg-transparent px-3 py-1.5 text-sm"
+              />
+              <Button type="submit" size="sm" className="w-full">
+                Sign in without Keycloak redirect
+              </Button>
+            </form>
+          </CardContent>
+        ) : null}
       </Card>
     );
   }

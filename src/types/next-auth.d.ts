@@ -5,4 +5,9 @@ declare module 'next-auth' {
     accessToken?: string;
     tokenExpired?: boolean;
   }
+  interface User {
+    // populated by the dev-login credentials provider (local dev only)
+    accessToken?: string;
+    expiresAt?: number;
+  }
 }
