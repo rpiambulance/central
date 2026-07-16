@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Mono, IBM_Plex_Sans, Poppins } from 'next/font/google';
 import './globals.css';
-import { SiteNav } from '@/components/site-nav';
+import { NavShell } from '@/components/nav-shell';
 import { ThemeProvider } from '@/components/theme-provider';
 
 const plexSans = IBM_Plex_Sans({
@@ -39,12 +39,9 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${plexSans.variable} ${plexMono.variable} ${poppins.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full">
         <ThemeProvider>
-          <SiteNav />
-          <main className="flex-1 container mx-auto max-w-6xl px-4 py-6">
-            {children}
-          </main>
+          <NavShell>{children}</NavShell>
         </ThemeProvider>
       </body>
     </html>
