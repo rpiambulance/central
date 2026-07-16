@@ -9,9 +9,22 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
-import { dropFromSlot, signupForSlot } from './actions';
+import {
+  declareAbsence,
+  dropFromSlot,
+  removeAbsence,
+  signupForSlot,
+} from './actions';
 
 const POSITIONS = ['CC', 'DRIVER', 'ATTENDANT', 'OBSERVER', 'DUTY_SUP'] as const;
 type Position = (typeof POSITIONS)[number];
@@ -46,6 +59,31 @@ type CrewsResponse = {
   currentWeek: Day[];
   nextWeek: Day[];
 };
+
+type MyShift = {
+  crewId: number;
+  date: string;
+  position: Position;
+  isPublic: boolean;
+};
+
+type Absence = {
+  id: number;
+  date: string;
+  note: string | null;
+};
+
+/** YYYY-MM-DD for tomorrow in America/New_York. */
+function tomorrowNY(): string {
+  const today = new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'America/New_York',
+  }).format(new Date());
+  const [y, m, d] = today.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
+}
 
 function SlotCell({ crewId, slot }: { crewId: number; slot: Slot }) {
   if (slot.member) {
@@ -134,7 +172,11 @@ export default async function NightCrewsPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
-  const data = await api<CrewsResponse>('/v1/crews');
+  const [data, myShifts, absences] = await Promise.all([
+    api<CrewsResponse>('/v1/crews'),
+    api<MyShift[]>('/v1/crews/mine'),
+    api<Absence[]>('/v1/crews/absences/mine'),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -145,6 +187,133 @@ export default async function NightCrewsPage({
       <ErrorBanner message={error} />
       <WeekTable title="This week" days={data.currentWeek} />
       <WeekTable title="Next week" days={data.nextWeek} />
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>My upcoming shifts</CardTitle>
+            <CardDescription>
+              All shifts you hold, including weeks not yet visible to members.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {myShifts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No upcoming shifts.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {myShifts.map((shift) => (
+                  <li
+                    key={`${shift.crewId}-${shift.position}`}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <span className="font-medium whitespace-nowrap">
+                      {formatDay(shift.date.slice(0, 10))}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {COLUMN_LABELS[shift.position]}
+                    </span>
+                    {!shift.isPublic ? (
+                      <Badge
+                        variant="secondary"
+                        className="text-muted-foreground"
+                      >
+                        not yet public
+                      </Badge>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Planned absences</CardTitle>
+            <CardDescription>
+              Declaring an absence clears any shift you hold that day (normal
+              drop deadline applies inside the visible window) and stops the
+              default schedule from placing you.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {absences.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No planned absences.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {absences.map((absence) => (
+                  <li
+                    key={absence.id}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <span className="font-medium whitespace-nowrap">
+                      {formatDay(absence.date.slice(0, 10))}
+                    </span>
+                    {absence.note ? (
+                      <span className="text-muted-foreground">
+                        {absence.note}
+                      </span>
+                    ) : null}
+                    <form
+                      action={removeAbsence.bind(null, absence.id)}
+                      className="ml-auto"
+                    >
+                      <Button
+                        type="submit"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs text-muted-foreground"
+                      >
+                        remove
+                      </Button>
+                    </form>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <form action={declareAbsence} className="flex flex-wrap items-end gap-2">
+              <div className="grid gap-1">
+                <label
+                  htmlFor="absence-date"
+                  className="text-xs text-muted-foreground"
+                >
+                  Date
+                </label>
+                <input
+                  id="absence-date"
+                  type="date"
+                  name="date"
+                  required
+                  min={tomorrowNY()}
+                  className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                />
+              </div>
+              <div className="grid flex-1 gap-1">
+                <label
+                  htmlFor="absence-note"
+                  className="text-xs text-muted-foreground"
+                >
+                  Note (optional)
+                </label>
+                <input
+                  id="absence-note"
+                  type="text"
+                  name="note"
+                  placeholder="e.g. out of town"
+                  className="h-8 min-w-40 rounded-md border border-input bg-background px-2 text-sm"
+                />
+              </div>
+              <Button type="submit" variant="outline" size="sm" className="h-8">
+                Declare
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

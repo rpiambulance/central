@@ -11,7 +11,14 @@ import {
 } from '@/components/ui/card';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
-import { dropFromEvent, signupForEvent } from './actions';
+import { WorkflowBadge } from '@/components/workflow-badge';
+import {
+  advanceWorkflow,
+  dropFromEvent,
+  respondAvailability,
+  signupForEvent,
+  signupOther,
+} from './actions';
 
 type EventDetail = {
   id: number;
@@ -34,7 +41,40 @@ type EventDetail = {
   }>;
   eligiblePositions: string[];
   myPosition?: string | null;
+  workflowStatus: string;
+  tierId: number | null;
 };
+
+type AvailabilityResponse = {
+  id: number;
+  positions: string[];
+  note: string | null;
+  member: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    credentials: Array<{ type: { key: string } }>;
+  };
+};
+
+/** Legal workflow transitions per status; the API enforces permissions. */
+const WORKFLOW_ACTIONS: Record<string, Array<{ action: string; label: string }>> =
+  {
+    DRAFT: [
+      { action: 'REQUEST_AVAILABILITY', label: 'Request availability' },
+      { action: 'SUBMIT_FOR_APPROVAL', label: 'Submit for approval' },
+      { action: 'CANCEL', label: 'Cancel' },
+    ],
+    AVAILABILITY_REQUESTED: [
+      { action: 'SUBMIT_FOR_APPROVAL', label: 'Submit for approval' },
+      { action: 'CANCEL', label: 'Cancel' },
+    ],
+    PENDING_APPROVAL: [
+      { action: 'APPROVE', label: 'Approve' },
+      { action: 'DENY', label: 'Deny' },
+      { action: 'CANCEL', label: 'Cancel' },
+    ],
+  };
 
 export default async function EventDetailPage({
   params,
@@ -58,6 +98,27 @@ export default async function EventDetailPage({
   const signedUp = event.myPosition !== undefined;
   const attendees = event.signups.filter((s) => !s.position);
 
+  const showWorkflow =
+    event.workflowStatus !== 'APPROVED' || event.tierId != null;
+  const collectingAvailability =
+    event.workflowStatus === 'AVAILABILITY_REQUESTED' ||
+    event.workflowStatus === 'PENDING_APPROVAL';
+
+  // Respondents are staff-only; a 403 just hides the section.
+  let availability: AvailabilityResponse[] | null = null;
+  if (showWorkflow) {
+    try {
+      availability = await api<AvailabilityResponse[]>(
+        `/v1/events/${eventId}/availability`,
+      );
+    } catch (e) {
+      if (!(e instanceof ApiError)) throw e;
+    }
+  }
+
+  const workflowActions = WORKFLOW_ACTIONS[event.workflowStatus] ?? [];
+  const showNotes = event.workflowStatus === 'PENDING_APPROVAL';
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -68,6 +129,7 @@ export default async function EventDetailPage({
       />
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="secondary">{event.kind.name}</Badge>
+        {showWorkflow ? <WorkflowBadge status={event.workflowStatus} /> : null}
         {event.locked ? <Badge variant="outline">Signups locked</Badge> : null}
         {signedUp ? (
           <Badge>
@@ -81,6 +143,160 @@ export default async function EventDetailPage({
         <p className="max-w-prose text-sm text-muted-foreground">
           {event.description}
         </p>
+      ) : null}
+
+      {showWorkflow ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3 text-base">
+              Coverage workflow <WorkflowBadge status={event.workflowStatus} />
+            </CardTitle>
+          </CardHeader>
+          {workflowActions.length ? (
+            <CardContent>
+              <form className="flex flex-wrap items-end gap-2">
+                {showNotes ? (
+                  <label className="grid gap-1 text-xs text-muted-foreground">
+                    Notes (optional, shared with the requester)
+                    <input
+                      type="text"
+                      name="notes"
+                      className="h-8 w-72 rounded-md border border-input bg-background px-2 text-sm"
+                    />
+                  </label>
+                ) : null}
+                {workflowActions.map(({ action, label }) => (
+                  <Button
+                    key={action}
+                    type="submit"
+                    formAction={advanceWorkflow.bind(null, event.id, action)}
+                    variant={
+                      action === 'APPROVE'
+                        ? 'default'
+                        : action === 'DENY' || action === 'CANCEL'
+                          ? 'ghost'
+                          : 'outline'
+                    }
+                    size="sm"
+                    className={
+                      action === 'DENY' || action === 'CANCEL'
+                        ? 'text-destructive'
+                        : undefined
+                    }
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </form>
+            </CardContent>
+          ) : null}
+        </Card>
+      ) : null}
+
+      {collectingAvailability ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">I can work this</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form
+              action={respondAvailability.bind(null, event.id)}
+              className="space-y-3"
+            >
+              <div className="flex flex-wrap gap-4">
+                {event.positions.map((pos) => (
+                  <label
+                    key={pos.position}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      name="positions"
+                      value={pos.position}
+                      className="size-4"
+                    />
+                    {pos.position}
+                    {pos.requiredCredentialKey ? (
+                      <span className="text-xs text-muted-foreground">
+                        ({pos.requiredCredentialKey})
+                      </span>
+                    ) : null}
+                  </label>
+                ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="text"
+                  name="note"
+                  placeholder="Note (optional)"
+                  className="h-8 w-72 rounded-md border border-input bg-background px-2 text-sm"
+                />
+                <Button type="submit" size="sm">
+                  Send availability
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {availability ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Availability responses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {availability.length ? (
+              <ul className="space-y-4">
+                {availability.map((response) => (
+                  <li key={response.id} className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-medium">
+                        {response.member.firstName} {response.member.lastName}
+                      </span>
+                      {response.member.credentials.map((cred) => (
+                        <Badge key={cred.type.key} variant="outline">
+                          {cred.type.key}
+                        </Badge>
+                      ))}
+                    </div>
+                    {response.note ? (
+                      <p className="text-sm text-muted-foreground">
+                        {response.note}
+                      </p>
+                    ) : null}
+                    <div className="flex flex-wrap gap-2">
+                      {response.positions.map((position) => (
+                        <form
+                          key={position}
+                          action={signupOther.bind(
+                            null,
+                            event.id,
+                            response.member.id,
+                            position,
+                          )}
+                        >
+                          <Button type="submit" variant="outline" size="sm">
+                            Assign as {position}
+                          </Button>
+                        </form>
+                      ))}
+                      {!response.positions.length ? (
+                        <p className="text-sm text-muted-foreground italic">
+                          No positions offered
+                        </p>
+                      ) : null}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No availability responses yet.
+              </p>
+            )}
+          </CardContent>
+        </Card>
       ) : null}
 
       <Card>

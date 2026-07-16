@@ -11,12 +11,15 @@ const links = [
   { href: '/evals', label: 'Evals' },
   { href: '/promotions', label: 'Promotions' },
   { href: '/ops/fuel', label: 'Fuel Log' },
+  { href: '/availability', label: 'Availability' },
   { href: '/settings/calendar', label: 'Settings' },
 ];
 
 const adminLinks = [
   { href: '/admin/roles', label: 'Roles' },
   { href: '/admin/schedule', label: 'Schedule' },
+  { href: '/admin/availability', label: 'Avail. Polls' },
+  { href: '/admin/coverage', label: 'Coverage' },
   { href: '/admin/certifications', label: 'Certifications' },
   { href: '/admin/members', label: 'Members' },
   { href: '/admin/trainings', label: 'Trainings' },

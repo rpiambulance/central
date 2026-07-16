@@ -13,9 +13,17 @@ function slotBody(formData: FormData): Record<string, unknown> {
   return {};
 }
 
+function scheduleUrl(viewDate: string | undefined, errorMessage: string) {
+  const params = new URLSearchParams();
+  if (viewDate) params.set('viewDate', viewDate);
+  params.set('error', errorMessage);
+  return `/admin/schedule?${params.toString()}`;
+}
+
 export async function setSlot(
   crewId: number,
   position: string,
+  viewDate: string | undefined,
   formData: FormData,
 ) {
   try {
@@ -24,9 +32,7 @@ export async function setSlot(
       body: JSON.stringify(slotBody(formData)),
     });
   } catch (error) {
-    redirect(
-      `/admin/schedule?error=${encodeURIComponent(apiErrorMessage(error))}`,
-    );
+    redirect(scheduleUrl(viewDate, apiErrorMessage(error)));
   }
   revalidatePath('/admin/schedule');
 }
@@ -34,6 +40,7 @@ export async function setSlot(
 export async function setDefaultSlot(
   weekday: number,
   position: string,
+  viewDate: string | undefined,
   formData: FormData,
 ) {
   try {
@@ -42,9 +49,7 @@ export async function setDefaultSlot(
       body: JSON.stringify({ weekday, position, ...slotBody(formData) }),
     });
   } catch (error) {
-    redirect(
-      `/admin/schedule?error=${encodeURIComponent(apiErrorMessage(error))}`,
-    );
+    redirect(scheduleUrl(viewDate, apiErrorMessage(error)));
   }
   revalidatePath('/admin/schedule');
 }

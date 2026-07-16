@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
 import { formatDay } from '@/lib/format';
 import { Button } from '@/components/ui/button';
@@ -70,6 +71,31 @@ type DefaultRow = {
   placeholder: string | null;
 };
 
+/** Shift a YYYY-MM-DD date string by n days. */
+function addDays(dateStr: string, n: number): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+}
+
+/** Today's YYYY-MM-DD in America/New_York. */
+function todayNY(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'America/New_York',
+  }).format(new Date());
+}
+
+/** Whole days from `fromStr` to `toStr` (positive when toStr is later). */
+function daysBetween(fromStr: string, toStr: string): number {
+  const parse = (s: string) => {
+    const [y, m, d] = s.split('-').map(Number);
+    return Date.UTC(y, m - 1, d);
+  };
+  return Math.round((parse(toStr) - parse(fromStr)) / 86_400_000);
+}
+
 function NoAccess() {
   return (
     <Card className="mx-auto mt-12 max-w-md">
@@ -132,10 +158,12 @@ function WeekTable({
   title,
   days,
   members,
+  viewDate,
 }: {
   title: string;
   days: Day[];
   members: Member[];
+  viewDate?: string;
 }) {
   return (
     <section className="space-y-2">
@@ -162,7 +190,7 @@ function WeekTable({
                     <TableCell key={position} className="align-top">
                       <SlotForm
                         members={members}
-                        action={setSlot.bind(null, day.crewId, position)}
+                        action={setSlot.bind(null, day.crewId, position, viewDate)}
                         currentMemberId={slot?.member?.id}
                         currentPlaceholder={slot?.placeholder}
                       />
@@ -181,9 +209,13 @@ function WeekTable({
 export default async function AdminSchedulePage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; viewDate?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, viewDate: rawViewDate } = await searchParams;
+  const viewDate =
+    rawViewDate && /^\d{4}-\d{2}-\d{2}$/.test(rawViewDate)
+      ? rawViewDate
+      : undefined;
 
   let crews: CrewsResponse;
   let members: Member[];
@@ -191,7 +223,9 @@ export default async function AdminSchedulePage({
   let settings: Record<string, unknown>;
   try {
     [crews, members, defaults, settings] = await Promise.all([
-      api<CrewsResponse>('/v1/crews'),
+      api<CrewsResponse>(
+        `/v1/crews${viewDate ? `?viewDate=${viewDate}` : ''}`,
+      ),
       api<Member[]>('/v1/members'),
       api<DefaultRow[]>('/v1/crews/defaults'),
       api<Record<string, unknown>>('/v1/crews/settings'),
@@ -204,6 +238,9 @@ export default async function AdminSchedulePage({
   const defaultFor = (weekday: number, position: Position) =>
     defaults.find((d) => d.weekday === weekday && d.position === position);
 
+  const weekStart = crews.weekStart;
+  const notYetPublic = daysBetween(todayNY(), weekStart) >= 14;
+
   return (
     <div className="space-y-8">
       <PageHeader
@@ -212,11 +249,61 @@ export default async function AdminSchedulePage({
       />
       <ErrorBanner message={error} />
 
-      <WeekTable title="This week" days={crews.currentWeek} members={members} />
-      <WeekTable title="Next week" days={crews.nextWeek} members={members} />
+      <div className="flex flex-wrap items-center gap-4 text-sm">
+        <Link
+          href={`/admin/schedule?viewDate=${addDays(weekStart, -14)}`}
+          className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
+        >
+          &larr; Previous week
+        </Link>
+        <Link
+          href="/admin/schedule"
+          className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
+        >
+          This week
+        </Link>
+        <Link
+          href={`/admin/schedule?viewDate=${addDays(weekStart, 14)}`}
+          className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
+        >
+          Next week &rarr;
+        </Link>
+        <span className="text-muted-foreground">
+          Week of {formatDay(weekStart)}
+        </span>
+      </div>
+
+      {notYetPublic ? (
+        <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          These weeks are not yet public to members.
+        </div>
+      ) : null}
+
+      <WeekTable
+        title={`Week of ${formatDay(weekStart)}`}
+        days={crews.currentWeek}
+        members={members}
+        viewDate={viewDate}
+      />
+      <WeekTable
+        title={`Week of ${formatDay(addDays(weekStart, 7))}`}
+        days={crews.nextWeek}
+        members={members}
+        viewDate={viewDate}
+      />
 
       <section className="space-y-2">
-        <h2 className="text-lg font-medium tracking-tight">Weekly defaults</h2>
+        <div className="flex flex-wrap items-baseline gap-3">
+          <h2 className="text-lg font-medium tracking-tight">
+            Weekly defaults
+          </h2>
+          <Link
+            href="/admin/availability"
+            className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+          >
+            Availability polls
+          </Link>
+        </div>
         <p className="text-sm text-muted-foreground">
           Applied when new crew nights are generated.
         </p>
@@ -244,7 +331,12 @@ export default async function AdminSchedulePage({
                       <TableCell key={position} className="align-top">
                         <SlotForm
                           members={members}
-                          action={setDefaultSlot.bind(null, weekday, position)}
+                          action={setDefaultSlot.bind(
+                            null,
+                            weekday,
+                            position,
+                            viewDate,
+                          )}
                           currentMemberId={row?.memberId ?? undefined}
                           currentPlaceholder={row?.placeholder ?? undefined}
                         />
