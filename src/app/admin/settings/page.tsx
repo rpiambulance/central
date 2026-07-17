@@ -19,6 +19,7 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import {
+  setCredentialRoles,
   addRequirement,
   createCertificationType,
   createEventKind,
@@ -67,7 +68,10 @@ type CredentialType = {
   key: string;
   name: string;
   requirements: Requirement[];
+  linkedRoles: Array<{ role: { id: number; name: string } }>;
 };
+
+type RoleOption = { id: number; name: string };
 
 type EvalTemplate = { id: number; name: string; version: number };
 
@@ -557,8 +561,9 @@ export default async function AdminSettingsPage({
   let credentialTypes: CredentialType[];
   let evalTemplates: EvalTemplate[];
   let classes: TrainingClass[];
+  let roles: RoleOption[];
   try {
-    [knobs, certTypes, kinds, credentialTypes, evalTemplates, classes] =
+    [knobs, certTypes, kinds, credentialTypes, evalTemplates, classes, roles] =
       await Promise.all([
         api<SchedulingKnobs>('/v1/crews/settings'),
         api<CertType[]>('/v1/certifications/types'),
@@ -566,6 +571,7 @@ export default async function AdminSettingsPage({
         api<CredentialType[]>('/v1/credentials/types'),
         api<EvalTemplate[]>('/v1/evals/templates'),
         api<TrainingClass[]>('/v1/trainings/classes'),
+        api<RoleOption[]>('/v1/roles'),
       ]);
   } catch (err) {
     if (err instanceof ApiError && err.status === 403) return <NoAccess />;
@@ -589,6 +595,56 @@ export default async function AdminSettingsPage({
         evalTemplates={evalTemplates}
         classes={classes}
       />
+      <LinkedRolesCard credentialTypes={credentialTypes} roles={roles} />
     </div>
+  );
+}
+
+function LinkedRolesCard({
+  credentialTypes,
+  roles,
+}: {
+  credentialTypes: CredentialType[];
+  roles: RoleOption[];
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Credential-conferred roles</CardTitle>
+        <CardDescription>
+          Members automatically hold the checked roles (and their permissions)
+          while the credential is active; suspension or revocation removes
+          them. Requires the roles:manage permission to change.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {credentialTypes.map((type) => (
+          <form
+            key={`${type.id}-${type.linkedRoles.map((l) => l.role.id).sort().join(',')}`}
+            action={setCredentialRoles.bind(null, type.id)}
+            className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b pb-3 last:border-b-0"
+          >
+            <span className="w-64 text-sm font-medium">
+              {type.name}{' '}
+              <span className="text-xs text-muted-foreground">({type.key})</span>
+            </span>
+            {roles.map((role) => (
+              <label key={role.id} className="flex items-center gap-1 text-xs">
+                <input
+                  type="checkbox"
+                  name="roleIds"
+                  value={role.id}
+                  defaultChecked={type.linkedRoles.some((l) => l.role.id === role.id)}
+                />
+                {role.name}
+              </label>
+            ))}
+            <Button type="submit" size="sm" variant="outline" className="h-6 text-xs">
+              Save
+            </Button>
+          </form>
+        ))}
+      </CardContent>
+    </Card>
   );
 }

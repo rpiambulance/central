@@ -52,9 +52,13 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
   if (!session?.user) {
     return (
       <div className="min-h-full flex flex-col">
+        <div aria-hidden className="h-1 bg-primary" />
         <header className="border-b bg-background">
           <div className="container mx-auto max-w-6xl px-4 h-14 flex items-center gap-4">
-            <Link href="/" className="font-heading font-semibold tracking-tight">
+            <Link
+              href="/"
+              className="font-heading font-semibold tracking-tight text-primary"
+            >
               RPI Ambulance
             </Link>
             <div className="ml-auto flex items-center gap-1">
@@ -85,9 +89,13 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
   if (navLayout === 'topnav') {
     return (
       <div className="min-h-full flex flex-col">
+        <div aria-hidden className="h-1 bg-primary" />
         <header className="border-b bg-background">
           <div className="container mx-auto max-w-6xl px-4 h-14 flex items-center gap-4">
-            <Link href="/" className="font-heading font-semibold tracking-tight">
+            <Link
+              href="/"
+              className="font-heading font-semibold tracking-tight text-primary"
+            >
               RPI Ambulance
             </Link>
             <TopNavMenus groups={groups} />
@@ -106,7 +114,8 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <AppSidebar groups={groups} />
       <SidebarInset>
-        <header className="flex h-14 items-center gap-2 border-b px-4">
+        <div aria-hidden className="h-1 bg-primary" />
+        <header className="flex h-13 items-center gap-2 border-b px-4">
           <SidebarTrigger />
           <div className="ml-auto flex items-center gap-1">
             <ThemeToggle />

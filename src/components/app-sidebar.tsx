@@ -20,10 +20,11 @@ export function AppSidebar({ groups }: { groups: NavGroup[] }) {
 
   return (
     <Sidebar>
+      <div aria-hidden className="h-1 bg-primary" />
       <SidebarHeader>
         <Link
           href="/"
-          className="font-heading font-semibold tracking-tight px-2 py-1.5 text-base"
+          className="font-heading font-semibold tracking-tight px-2 py-1.5 text-base text-primary"
         >
           RPI Ambulance
         </Link>

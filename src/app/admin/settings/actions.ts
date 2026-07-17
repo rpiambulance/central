@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 import { apiErrorMessage } from '@/lib/errors';
 
 function fail(error: unknown): never {
@@ -148,6 +148,25 @@ export async function removeRequirement(requirementId: number) {
     });
   } catch (error) {
     fail(error);
+  }
+  revalidatePath('/admin/settings');
+}
+
+export async function setCredentialRoles(
+  credentialTypeId: number,
+  formData: FormData,
+) {
+  const roleIds = formData.getAll('roleIds').map(Number).filter(Number.isFinite);
+  try {
+    await api(`/v1/credentials/types/${credentialTypeId}/roles`, {
+      method: 'PUT',
+      body: JSON.stringify({ roleIds }),
+    });
+  } catch (error) {
+    if (error instanceof ApiError) {
+      redirect(`/admin/settings?error=${encodeURIComponent(apiErrorMessage(error))}`);
+    }
+    throw error;
   }
   revalidatePath('/admin/settings');
 }
