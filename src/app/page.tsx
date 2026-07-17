@@ -1,3 +1,4 @@
+import { summarizeCredentials } from '@/lib/credentials';
 import { auth, devLoginEnabled, signIn } from '@/auth';
 import { api, ApiError } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ type Me = {
   id: number;
   firstName: string;
   lastName: string;
-  credentials: Array<{ type: { name: string }; title: string | null }>;
+  credentials: Array<{ type: { key: string; name: string }; title: string | null }>;
 } | null;
 
 export default async function Dashboard() {
@@ -99,7 +100,9 @@ export default async function Dashboard() {
             <CardTitle className="text-base">My credentials</CardTitle>
             <CardDescription>
               {me?.credentials.length
-                ? me.credentials.map((c) => c.title ?? c.type.name).join(', ')
+                ? summarizeCredentials(me.credentials)
+                    .map((b) => b.tooltip)
+                    .join(', ')
                 : 'None yet'}
             </CardDescription>
           </CardHeader>

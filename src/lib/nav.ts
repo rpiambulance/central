@@ -57,6 +57,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/admin/trainings', label: 'Trainings', permissions: ['trainings:manage'] },
       { href: '/admin/evals', label: 'Eval Templates', permissions: ['evals:manage-forms'] },
       { href: '/admin/radios', label: 'Radios', permissions: ['radios:manage'] },
+      { href: '/admin/vehicles', label: 'Vehicles', permissions: ['vehicles:manage'] },
       { href: '/admin/tokens', label: 'API Tokens', permissions: ['tokens:manage'] },
       {
         href: '/admin/settings',

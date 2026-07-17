@@ -1,3 +1,4 @@
+import { summarizeCredentials } from '@/lib/credentials';
 import { formatCredKey } from '@/lib/format';
 import { api, ApiError } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
@@ -74,13 +75,13 @@ export default async function MembersPage() {
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
-                    {member.credentials.map((cred, i) => (
+                    {summarizeCredentials(member.credentials).map((badge) => (
                       <Badge
-                        key={`${formatCredKey(cred.type.key)}-${i}`}
+                        key={badge.key}
                         variant="secondary"
-                        title={cred.title ?? cred.type.name}
+                        title={badge.tooltip}
                       >
-                        {formatCredKey(cred.type.key)}
+                        {badge.label}
                       </Badge>
                     ))}
                   </div>

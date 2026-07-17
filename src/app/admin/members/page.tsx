@@ -1,3 +1,4 @@
+import { summarizeCredentials } from '@/lib/credentials';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
@@ -158,13 +159,13 @@ export default async function AdminMembersPage({
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
                     {member.credentials.length ? (
-                      member.credentials.map((credential) => (
+                      summarizeCredentials(member.credentials).map((badge) => (
                         <Badge
-                          key={credential.type.key}
+                          key={badge.key}
                           variant="secondary"
-                          title={credential.title ?? credential.type.name}
+                          title={badge.tooltip}
                         >
-                          {credential.title ?? credential.type.name}
+                          {badge.label}
                         </Badge>
                       ))
                     ) : (

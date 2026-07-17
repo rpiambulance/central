@@ -1,3 +1,4 @@
+import { summarizeCredentials } from '@/lib/credentials';
 import { notFound } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import { formatDateTime, formatTime, formatCredKey } from '@/lib/format';
@@ -254,9 +255,9 @@ export default async function EventDetailPage({
                       <span className="font-medium">
                         {response.member.firstName} {response.member.lastName}
                       </span>
-                      {response.member.credentials.map((cred) => (
-                        <Badge key={formatCredKey(cred.type.key)} variant="outline">
-                          {formatCredKey(cred.type.key)}
+                      {summarizeCredentials(response.member.credentials).map((badge) => (
+                        <Badge key={badge.key} variant="outline" title={badge.tooltip}>
+                          {badge.label}
                         </Badge>
                       ))}
                     </div>

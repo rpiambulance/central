@@ -7,7 +7,7 @@ import { apiErrorMessage } from '@/lib/errors';
 
 export async function addFuelEntry(formData: FormData) {
   const loggedAtLocal = String(formData.get('loggedAt') ?? '');
-  const vehicle = String(formData.get('vehicle') ?? '');
+  const vehicleId = Number(formData.get('vehicleId'));
   const amount = Number(formData.get('amount'));
   const mileage = Number(formData.get('mileage'));
 
@@ -16,7 +16,7 @@ export async function addFuelEntry(formData: FormData) {
       method: 'POST',
       body: JSON.stringify({
         loggedAt: new Date(loggedAtLocal).toISOString(),
-        vehicle,
+        vehicleId,
         amount,
         mileage,
       }),

@@ -34,9 +34,10 @@ export default async function FuelLogPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  const [{ error }, entries] = await Promise.all([
+  const [{ error }, entries, vehicles] = await Promise.all([
     searchParams,
     api<FuelEntry[]>('/v1/fuel'),
+    api<Array<{ id: number; name: string }>>('/v1/vehicles'),
   ]);
 
   return (
@@ -68,13 +69,21 @@ export default async function FuelLogPage({
             </label>
             <label className="flex flex-col gap-1 text-sm">
               <span className="text-muted-foreground">Vehicle</span>
-              <input
-                type="text"
-                name="vehicle"
+              <select
+                name="vehicleId"
                 required
-                placeholder="A1"
-                className="h-9 w-28 rounded-md border border-input bg-background px-2 text-sm"
-              />
+                defaultValue=""
+                className="h-9 w-36 rounded-md border border-input bg-background px-2 text-sm"
+              >
+                <option value="" disabled>
+                  Select…
+                </option>
+                {vehicles.map((vehicle) => (
+                  <option key={vehicle.id} value={vehicle.id}>
+                    {vehicle.name}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="flex flex-col gap-1 text-sm">
               <span className="text-muted-foreground">Amount (gal)</span>
