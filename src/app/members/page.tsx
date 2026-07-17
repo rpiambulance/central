@@ -1,3 +1,4 @@
+import { formatCredKey } from '@/lib/format';
 import { api, ApiError } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -75,11 +76,11 @@ export default async function MembersPage() {
                   <div className="flex flex-wrap gap-1">
                     {member.credentials.map((cred, i) => (
                       <Badge
-                        key={`${cred.type.key}-${i}`}
+                        key={`${formatCredKey(cred.type.key)}-${i}`}
                         variant="secondary"
                         title={cred.title ?? cred.type.name}
                       >
-                        {cred.type.key}
+                        {formatCredKey(cred.type.key)}
                       </Badge>
                     ))}
                   </div>

@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import { formatDate, formatDateTime } from '@/lib/format';
+import { formatDate, formatDateTime, formatCredKey } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -196,7 +196,7 @@ export default async function TrainingPage({
                 <CardHeader>
                   <CardTitle className="text-base">{path.name}</CardTitle>
                   <CardDescription>
-                    Requirements for {path.key}
+                    Requirements for {formatCredKey(path.key)}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">

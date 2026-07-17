@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
-import { formatDateTime, formatTime } from '@/lib/format';
+import { formatDateTime, formatTime, formatCredKey } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -255,8 +255,8 @@ export default async function EventDetailPage({
                         {response.member.firstName} {response.member.lastName}
                       </span>
                       {response.member.credentials.map((cred) => (
-                        <Badge key={cred.type.key} variant="outline">
-                          {cred.type.key}
+                        <Badge key={formatCredKey(cred.type.key)} variant="outline">
+                          {formatCredKey(cred.type.key)}
                         </Badge>
                       ))}
                     </div>

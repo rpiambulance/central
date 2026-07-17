@@ -55,3 +55,8 @@ export function dayKey(iso: string): string {
     timeZone: TZ,
   }).format(new Date(iso));
 }
+
+/** Credential keys are stored with underscores (P_CC); display with dashes (P-CC). */
+export function formatCredKey(key: string): string {
+  return key.replace(/_/g, '-');
+}

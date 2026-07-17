@@ -79,13 +79,14 @@
   --chart-4: #6b6c70;
   --chart-5: #711013;
   --radius: 0.625rem;
-  --sidebar: #f7f7f8;
-  --sidebar-foreground: #221f1f;
+  /* Branded sidebar: RPIA Black with red accents in both modes */
+  --sidebar: #221f1f;
+  --sidebar-foreground: #f2f2f3;
   --sidebar-primary: #e21f26;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #fbe5e6; /* RPIA Red ~10% tint for active/hover items */
-  --sidebar-accent-foreground: #b8161d;
-  --sidebar-border: #d8d8da;
+  --sidebar-accent: #3d2224; /* RPIA Red dark tint for active/hover items */
+  --sidebar-accent-foreground: #f2aeb1;
+  --sidebar-border: rgba(255, 255, 255, 0.12);
   --sidebar-ring: #e21f26;
 }
 

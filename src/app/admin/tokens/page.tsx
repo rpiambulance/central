@@ -20,6 +20,7 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { createToken, revokeToken } from './actions';
+import { PERMISSION_INFO, groupPermissions } from '@/lib/permissions';
 
 type Token = {
   id: number;
@@ -125,7 +126,16 @@ export default async function AdminTokensPage({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {tokens.map((token) => {
+                {[...tokens]
+                  .sort((a, b) => {
+                    const order = { active: 0, expired: 1, revoked: 2 } as const;
+                    const byStatus =
+                      order[tokenStatus(a)] - order[tokenStatus(b)];
+                    return byStatus !== 0
+                      ? byStatus
+                      : a.name.localeCompare(b.name);
+                  })
+                  .map((token) => {
                   const status = tokenStatus(token);
                   return (
                     <TableRow key={token.id}>
@@ -137,12 +147,28 @@ export default async function AdminTokensPage({
                       </TableCell>
                       <TableCell>
                         <div className="flex max-w-xs flex-wrap gap-1">
-                          {token.permissions.map((permission) => (
-                            <Badge key={permission} variant="secondary">
+                          {[...token.permissions].sort().map((permission) => (
+                            <Badge
+                              key={permission}
+                              variant="secondary"
+                              title={PERMISSION_INFO[permission]}
+                            >
                               {permission}
                             </Badge>
                           ))}
                         </div>
+                        <details className="mt-1 max-w-xs text-xs text-muted-foreground">
+                          <summary className="cursor-pointer">
+                            What this token allows
+                          </summary>
+                          <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                            {[...token.permissions].sort().map((permission) => (
+                              <li key={permission}>
+                                {PERMISSION_INFO[permission] ?? permission}
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
                         {token.owner ? (
@@ -220,19 +246,34 @@ export default async function AdminTokensPage({
               <legend className="text-xs text-muted-foreground">
                 Permissions
               </legend>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
-                {permissionCatalog.map((permission) => (
-                  <label
-                    key={permission}
-                    className="flex items-center gap-2 text-sm"
-                  >
-                    <input
-                      type="checkbox"
-                      name="permissions"
-                      value={permission}
-                    />
-                    {permission}
-                  </label>
+              <div className="space-y-3">
+                {groupPermissions(permissionCatalog).map(({ group, permissions }) => (
+                  <div key={group}>
+                    <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      {group}
+                    </h3>
+                    <div className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
+                      {permissions.map((permission) => (
+                        <label
+                          key={permission}
+                          className="flex items-start gap-2 text-sm"
+                        >
+                          <input
+                            type="checkbox"
+                            name="permissions"
+                            value={permission}
+                            className="mt-1"
+                          />
+                          <span>
+                            <code className="text-xs">{permission}</code>
+                            <span className="block text-xs text-muted-foreground">
+                              {PERMISSION_INFO[permission] ?? ''}
+                            </span>
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </fieldset>

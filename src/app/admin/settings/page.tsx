@@ -1,3 +1,4 @@
+import { formatCredKey } from '@/lib/format';
 import { api, ApiError } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -450,7 +451,7 @@ function RequirementsCard({
           <div key={type.id} className="space-y-2">
             <h3 className="text-sm font-medium">
               {type.name}{' '}
-              <span className="text-xs text-muted-foreground">({type.key})</span>
+              <span className="text-xs text-muted-foreground">({formatCredKey(type.key)})</span>
             </h3>
             {type.requirements.length ? (
               <ul className="space-y-1">
@@ -626,7 +627,7 @@ function LinkedRolesCard({
           >
             <span className="w-64 text-sm font-medium">
               {type.name}{' '}
-              <span className="text-xs text-muted-foreground">({type.key})</span>
+              <span className="text-xs text-muted-foreground">({formatCredKey(type.key)})</span>
             </span>
             {roles.map((role) => (
               <label key={role.id} className="flex items-center gap-1 text-xs">
