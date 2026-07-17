@@ -19,7 +19,10 @@ import {
 } from '@/components/ui/table';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
-import { setDefaultSlot, setSlot } from './actions';
+import { SlotSelect } from './slot-select';
+import { UndoButton } from './undo-button';
+import { UndoProvider } from './undo-context';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 const POSITIONS = ['CC', 'DRIVER', 'ATTENDANT', 'OBSERVER', 'DUTY_SUP'] as const;
 type Position = (typeof POSITIONS)[number];
@@ -110,55 +113,6 @@ function NoAccess() {
   );
 }
 
-function SlotForm({
-  members,
-  action,
-  currentMemberId,
-  currentPlaceholder,
-}: {
-  members: Member[];
-  action: (formData: FormData) => Promise<void>;
-  currentMemberId?: number;
-  currentPlaceholder?: string;
-}) {
-  return (
-    <form action={action} className="grid w-40 gap-1">
-      {/* keyed by the server value: React resets uncontrolled fields to
-          defaultValue after a server action, and a mount-time defaultValue
-          alone won't track revalidated data */}
-      <select
-        key={`m-${currentMemberId ?? ''}`}
-        name="memberId"
-        defaultValue={currentMemberId ?? ''}
-        className="h-7 rounded-md border border-input bg-background px-1 text-xs"
-      >
-        <option value="">&mdash; vacant &mdash;</option>
-        {members.map((m) => (
-          <option key={m.id} value={m.id}>
-            {m.lastName}, {m.firstName}
-          </option>
-        ))}
-      </select>
-      <input
-        key={`p-${currentPlaceholder ?? ''}`}
-        type="text"
-        name="placeholder"
-        placeholder="or placeholder text"
-        defaultValue={currentPlaceholder ?? ''}
-        className="h-7 rounded-md border border-input bg-background px-1 text-xs"
-      />
-      <Button
-        type="submit"
-        variant="outline"
-        size="sm"
-        className="h-6 text-xs"
-      >
-        Set
-      </Button>
-    </form>
-  );
-}
-
 function WeekTable({
   title,
   days,
@@ -193,11 +147,14 @@ function WeekTable({
                   const slot = day.slots[position];
                   return (
                     <TableCell key={position} className="align-top">
-                      <SlotForm
+                      <SlotSelect
+                        kind="slot"
+                        target={day.crewId}
+                        position={position}
+                        label={`${formatDay(day.date)} — ${COLUMN_LABELS[position]}`}
                         members={members}
-                        action={setSlot.bind(null, day.crewId, position, viewDate)}
-                        currentMemberId={slot?.member?.id}
-                        currentPlaceholder={slot?.placeholder}
+                        memberId={slot?.member?.id}
+                        placeholder={slot?.placeholder}
                       />
                     </TableCell>
                   );
@@ -247,14 +204,18 @@ export default async function AdminSchedulePage({
   const notYetPublic = daysBetween(todayNY(), weekStart) >= 14;
 
   return (
+    <TooltipProvider>
+      <UndoProvider>
     <div className="space-y-8">
       <PageHeader
         title="Schedule Admin"
-        description="Override crew slots, manage weekly defaults, and review scheduling settings."
+        description="Pick a member in any slot and it saves instantly."
       />
       <ErrorBanner message={error} />
 
       <div className="flex flex-wrap items-center gap-4 text-sm">
+        <UndoButton />
+        <span aria-hidden className="h-4 w-px bg-border" />
         <Link
           href={`/admin/schedule?viewDate=${addDays(weekStart, -14)}`}
           className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
@@ -334,16 +295,14 @@ export default async function AdminSchedulePage({
                     const row = defaultFor(weekday, position);
                     return (
                       <TableCell key={position} className="align-top">
-                        <SlotForm
+                        <SlotSelect
+                          kind="default"
+                          target={weekday}
+                          position={position}
+                          label={`${weekdayName} default — ${COLUMN_LABELS[position]}`}
                           members={members}
-                          action={setDefaultSlot.bind(
-                            null,
-                            weekday,
-                            position,
-                            viewDate,
-                          )}
-                          currentMemberId={row?.memberId ?? undefined}
-                          currentPlaceholder={row?.placeholder ?? undefined}
+                          memberId={row?.memberId ?? undefined}
+                          placeholder={row?.placeholder ?? undefined}
                         />
                       </TableCell>
                     );
@@ -375,5 +334,7 @@ export default async function AdminSchedulePage({
         </Card>
       </section>
     </div>
+      </UndoProvider>
+    </TooltipProvider>
   );
 }

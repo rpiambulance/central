@@ -53,3 +53,43 @@ export async function setDefaultSlot(
   }
   revalidatePath('/admin/schedule');
 }
+
+export interface SlotValue {
+  memberId?: number | null;
+  placeholder?: string | null;
+}
+
+/** Auto-save variant used by the client grid; returns errors instead of redirecting. */
+export async function setSlotValue(
+  crewId: number,
+  position: string,
+  value: SlotValue,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await api(`/v1/crews/${crewId}/slots/${position}`, {
+      method: 'PUT',
+      body: JSON.stringify(value),
+    });
+  } catch (error) {
+    return { ok: false, error: apiErrorMessage(error) };
+  }
+  revalidatePath('/admin/schedule');
+  return { ok: true };
+}
+
+export async function setDefaultSlotValue(
+  weekday: number,
+  position: string,
+  value: SlotValue,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await api('/v1/crews/defaults', {
+      method: 'PUT',
+      body: JSON.stringify({ weekday, position, ...value }),
+    });
+  } catch (error) {
+    return { ok: false, error: apiErrorMessage(error) };
+  }
+  revalidatePath('/admin/schedule');
+  return { ok: true };
+}
