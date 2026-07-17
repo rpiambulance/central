@@ -64,6 +64,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'App Settings',
         permissions: ['settings:write', 'schedule:settings'],
       },
+      { href: '/admin/audit', label: 'Audit Log', permissions: ['audit:read'] },
     ],
   },
   {
