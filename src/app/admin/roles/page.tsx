@@ -1,3 +1,4 @@
+import { PERMISSION_INFO, groupPermissions } from '@/lib/permissions';
 import { api, ApiError } from '@/lib/api';
 import { formatDate } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,45 @@ type Role = {
 };
 
 type Member = { id: number; firstName: string; lastName: string };
+
+function PermissionPicker({
+  catalog,
+  checked,
+}: {
+  catalog: string[];
+  checked?: (permission: string) => boolean;
+}) {
+  return (
+    <div className="space-y-3">
+      {groupPermissions(catalog).map(({ group, permissions }) => (
+        <div key={group}>
+          <h4 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {group}
+          </h4>
+          <div className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
+            {permissions.map((permission) => (
+              <label key={permission} className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="permissions"
+                  value={permission}
+                  defaultChecked={checked?.(permission)}
+                  className="mt-1"
+                />
+                <span>
+                  <code className="text-xs">{permission}</code>
+                  <span className="block text-xs text-muted-foreground">
+                    {PERMISSION_INFO[permission] ?? ''}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function NoAccess() {
   return (
@@ -90,11 +130,17 @@ function RoleCard({
         ) : null}
         <div className="flex flex-wrap gap-1 pt-1">
           {role.permissions.length ? (
-            role.permissions.map((p) => (
-              <Badge key={p.permission} variant="secondary">
-                {p.permission}
-              </Badge>
-            ))
+            [...role.permissions]
+              .sort((a, b) => a.permission.localeCompare(b.permission))
+              .map((p) => (
+                <Badge
+                  key={p.permission}
+                  variant="secondary"
+                  title={PERMISSION_INFO[p.permission]}
+                >
+                  {p.permission}
+                </Badge>
+              ))
           ) : (
             <span className="text-xs text-muted-foreground">
               No permissions
@@ -187,24 +233,12 @@ function RoleCard({
               />
               Officer role
             </label>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
-              {permissionCatalog.map((permission) => (
-                <label
-                  key={permission}
-                  className="flex items-center gap-2 text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    name="permissions"
-                    value={permission}
-                    defaultChecked={role.permissions.some(
-                      (p) => p.permission === permission,
-                    )}
-                  />
-                  {permission}
-                </label>
-              ))}
-            </div>
+            <PermissionPicker
+              catalog={permissionCatalog}
+              checked={(permission) =>
+                role.permissions.some((p) => p.permission === permission)
+              }
+            />
             <Button type="submit" size="sm" variant="outline">
               Save permissions
             </Button>
@@ -287,21 +321,7 @@ export default async function AdminRolesPage({
               <legend className="text-xs text-muted-foreground">
                 Permissions
               </legend>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
-                {permissionCatalog.map((permission) => (
-                  <label
-                    key={permission}
-                    className="flex items-center gap-2 text-sm"
-                  >
-                    <input
-                      type="checkbox"
-                      name="permissions"
-                      value={permission}
-                    />
-                    {permission}
-                  </label>
-                ))}
-              </div>
+              <PermissionPicker catalog={permissionCatalog} />
             </fieldset>
             <Button type="submit" size="sm">
               Create role
