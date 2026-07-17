@@ -208,7 +208,11 @@ export default async function EvalDetailPage({
       </div>
 
       {editable ? (
-        <form action={saveScores.bind(null, evaluation.id, items.map((i) => ({ id: i.id, scoreType: i.scoreType })))} className="space-y-6">
+        <form
+          key={JSON.stringify([evaluation.scores, evaluation.notes])}
+          action={saveScores.bind(null, evaluation.id, items.map((i) => ({ id: i.id, scoreType: i.scoreType })))}
+          className="space-y-6"
+        >
           <div className="space-y-4">
             {items.map((item) => (
               <div key={item.id} className="space-y-1.5 rounded-md border p-4">

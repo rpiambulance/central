@@ -52,7 +52,11 @@ export default async function ProfilePage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={updateProfile} className="space-y-3">
+            <form
+              key={JSON.stringify([me.personalEmail, me.cellPhone, me.homePhone, me.localAddress, me.homeAddress])}
+              action={updateProfile}
+              className="space-y-3"
+            >
               <label className="block text-sm">
                 Personal email
                 <input
@@ -111,7 +115,7 @@ export default async function ProfilePage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={updateNavLayout} className="space-y-3">
+            <form key={me.navLayout} action={updateNavLayout} className="space-y-3">
               <label className="flex items-start gap-2 text-sm">
                 <input
                   type="radio"

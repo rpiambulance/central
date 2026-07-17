@@ -123,7 +123,11 @@ function SlotForm({
 }) {
   return (
     <form action={action} className="grid w-40 gap-1">
+      {/* keyed by the server value: React resets uncontrolled fields to
+          defaultValue after a server action, and a mount-time defaultValue
+          alone won't track revalidated data */}
       <select
+        key={`m-${currentMemberId ?? ''}`}
         name="memberId"
         defaultValue={currentMemberId ?? ''}
         className="h-7 rounded-md border border-input bg-background px-1 text-xs"
@@ -136,6 +140,7 @@ function SlotForm({
         ))}
       </select>
       <input
+        key={`p-${currentPlaceholder ?? ''}`}
         type="text"
         name="placeholder"
         placeholder="or placeholder text"

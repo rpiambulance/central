@@ -48,7 +48,11 @@ function PollCard({ poll }: { poll: OpenPoll }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form action={savePollResponse.bind(null, poll.id)} className="space-y-3">
+        <form
+          key={JSON.stringify(poll.days)}
+          action={savePollResponse.bind(null, poll.id)}
+          className="space-y-3"
+        >
           <div className="grid gap-2">
             {WEEKDAYS.map((weekdayName, weekday) => {
               const current = poll.days[String(weekday)];

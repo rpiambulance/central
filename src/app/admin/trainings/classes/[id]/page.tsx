@@ -112,6 +112,7 @@ export default async function ClassRosterPage({
                       className="flex items-center gap-2"
                     >
                       <select
+                        key={row.status}
                         name="status"
                         defaultValue={row.status}
                         className={inputCls}

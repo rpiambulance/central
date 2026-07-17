@@ -125,6 +125,7 @@ function SchedulingCard({ knobs }: { knobs: SchedulingKnobs }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <form
+          key={`age-${knobs.minAgeYears}`}
           action={updateMinAgeYears}
           className="flex flex-wrap items-end gap-2"
         >
@@ -145,6 +146,7 @@ function SchedulingCard({ knobs }: { knobs: SchedulingKnobs }) {
         </form>
 
         <form
+          key={`open-${knobs.riderSignupOpen.weekday}-${knobs.riderSignupOpen.time}`}
           action={updateRiderSignupOpen}
           className="flex flex-wrap items-end gap-2"
         >
@@ -178,6 +180,7 @@ function SchedulingCard({ knobs }: { knobs: SchedulingKnobs }) {
         </form>
 
         <form
+          key={`rot-${knobs.rotationWeeks}`}
           action={updateRotationWeeks}
           className="flex flex-wrap items-end gap-2"
         >
@@ -198,6 +201,7 @@ function SchedulingCard({ knobs }: { knobs: SchedulingKnobs }) {
         </form>
 
         <form
+          key={`unlock-${knobs.dayOfUnlockTime}`}
           action={updateDayOfUnlockTime}
           className="flex flex-wrap items-end gap-2"
         >
@@ -217,6 +221,7 @@ function SchedulingCard({ knobs }: { knobs: SchedulingKnobs }) {
         </form>
 
         <form
+          key={`prob-${knobs.probationaryRequiresTrainer}`}
           action={updateProbationaryRequiresTrainer}
           className="flex flex-wrap items-end gap-2"
         >
@@ -234,6 +239,7 @@ function SchedulingCard({ knobs }: { knobs: SchedulingKnobs }) {
         </form>
 
         <form
+          key={`drop-${knobs.dropDeadline.daysBefore}-${knobs.dropDeadline.time}`}
           action={updateDropDeadline}
           className="flex flex-wrap items-end gap-2"
         >

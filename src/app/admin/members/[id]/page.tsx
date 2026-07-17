@@ -177,7 +177,11 @@ export default async function AdminMemberDetailPage({
           <CardTitle>Contact &amp; identity</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={updateMember.bind(null, memberId)} className="space-y-4">
+          <form
+            key={JSON.stringify([member.firstName, member.lastName, member.email, member.dob, member.personalEmail, member.cellPhone, member.localAddress, member.homeAddress, member.rcsId, member.rin])}
+            action={updateMember.bind(null, memberId)}
+            className="space-y-4"
+          >
             <div className="flex flex-wrap gap-4">
               <TextField
                 label="First name"

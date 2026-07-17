@@ -173,7 +173,11 @@ function RoleCard({
           <summary className="cursor-pointer text-sm font-medium">
             Edit permissions
           </summary>
-          <form action={updateRole.bind(null, role.id)} className="space-y-3 pt-3">
+          <form
+            key={JSON.stringify([role.name, role.isOfficer, role.permissions.map((p) => p.permission).sort()])}
+            action={updateRole.bind(null, role.id)}
+            className="space-y-3 pt-3"
+          >
             <input type="hidden" name="name" value={role.name} />
             <label className="flex items-center gap-2 text-sm">
               <input
