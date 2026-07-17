@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 import { apiErrorMessage } from '@/lib/errors';
 
 function fail(memberId: number, error: unknown): never {
@@ -96,6 +96,95 @@ export async function appointDutySupervisor(
     });
   } catch (error) {
     fail(memberId, error);
+  }
+  revalidatePath(`/admin/members/${memberId}`);
+}
+
+function adjustFail(memberId: number, error: unknown): never {
+  if (error instanceof ApiError) {
+    redirect(
+      `/admin/members/${memberId}?error=${encodeURIComponent(apiErrorMessage(error))}`,
+    );
+  }
+  throw error;
+}
+
+export async function waiveRequirement(
+  memberId: number,
+  credentialTypeId: number,
+  requirementId: number,
+  formData: FormData,
+) {
+  const note = String(formData.get('note') ?? '').trim();
+  try {
+    await api('/v1/promotions/adjustments', {
+      method: 'POST',
+      body: JSON.stringify({
+        memberId,
+        credentialTypeId,
+        kind: 'WAIVER',
+        requirementId,
+        ...(note ? { note } : {}),
+      }),
+    });
+  } catch (error) {
+    adjustFail(memberId, error);
+  }
+  revalidatePath(`/admin/members/${memberId}`);
+}
+
+export async function addAdditionalRequirement(
+  memberId: number,
+  credentialTypeId: number,
+  formData: FormData,
+) {
+  const reqKind = String(formData.get('reqKind') ?? 'CUSTOM');
+  const note = String(formData.get('note') ?? '').trim();
+  const body: Record<string, unknown> = {
+    memberId,
+    credentialTypeId,
+    kind: 'ADDITIONAL',
+    ...(note ? { note } : {}),
+  };
+  if (reqKind !== 'CUSTOM') {
+    body.reqKind = reqKind;
+    for (const field of ['certificationTypeId', 'evalTemplateId', 'count', 'classId']) {
+      const value = String(formData.get(field) ?? '').trim();
+      if (value) body[field] = Number(value);
+    }
+  }
+  try {
+    await api('/v1/promotions/adjustments', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  } catch (error) {
+    adjustFail(memberId, error);
+  }
+  revalidatePath(`/admin/members/${memberId}`);
+}
+
+export async function setAdjustmentSatisfied(
+  memberId: number,
+  adjustmentId: number,
+  satisfied: boolean,
+) {
+  try {
+    await api(`/v1/promotions/adjustments/${adjustmentId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ satisfied }),
+    });
+  } catch (error) {
+    adjustFail(memberId, error);
+  }
+  revalidatePath(`/admin/members/${memberId}`);
+}
+
+export async function removeAdjustment(memberId: number, adjustmentId: number) {
+  try {
+    await api(`/v1/promotions/adjustments/${adjustmentId}`, { method: 'DELETE' });
+  } catch (error) {
+    adjustFail(memberId, error);
   }
   revalidatePath(`/admin/members/${memberId}`);
 }

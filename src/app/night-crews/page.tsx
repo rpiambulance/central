@@ -120,14 +120,13 @@ function SlotCell({ crewId, slot }: { crewId: number; slot: Slot }) {
     );
   }
 
+  // Ineligible: just an em-dash; the reason lives in the hover tooltip.
   return (
-    <span title={slot.reason} className="text-muted-foreground">
+    <span
+      title={slot.reason || undefined}
+      className="cursor-help text-muted-foreground"
+    >
       &mdash;
-      {slot.reason ? (
-        <span className="block text-xs text-muted-foreground/70">
-          {slot.reason}
-        </span>
-      ) : null}
     </span>
   );
 }

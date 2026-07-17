@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
-import { formatDate } from '@/lib/format';
+import {formatDate, formatCredKey } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,13 +12,11 @@ import {
 } from '@/components/ui/card';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
-import {
-  appointDutySupervisor,
+import {appointDutySupervisor,
   grantCredential,
   revokeCredential,
   setMemberActive,
-  updateMember,
-} from './actions';
+  updateMember, waiveRequirement, addAdditionalRequirement, setAdjustmentSatisfied, removeAdjustment } from './actions';
 
 type MemberDetail = {
   id: number;
@@ -105,22 +103,241 @@ function TextField({
   );
 }
 
+type AdjCredentialType = { id: number; key: string; name: string; grantMethod?: string };
+
+type ChecklistItem = {
+  kind: string;
+  label: string;
+  satisfied: boolean;
+  detail?: string;
+  waived?: boolean;
+  adjustmentId?: number;
+  requirementId?: number;
+};
+
+type Adjustment = {
+  id: number;
+  kind: 'WAIVER' | 'ADDITIONAL';
+  note: string | null;
+  satisfiedAt: string | null;
+  reqKind: string | null;
+  createdBy: { firstName: string; lastName: string };
+};
+
+async function AdjustmentsCard({
+  memberId,
+  credentialTypes,
+  adjustType,
+}: {
+  memberId: number;
+  credentialTypes: AdjCredentialType[];
+  adjustType?: string;
+}) {
+  const promotable = credentialTypes.filter(
+    (t) => (t as { grantMethod?: string }).grantMethod !== 'APPOINTMENT',
+  );
+  const selected = promotable.find((t) => String(t.id) === adjustType);
+
+  let checklist: ChecklistItem[] = [];
+  let adjustments: Adjustment[] = [];
+  let addFormData: {
+    certTypes: Array<{ id: number; name: string }>;
+    evalTemplates: Array<{ id: number; name: string }>;
+    classes: Array<{ id: number; name: string }>;
+  } | null = null;
+  if (selected) {
+    try {
+      const [cl, adj, certTypes, evalTemplates, classes] = await Promise.all([
+        api<ChecklistItem[]>(`/v1/credentials/checklist/${memberId}/${selected.id}`),
+        api<Adjustment[]>(`/v1/promotions/adjustments/${memberId}/${selected.id}`),
+        api<Array<{ id: number; name: string }>>('/v1/certifications/types'),
+        api<Array<{ id: number; name: string }>>('/v1/evals/templates'),
+        api<Array<{ id: number; name: string }>>('/v1/trainings/classes'),
+      ]);
+      checklist = cl;
+      adjustments = adj;
+      addFormData = { certTypes, evalTemplates, classes };
+    } catch {
+      // promotions:review required — hide detail
+    }
+  }
+
+  const FIELD = 'h-8 rounded-md border border-input bg-background px-2 text-sm';
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">
+          Promotion requirement adjustments
+        </CardTitle>
+        <CardDescription>
+          Waive checklist requirements or add member-specific extras for a
+          particular promotion. Changes apply to eligibility, My Training, and
+          TC review immediately.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap gap-2 text-sm">
+          {promotable.map((type) => (
+            <a
+              key={type.id}
+              href={`?adjustType=${type.id}`}
+              className={
+                selected?.id === type.id
+                  ? 'rounded-md bg-accent px-2 py-1 text-accent-foreground'
+                  : 'rounded-md px-2 py-1 text-muted-foreground hover:text-foreground'
+              }
+            >
+              {formatCredKey(type.key)}
+            </a>
+          ))}
+        </div>
+
+        {selected && addFormData ? (
+          <>
+            <div className="space-y-1">
+              <h3 className="text-sm font-medium">Checklist for {selected.name}</h3>
+              <ul className="space-y-1 text-sm">
+                {checklist.map((item, i) => (
+                  <li key={i} className="flex flex-wrap items-center gap-2">
+                    <span aria-hidden>{item.satisfied ? '✓' : '✗'}</span>
+                    <span className={item.waived ? 'italic text-muted-foreground' : ''}>
+                      {item.label}
+                      {item.detail ? ` (${item.detail})` : ''}
+                    </span>
+                    {item.waived && item.adjustmentId ? (
+                      <form action={removeAdjustment.bind(null, memberId, item.adjustmentId)}>
+                        <Button type="submit" variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                          restore
+                        </Button>
+                      </form>
+                    ) : item.requirementId ? (
+                      <form
+                        action={waiveRequirement.bind(null, memberId, selected.id, item.requirementId)}
+                        className="flex items-center gap-1"
+                      >
+                        <input
+                          name="note"
+                          placeholder="reason"
+                          className="h-6 w-32 rounded-md border border-input bg-background px-1 text-xs"
+                        />
+                        <Button type="submit" variant="ghost" size="sm" className="h-6 px-2 text-xs text-destructive">
+                          waive
+                        </Button>
+                      </form>
+                    ) : item.kind === 'CUSTOM' && item.adjustmentId ? (
+                      <>
+                        <form action={setAdjustmentSatisfied.bind(null, memberId, item.adjustmentId, !item.satisfied)}>
+                          <Button type="submit" variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                            {item.satisfied ? 'mark incomplete' : 'mark complete'}
+                          </Button>
+                        </form>
+                        <form action={removeAdjustment.bind(null, memberId, item.adjustmentId)}>
+                          <Button type="submit" variant="ghost" size="sm" className="h-6 px-2 text-xs text-destructive">
+                            remove
+                          </Button>
+                        </form>
+                      </>
+                    ) : item.adjustmentId ? (
+                      <form action={removeAdjustment.bind(null, memberId, item.adjustmentId)}>
+                        <Button type="submit" variant="ghost" size="sm" className="h-6 px-2 text-xs text-destructive">
+                          remove
+                        </Button>
+                      </form>
+                    ) : null}
+                  </li>
+                ))}
+                {!checklist.length ? (
+                  <li className="text-muted-foreground">No requirements defined.</li>
+                ) : null}
+              </ul>
+            </div>
+
+            <form
+              action={addAdditionalRequirement.bind(null, memberId, selected.id)}
+              className="flex flex-wrap items-end gap-2 border-t pt-3"
+            >
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Add requirement
+                <select name="reqKind" defaultValue="CUSTOM" className={FIELD}>
+                  <option value="CUSTOM">Free text (checked off manually)</option>
+                  <option value="CERTIFICATION">Certification</option>
+                  <option value="EVALUATION_COUNT">Signed evaluations</option>
+                  <option value="CLASS">Class completion</option>
+                </select>
+              </label>
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Certification
+                <select name="certificationTypeId" defaultValue="" className={FIELD}>
+                  <option value="">—</option>
+                  {addFormData.certTypes.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Eval template
+                <select name="evalTemplateId" defaultValue="" className={FIELD}>
+                  <option value="">—</option>
+                  {addFormData.evalTemplates.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Count
+                <input name="count" type="number" min={1} className={`${FIELD} w-16`} />
+              </label>
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Class
+                <select name="classId" defaultValue="" className={FIELD}>
+                  <option value="">—</option>
+                  {addFormData.classes.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Note / free-text requirement
+                <input name="note" className={`${FIELD} w-64`} />
+              </label>
+              <Button type="submit" size="sm" variant="outline">
+                Add
+              </Button>
+            </form>
+            {adjustments.length ? (
+              <p className="text-xs text-muted-foreground">
+                {adjustments.length} adjustment(s) on file — set by{' '}
+                {[...new Set(adjustments.map((a) => `${a.createdBy.firstName} ${a.createdBy.lastName}`))].join(', ')}.
+              </p>
+            ) : null}
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Pick a credential above to view and adjust its checklist for this member.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default async function AdminMemberDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; adjustType?: string }>;
 }) {
-  const [{ id }, { error }] = await Promise.all([params, searchParams]);
+  const [{ id }, { error, adjustType }] = await Promise.all([params, searchParams]);
   const memberId = Number(id);
 
   let member: MemberDetail;
-  let credentialTypes: CredentialType[];
+  let credentialTypes: AdjCredentialType[];
   try {
     [member, credentialTypes] = await Promise.all([
       api<MemberDetail>(`/v1/members/${memberId}`),
-      api<CredentialType[]>('/v1/credentials/types'),
+      api<AdjCredentialType[]>('/v1/credentials/types'),
     ]);
   } catch (err) {
     if (err instanceof ApiError && err.status === 403) return <NoAccess />;
@@ -405,6 +622,11 @@ export default async function AdminMemberDetailPage({
           )}
         </CardContent>
       </Card>
+      <AdjustmentsCard
+        memberId={memberId}
+        credentialTypes={credentialTypes}
+        adjustType={adjustType}
+      />
     </div>
   );
 }
