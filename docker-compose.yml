@@ -19,7 +19,7 @@ services:
       AUTH_SECRET: ${AUTH_SECRET:-dev-only-secret-change-me}
       AUTH_URL: http://localhost:3000
       AUTH_TRUST_HOST: 'true'
-      AUTH_KEYCLOAK_ID: ${AUTH_KEYCLOAK_ID:-rampart-web}
+      AUTH_KEYCLOAK_ID: ${AUTH_KEYCLOAK_ID:-central}
       AUTH_KEYCLOAK_SECRET: ${AUTH_KEYCLOAK_SECRET:-dev-secret}
       AUTH_KEYCLOAK_ISSUER: ${AUTH_KEYCLOAK_ISSUER:-http://keycloak:8080/realms/rampart}
       # Username/password form on the dashboard (server-side token exchange —

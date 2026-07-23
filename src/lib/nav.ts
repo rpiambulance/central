@@ -53,18 +53,9 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/admin/coverage', label: 'Coverage Requests', permissions: ['events:create'] },
       { href: '/admin/certifications', label: 'Certifications', permissions: ['certs:verify'] },
       { href: '/admin/members', label: 'Members', permissions: ['members:write'] },
-      { href: '/admin/roles', label: 'Roles', permissions: ['roles:manage'] },
       { href: '/admin/trainings', label: 'Trainings', permissions: ['trainings:manage'] },
       { href: '/admin/evals', label: 'Eval Templates', permissions: ['evals:manage-forms'] },
       { href: '/admin/radios', label: 'Radios', permissions: ['radios:manage'] },
-      { href: '/admin/vehicles', label: 'Vehicles', permissions: ['vehicles:manage'] },
-      { href: '/admin/tokens', label: 'API Tokens', permissions: ['tokens:manage'] },
-      {
-        href: '/admin/settings',
-        label: 'App Settings',
-        permissions: ['settings:write', 'schedule:settings'],
-      },
-      { href: '/admin/audit', label: 'Audit Log', permissions: ['audit:read'] },
     ],
   },
   {
