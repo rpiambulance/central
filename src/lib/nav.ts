@@ -39,6 +39,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/members', label: 'Member Directory', permissions: ['members:read'] },
       { href: '/ops/fuel', label: 'Fuel Log' },
+      { href: '/ops/dispatches', label: 'Dispatch Log', permissions: ['dispatches:read'] },
     ],
   },
   {

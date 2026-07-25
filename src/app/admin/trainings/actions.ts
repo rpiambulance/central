@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 import { apiErrorMessage } from '@/lib/errors';
 
 function fail(error: unknown): never {
@@ -19,6 +19,7 @@ export async function createAnnualRequirement(formData: FormData) {
         name: String(formData.get('name') ?? '').trim(),
         year: Number(formData.get('year')),
         alertOnLapse: formData.get('alertOnLapse') === 'on',
+        blocksScheduling: formData.get('blocksScheduling') === 'on',
       }),
     });
   } catch (error) {
@@ -55,6 +56,21 @@ export async function createClass(formData: FormData) {
     });
   } catch (error) {
     fail(error);
+  }
+  revalidatePath('/admin/trainings');
+}
+
+export async function setBlocksScheduling(id: number, blocksScheduling: boolean) {
+  try {
+    await api(`/v1/trainings/annual/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ blocksScheduling }),
+    });
+  } catch (error) {
+    if (error instanceof ApiError) {
+      redirect(`/admin/trainings?error=${encodeURIComponent(apiErrorMessage(error))}`);
+    }
+    throw error;
   }
   revalidatePath('/admin/trainings');
 }

@@ -20,13 +20,14 @@ import {
 } from '@/components/ui/table';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
-import { createAnnualRequirement, createClass, setAlertOnLapse } from './actions';
+import { setBlocksScheduling, createAnnualRequirement, createClass, setAlertOnLapse } from './actions';
 
 type AnnualRequirement = {
   id: number;
   name: string;
   year: number;
   alertOnLapse: boolean;
+  blocksScheduling: boolean;
   active: boolean;
 };
 
@@ -99,6 +100,7 @@ export default async function AdminTrainingsPage({
                   <TableHead>Name</TableHead>
                   <TableHead>Year</TableHead>
                   <TableHead>Alert on lapse</TableHead>
+                  <TableHead>Blocks scheduling</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -134,6 +136,31 @@ export default async function AdminTrainingsPage({
                             className="h-6 px-2 text-xs"
                           >
                             {requirement.alertOnLapse ? 'disable' : 'enable'}
+                          </Button>
+                        </form>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {requirement.blocksScheduling ? (
+                          <Badge variant="destructive">Blocks crews</Badge>
+                        ) : (
+                          <Badge variant="secondary">No</Badge>
+                        )}
+                        <form
+                          action={setBlocksScheduling.bind(
+                            null,
+                            requirement.id,
+                            !requirement.blocksScheduling,
+                          )}
+                        >
+                          <Button
+                            type="submit"
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                          >
+                            {requirement.blocksScheduling ? 'unblock' : 'block'}
                           </Button>
                         </form>
                       </div>
@@ -180,6 +207,10 @@ export default async function AdminTrainingsPage({
               <label className="flex items-center gap-2 pb-1 text-sm">
                 <input type="checkbox" name="alertOnLapse" />
                 Alert on lapse
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="blocksScheduling" />
+                Outstanding completion blocks night-crew signup
               </label>
               <Button type="submit" size="sm">
                 Add requirement

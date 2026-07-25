@@ -41,6 +41,12 @@ export default async function EventsPage() {
         title="Events"
         description="Upcoming agency events, standbys, and trainings."
       />
+      <Link
+        href="/events/new"
+        className="inline-flex h-8 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+      >
+        + New event
+      </Link>
       {groups.size === 0 ? (
         <p className="text-sm text-muted-foreground">No upcoming events.</p>
       ) : (
