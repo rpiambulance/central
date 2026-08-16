@@ -135,7 +135,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
     authorized({ auth }) {
-      return !!auth;
+      // A session is only useful if it carries a working access token: every
+      // page calls the API with it. A stale cookie minted before token
+      // handling existed, or one whose refresh failed, looks signed-in but
+      // can never call the API — treat it as unauthenticated so the user is
+      // sent back through sign-in instead of hitting a server error.
+      return !!auth && !!auth.accessToken && !auth.authError;
     },
   },
 });
