@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import { formatDay } from '@/lib/format';
 import { Button } from '@/components/ui/button';
@@ -51,11 +52,17 @@ type Day = {
   crewId: number;
   date: string;
   weekday: string;
+  /** The night has already happened: a record, not an opportunity. */
+  historical: boolean;
   slots: Record<Position, Slot>;
 };
 
 type CrewsResponse = {
   weekStart: string;
+  thisWeek: string;
+  prevViewDate: string;
+  /** Null once the member is at the edge of the public window. */
+  nextViewDate: string | null;
   currentWeek: Day[];
   nextWeek: Day[];
 };
@@ -85,12 +92,26 @@ function tomorrowNY(): string {
   return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
 }
 
-function SlotCell({ crewId, slot }: { crewId: number; slot: Slot }) {
+/** YYYY-MM-DD n days from dateStr, as a plain date. */
+function addDays(dateStr: string, n: number): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+}
+
+function SlotCell({
+  crewId,
+  slot,
+  historical,
+}: {
+  crewId: number;
+  slot: Slot;
+  historical: boolean;
+}) {
   if (slot.member) {
     return (
       <div className="flex items-center gap-2">
         <span>{slot.member.name}</span>
-        {slot.canDrop ? (
+        {slot.canDrop && !historical ? (
           <form action={dropFromSlot.bind(null, crewId, slot.position)}>
             <Button
               type="submit"
@@ -108,6 +129,12 @@ function SlotCell({ crewId, slot }: { crewId: number; slot: Slot }) {
 
   if (slot.placeholder) {
     return <span className="text-muted-foreground italic">{slot.placeholder}</span>;
+  }
+
+  // A past night that nobody filled stays visibly unfilled — there is nothing
+  // left to sign up for.
+  if (historical) {
+    return <span className="text-muted-foreground">Unfilled</span>;
   }
 
   if (slot.eligible) {
@@ -132,6 +159,17 @@ function SlotCell({ crewId, slot }: { crewId: number; slot: Slot }) {
 }
 
 function WeekTable({ title, days }: { title: string; days: Day[] }) {
+  if (days.length === 0) {
+    return (
+      <section className="space-y-2">
+        <h2 className="text-lg font-medium tracking-tight">{title}</h2>
+        <p className="rounded-md border px-3 py-6 text-center text-sm text-muted-foreground">
+          No crews were recorded for this week.
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section className="space-y-2">
       <h2 className="text-lg font-medium tracking-tight">{title}</h2>
@@ -153,7 +191,11 @@ function WeekTable({ title, days }: { title: string; days: Day[] }) {
                 </TableCell>
                 {POSITIONS.map((position) => (
                   <TableCell key={position} className="align-top">
-                    <SlotCell crewId={day.crewId} slot={day.slots[position]} />
+                    <SlotCell
+                      crewId={day.crewId}
+                      slot={day.slots[position]}
+                      historical={day.historical}
+                    />
                   </TableCell>
                 ))}
               </TableRow>
@@ -168,24 +210,75 @@ function WeekTable({ title, days }: { title: string; days: Day[] }) {
 export default async function NightCrewsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; viewDate?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, viewDate: rawViewDate } = await searchParams;
+  const viewDate = /^\d{4}-\d{2}-\d{2}$/.test(rawViewDate ?? '')
+    ? rawViewDate
+    : undefined;
   const [data, myShifts, absences] = await Promise.all([
-    api<CrewsResponse>('/v1/crews'),
+    api<CrewsResponse>(`/v1/crews${viewDate ? `?viewDate=${viewDate}` : ''}`),
     api<MyShift[]>('/v1/crews/mine'),
     api<Absence[]>('/v1/crews/absences/mine'),
   ]);
+
+  const onCurrentWeek = data.weekStart === data.thisWeek;
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Night Crews"
-        description="Sign up for open crew slots for this week and next."
+        description="Sign up for open crew slots, or look back at past weeks."
       />
       <ErrorBanner message={error} />
-      <WeekTable title="This week" days={data.currentWeek} />
-      <WeekTable title="Next week" days={data.nextWeek} />
+
+      <div className="flex flex-wrap items-center gap-4 text-sm">
+        <Link
+          href={`/night-crews?viewDate=${data.prevViewDate}`}
+          className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
+        >
+          &larr; Earlier weeks
+        </Link>
+        {onCurrentWeek ? null : (
+          <Link
+            href="/night-crews"
+            className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
+          >
+            This week
+          </Link>
+        )}
+        {data.nextViewDate ? (
+          <Link
+            href={`/night-crews?viewDate=${data.nextViewDate}`}
+            className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
+          >
+            Later weeks &rarr;
+          </Link>
+        ) : null}
+        <span className="text-muted-foreground">
+          Week of {formatDay(data.weekStart)}
+        </span>
+      </div>
+
+      {onCurrentWeek ? null : (
+        <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+          You&apos;re looking at a past schedule. It&apos;s read-only — sign-ups
+          and drops are only available from this week onward.
+        </div>
+      )}
+
+      <WeekTable
+        title={onCurrentWeek ? 'This week' : `Week of ${formatDay(data.weekStart)}`}
+        days={data.currentWeek}
+      />
+      <WeekTable
+        title={
+          onCurrentWeek
+            ? 'Next week'
+            : `Week of ${formatDay(addDays(data.weekStart, 7))}`
+        }
+        days={data.nextWeek}
+      />
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
