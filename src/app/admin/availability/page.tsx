@@ -20,6 +20,11 @@ import {
 } from '@/components/ui/table';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
+import {
+  InvitePicker,
+  type CredentialType,
+  type InviteMember,
+} from './invite-picker';
 import { createPoll } from './actions';
 
 type Poll = {
@@ -31,7 +36,7 @@ type Poll = {
   _count: { invites: number };
 };
 
-type Member = { id: number; firstName: string; lastName: string };
+type Member = InviteMember;
 
 function NoAccess() {
   return (
@@ -56,10 +61,12 @@ export default async function AdminAvailabilityPage({
 
   let polls: Poll[];
   let members: Member[];
+  let credentialTypes: CredentialType[];
   try {
-    [polls, members] = await Promise.all([
+    [polls, members, credentialTypes] = await Promise.all([
       api<Poll[]>('/v1/availability/polls'),
       api<Member[]>('/v1/members'),
+      api<CredentialType[]>('/v1/credentials/types'),
     ]);
   } catch (err) {
     if (err instanceof ApiError && err.status === 403) return <NoAccess />;
@@ -145,24 +152,10 @@ export default async function AdminAvailabilityPage({
                   className="h-8 max-w-md rounded-md border border-input bg-background px-2 text-sm"
                 />
               </div>
-              <div className="grid gap-1">
-                <span className="text-sm font-medium">Invite members</span>
-                <div className="grid max-h-72 gap-1 overflow-y-auto rounded-md border p-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {members.map((member) => (
-                    <label
-                      key={member.id}
-                      className="flex items-center gap-2 text-sm"
-                    >
-                      <input
-                        type="checkbox"
-                        name="memberIds"
-                        value={member.id}
-                      />
-                      {member.lastName}, {member.firstName}
-                    </label>
-                  ))}
-                </div>
-              </div>
+              <InvitePicker
+                members={members}
+                credentialTypes={credentialTypes}
+              />
               <Button type="submit" variant="outline" size="sm">
                 Create poll
               </Button>
