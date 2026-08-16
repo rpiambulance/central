@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
-import { formatDate, formatDateTime } from '@/lib/format';
+import { formatCredKey, formatDate, formatDateTime } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -270,7 +270,7 @@ export default async function AdminCoverageDetailPage({
                 <Badge key={pos.position} variant="outline">
                   {pos.position} ×{pos.count}
                   {pos.requiredCredentialKey
-                    ? ` (${pos.requiredCredentialKey})`
+                    ? ` (${formatCredKey(pos.requiredCredentialKey)})`
                     : ''}
                 </Badge>
               ))}

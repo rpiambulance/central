@@ -219,7 +219,7 @@ export default async function EventDetailPage({
                     {pos.position}
                     {pos.requiredCredentialKey ? (
                       <span className="text-xs text-muted-foreground">
-                        ({pos.requiredCredentialKey})
+                        ({formatCredKey(pos.requiredCredentialKey)})
                       </span>
                     ) : null}
                   </label>
@@ -316,7 +316,7 @@ export default async function EventDetailPage({
                   <span className="text-xs text-muted-foreground">
                     {filled.length}/{pos.count}
                     {pos.requiredCredentialKey
-                      ? ` · requires ${pos.requiredCredentialKey}`
+                      ? ` · requires ${formatCredKey(pos.requiredCredentialKey)}`
                       : ''}
                   </span>
                 </div>
