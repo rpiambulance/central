@@ -14,6 +14,13 @@ export interface SlotSelectProps {
   members: Array<{ id: number; firstName: string; lastName: string }>;
   memberId?: number | null;
   placeholder?: string | null;
+  /**
+   * The member currently in this slot when they are not among `members` —
+   * inactive now, or lacking the position's credential. Kept as an option so
+   * an existing assignment is shown as it stands rather than reading as
+   * vacant, and is only lost if a scheduler actually changes it.
+   */
+  retained?: { id: number; name: string } | null;
 }
 
 const PLACEHOLDER_OPTION = '__placeholder__';
@@ -31,6 +38,7 @@ export function SlotSelect({
   members,
   memberId,
   placeholder,
+  retained,
 }: SlotSelectProps) {
   const { push, setError } = useUndo();
   const [pending, startTransition] = useTransition();
@@ -102,6 +110,9 @@ export function SlotSelect({
         <option value={PLACEHOLDER_OPTION}>
           {placeholder ? `${placeholder} (edit…)` : 'Label…'}
         </option>
+        {retained ? (
+          <option value={retained.id}>{retained.name} (no longer eligible)</option>
+        ) : null}
         {members.map((m) => (
           <option key={m.id} value={m.id}>
             {m.lastName}, {m.firstName}

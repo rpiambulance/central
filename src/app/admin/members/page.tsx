@@ -1,6 +1,8 @@
 import { summarizeCredentials } from '@/lib/credentials';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
+import { myPermissions, VIEW_INACTIVE } from '@/lib/me';
+import { InactiveToggle } from '@/components/inactive-toggle';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -55,13 +57,18 @@ function NoAccess() {
 export default async function AdminMembersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; showInactive?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, showInactive } = await searchParams;
+  const permissions = await myPermissions();
+  const maySeeInactive = permissions.has(VIEW_INACTIVE);
+  const showingInactive = maySeeInactive && showInactive === '1';
 
   let members: MemberRow[];
   try {
-    members = await api<MemberRow[]>('/v1/members?includeInactive=true');
+    members = await api<MemberRow[]>(
+      `/v1/members${showingInactive ? '?includeInactive=true' : ''}`,
+    );
   } catch (err) {
     if (err instanceof ApiError && err.status === 403) return <NoAccess />;
     throw err;
@@ -74,6 +81,12 @@ export default async function AdminMembersPage({
         description="Roster administration: profiles, activation, and credentials."
       />
       <ErrorBanner message={error} />
+      {maySeeInactive ? (
+        <InactiveToggle
+          basePath="/admin/members"
+          showingInactive={showingInactive}
+        />
+      ) : null}
 
       <Card>
         <CardHeader>

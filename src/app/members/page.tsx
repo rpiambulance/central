@@ -1,6 +1,8 @@
 import { summarizeCredentials } from '@/lib/credentials';
 import { formatCredKey } from '@/lib/format';
 import { api, ApiError } from '@/lib/api';
+import { myPermissions, VIEW_INACTIVE } from '@/lib/me';
+import { InactiveToggle } from '@/components/inactive-toggle';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -24,16 +26,28 @@ type Member = {
   lastName: string;
   email: string;
   cellPhone: string | null;
+  active: boolean;
   credentials: Array<{
     title: string | null;
     type: { key: string; name: string };
   }>;
 };
 
-export default async function MembersPage() {
+export default async function MembersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ showInactive?: string }>;
+}) {
+  const { showInactive } = await searchParams;
+  const permissions = await myPermissions();
+  const maySeeInactive = permissions.has(VIEW_INACTIVE);
+  const showingInactive = maySeeInactive && showInactive === '1';
+
   let members: Member[];
   try {
-    members = await api<Member[]>('/v1/members');
+    members = await api<Member[]>(
+      `/v1/members${showingInactive ? '?includeInactive=true' : ''}`,
+    );
   } catch (error) {
     if (error instanceof ApiError && error.status === 403) {
       return (
@@ -55,8 +69,15 @@ export default async function MembersPage() {
     <div className="space-y-6">
       <PageHeader
         title="Members"
-        description={`${members.length} active members.`}
+        description={
+          showingInactive
+            ? `${members.length} members, including inactive.`
+            : `${members.length} active members.`
+        }
       />
+      {maySeeInactive ? (
+        <InactiveToggle basePath="/members" showingInactive={showingInactive} />
+      ) : null}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -72,6 +93,11 @@ export default async function MembersPage() {
               <TableRow key={member.id}>
                 <TableCell className="font-medium whitespace-nowrap">
                   {member.lastName}, {member.firstName}
+                  {member.active ? null : (
+                    <Badge variant="outline" className="ml-2 text-muted-foreground">
+                      inactive
+                    </Badge>
+                  )}
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">

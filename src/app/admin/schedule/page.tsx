@@ -45,7 +45,34 @@ const WEEKDAYS = [
   'Saturday',
 ];
 
-type Member = { id: number; firstName: string; lastName: string };
+type Member = {
+  id: number;
+  firstName: string;
+  lastName: string;
+  /** Crew positions this member holds the credentials for. */
+  positions: string[];
+};
+
+/** Candidates for a position, plus the current holder if they don't qualify. */
+function candidatesFor(members: Member[], position: string) {
+  return members.filter((m) => m.positions.includes(position));
+}
+
+function retainedFor(
+  members: Member[],
+  position: string,
+  current?: { id: number; name?: string } | null,
+) {
+  if (!current) return null;
+  const known = members.find((m) => m.id === current.id);
+  if (known?.positions.includes(position)) return null;
+  // An active member in the wrong position we can still name; an inactive one
+  // is absent from the roster entirely.
+  const name =
+    current.name ??
+    (known ? `${known.lastName}, ${known.firstName}` : 'Currently assigned');
+  return { id: current.id, name };
+}
 
 type Slot = {
   position: Position;
@@ -152,7 +179,8 @@ function WeekTable({
                         target={day.crewId}
                         position={position}
                         label={`${formatDay(day.date)} — ${COLUMN_LABELS[position]}`}
-                        members={members}
+                        members={candidatesFor(members, position)}
+                        retained={retainedFor(members, position, slot?.member)}
                         memberId={slot?.member?.id}
                         placeholder={slot?.placeholder}
                       />
@@ -188,7 +216,7 @@ export default async function AdminSchedulePage({
       api<CrewsResponse>(
         `/v1/crews${viewDate ? `?viewDate=${viewDate}` : ''}`,
       ),
-      api<Member[]>('/v1/members'),
+      api<Member[]>('/v1/crews/assignable-members'),
       api<DefaultRow[]>('/v1/crews/defaults'),
       api<Record<string, unknown>>('/v1/crews/settings'),
     ]);
@@ -300,7 +328,12 @@ export default async function AdminSchedulePage({
                           target={weekday}
                           position={position}
                           label={`${weekdayName} default — ${COLUMN_LABELS[position]}`}
-                          members={members}
+                          members={candidatesFor(members, position)}
+                          retained={retainedFor(
+                            members,
+                            position,
+                            row?.memberId ? { id: row.memberId } : null,
+                          )}
                           memberId={row?.memberId ?? undefined}
                           placeholder={row?.placeholder ?? undefined}
                         />
