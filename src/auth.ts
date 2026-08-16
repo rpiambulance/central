@@ -67,14 +67,62 @@ const providers = [
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
   callbacks: {
-    jwt({ token, account, user }) {
+    async jwt({ token, account, user }) {
       if (account?.access_token) {
         token.accessToken = account.access_token;
+        token.refreshToken = account.refresh_token;
         token.expiresAt = account.expires_at;
-      } else if (user && 'accessToken' in user) {
+        delete token.authError;
+        return token;
+      }
+      if (user && 'accessToken' in user) {
         // dev-login provider: token came from the password grant
         token.accessToken = (user as { accessToken: string }).accessToken;
         token.expiresAt = (user as { expiresAt: number }).expiresAt;
+        return token;
+      }
+
+      // Still valid (30s of slack)? Keep it.
+      if (
+        typeof token.expiresAt === 'number' &&
+        Date.now() / 1000 < token.expiresAt - 30
+      ) {
+        return token;
+      }
+
+      // Expired. Keycloak access tokens default to 5 minutes, so without this
+      // every session would break minutes after sign-in.
+      if (typeof token.refreshToken !== 'string') {
+        token.authError = 'NoRefreshToken';
+        return token;
+      }
+      try {
+        const res = await fetch(
+          `${process.env.AUTH_KEYCLOAK_ISSUER}/protocol/openid-connect/token`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+              grant_type: 'refresh_token',
+              client_id: process.env.AUTH_KEYCLOAK_ID!,
+              client_secret: process.env.AUTH_KEYCLOAK_SECRET!,
+              refresh_token: token.refreshToken,
+            }),
+          },
+        );
+        if (!res.ok) throw new Error(`refresh failed: ${res.status}`);
+        const refreshed = (await res.json()) as {
+          access_token: string;
+          expires_in: number;
+          refresh_token?: string;
+        };
+        token.accessToken = refreshed.access_token;
+        token.expiresAt = Math.floor(Date.now() / 1000) + refreshed.expires_in;
+        if (refreshed.refresh_token) token.refreshToken = refreshed.refresh_token;
+        delete token.authError;
+      } catch {
+        // Force re-authentication rather than silently sending a dead token.
+        token.authError = 'RefreshFailed';
       }
       return token;
     },
@@ -83,6 +131,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.tokenExpired =
         typeof token.expiresAt === 'number' &&
         Date.now() / 1000 > token.expiresAt;
+      session.authError = token.authError as string | undefined;
       return session;
     },
     authorized({ auth }) {
