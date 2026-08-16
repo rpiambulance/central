@@ -76,3 +76,50 @@ export function summarizeCredentials(
   }
   return badges;
 }
+
+/**
+ * Client-side view of the credential ladder, mirroring the API's graph so a
+ * roster filter can answer "who can crew chief?" rather than only "who holds
+ * exactly CC". Keyed by credential: the set of credentials that satisfy it.
+ */
+export interface LadderType {
+  key: string;
+  outranksAll?: boolean;
+  prerequisites?: Array<{ requiresType: { key: string } }>;
+}
+
+export function buildSatisfiedBy(
+  types: LadderType[],
+): Map<string, Set<string>> {
+  const parents = new Map<string, string[]>(
+    types.map((t) => [
+      t.key,
+      (t.prerequisites ?? []).map((p) => p.requiresType.key),
+    ]),
+  );
+
+  const ancestorsOf = new Map<string, Set<string>>();
+  const resolve = (key: string): Set<string> => {
+    const memo = ancestorsOf.get(key);
+    if (memo) return memo;
+    const out = new Set<string>();
+    ancestorsOf.set(key, out); // placeholder guards against cycles
+    for (const parent of parents.get(key) ?? []) {
+      out.add(parent);
+      for (const ancestor of resolve(parent)) out.add(ancestor);
+    }
+    return out;
+  };
+
+  const satisfiedBy = new Map<string, Set<string>>();
+  for (const t of types) satisfiedBy.set(t.key, new Set([t.key]));
+  for (const t of types) {
+    for (const ancestor of resolve(t.key)) satisfiedBy.get(ancestor)?.add(t.key);
+  }
+  // A Duty Supervisor satisfies everything, including add-ons it does not
+  // descend from.
+  for (const t of types.filter((type) => type.outranksAll)) {
+    for (const satisfying of satisfiedBy.values()) satisfying.add(t.key);
+  }
+  return satisfiedBy;
+}

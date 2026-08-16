@@ -1,0 +1,256 @@
+'use client';
+
+import Link from 'next/link';
+import { useMemo, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { formatCredKey } from '@/lib/format';
+import {
+  buildSatisfiedBy,
+  summarizeCredentials,
+  type LadderType,
+} from '@/lib/credentials';
+
+export type MemberRow = {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  cellPhone: string | null;
+  active: boolean;
+  credentials: Array<{
+    title: string | null;
+    type: { key: string; name: string };
+  }>;
+};
+
+export type CredentialType = LadderType & { id: number; name: string };
+
+const ANY = '';
+const NONE = '__none__';
+
+const controlCls =
+  'h-8 rounded-md border border-input bg-background px-2 text-sm';
+
+/** Matches a member against free text across the fields an admin would type. */
+function matches(member: MemberRow, needle: string): boolean {
+  if (!needle) return true;
+  const haystack = [
+    member.firstName,
+    member.lastName,
+    `${member.lastName}, ${member.firstName}`,
+    `${member.firstName} ${member.lastName}`,
+    member.email,
+    member.cellPhone ?? '',
+    // Searching "CC" should find crew chiefs.
+    ...member.credentials.map((c) => formatCredKey(c.type.key)),
+    ...member.credentials.map((c) => c.type.name),
+  ]
+    .join(' ')
+    .toLowerCase();
+  return needle
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .every((term) => haystack.includes(term));
+}
+
+export function MemberTable({
+  members,
+  credentialTypes,
+  showingInactive,
+}: {
+  members: MemberRow[];
+  credentialTypes: CredentialType[];
+  showingInactive: boolean;
+}) {
+  const [query, setQuery] = useState('');
+  const [credential, setCredential] = useState(ANY);
+  const [orAbove, setOrAbove] = useState(true);
+  const [status, setStatus] = useState<'all' | 'active' | 'inactive'>('all');
+
+  const satisfiedBy = useMemo(
+    () => buildSatisfiedBy(credentialTypes),
+    [credentialTypes],
+  );
+
+  const filtered = useMemo(() => {
+    return members.filter((member) => {
+      if (!matches(member, query)) return false;
+      if (status === 'active' && !member.active) return false;
+      if (status === 'inactive' && member.active) return false;
+
+      if (credential === ANY) return true;
+      if (credential === NONE) return member.credentials.length === 0;
+
+      const held = new Set(member.credentials.map((c) => c.type.key));
+      if (!orAbove) return held.has(credential);
+      // "or above": anything descending from the requirement counts.
+      const satisfying = satisfiedBy.get(credential) ?? new Set([credential]);
+      for (const key of held) if (satisfying.has(key)) return true;
+      return false;
+    });
+  }, [members, query, credential, orAbove, status, satisfiedBy]);
+
+  const filtering =
+    query !== '' || credential !== ANY || status !== 'all';
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="grid gap-1 text-xs text-muted-foreground">
+          Search
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Name, email, phone, credential…"
+            className={`${controlCls} w-64`}
+            aria-label="Search members"
+          />
+        </label>
+
+        <label className="grid gap-1 text-xs text-muted-foreground">
+          Credential
+          <select
+            value={credential}
+            onChange={(event) => setCredential(event.target.value)}
+            className={controlCls}
+          >
+            <option value={ANY}>Any</option>
+            <option value={NONE}>None yet</option>
+            {credentialTypes.map((type) => (
+              <option key={type.id} value={type.key}>
+                {formatCredKey(type.key)} — {type.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label
+          className={`flex h-8 items-center gap-1.5 text-xs ${
+            credential === ANY || credential === NONE
+              ? 'text-muted-foreground/50'
+              : 'text-muted-foreground'
+          }`}
+        >
+          <input
+            type="checkbox"
+            checked={orAbove}
+            disabled={credential === ANY || credential === NONE}
+            onChange={(event) => setOrAbove(event.target.checked)}
+            className="size-3.5"
+          />
+          or above
+        </label>
+
+        {showingInactive ? (
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            Status
+            <select
+              value={status}
+              onChange={(event) =>
+                setStatus(event.target.value as 'all' | 'active' | 'inactive')
+              }
+              className={controlCls}
+            >
+              <option value="all">All</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </label>
+        ) : null}
+
+        {filtering ? (
+          <button
+            type="button"
+            onClick={() => {
+              setQuery('');
+              setCredential(ANY);
+              setStatus('all');
+            }}
+            className="h-8 rounded-md border px-3 text-sm hover:bg-muted"
+          >
+            Clear
+          </button>
+        ) : null}
+
+        <span className="ml-auto text-sm text-muted-foreground">
+          {filtered.length} of {members.length}
+        </span>
+      </div>
+
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Credentials</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={4}
+                  className="py-8 text-center text-sm text-muted-foreground"
+                >
+                  No members match these filters.
+                </TableCell>
+              </TableRow>
+            ) : (
+              filtered.map((member) => (
+                <TableRow key={member.id}>
+                  <TableCell className="font-medium whitespace-nowrap">
+                    <Link
+                      href={`/admin/members/${member.id}`}
+                      className="underline underline-offset-2 hover:text-foreground"
+                    >
+                      {member.lastName}, {member.firstName}
+                    </Link>
+                  </TableCell>
+                  <TableCell>{member.email}</TableCell>
+                  <TableCell>
+                    {member.active ? (
+                      <Badge>Active</Badge>
+                    ) : (
+                      <Badge variant="secondary">Inactive</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {member.credentials.length ? (
+                        summarizeCredentials(member.credentials).map((badge) => (
+                          <Badge
+                            key={badge.key}
+                            variant="secondary"
+                            title={badge.tooltip}
+                          >
+                            {badge.label}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          None
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}

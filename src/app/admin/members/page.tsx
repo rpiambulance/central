@@ -1,9 +1,7 @@
-import { summarizeCredentials } from '@/lib/credentials';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
 import { myPermissions, VIEW_INACTIVE } from '@/lib/me';
 import { InactiveToggle } from '@/components/inactive-toggle';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -12,30 +10,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { createMember } from './actions';
-
-type MemberRow = {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  cellPhone: string | null;
-  active: boolean;
-  credentials: Array<{
-    title: string | null;
-    type: { key: string; name: string };
-  }>;
-};
+import {
+  MemberTable,
+  type CredentialType,
+  type MemberRow,
+} from './member-table';
 
 const inputCls =
   'h-8 rounded-md border border-input bg-background px-2 text-sm';
@@ -69,10 +51,14 @@ export default async function AdminMembersPage({
   const showingInactive = maySeeInactive && showInactive === '1';
 
   let members: MemberRow[];
+  let credentialTypes: CredentialType[];
   try {
-    members = await api<MemberRow[]>(
-      `/v1/members${showingInactive ? '?includeInactive=true' : ''}`,
-    );
+    [members, credentialTypes] = await Promise.all([
+      api<MemberRow[]>(
+        `/v1/members${showingInactive ? '?includeInactive=true' : ''}`,
+      ),
+      api<CredentialType[]>('/v1/credentials/types'),
+    ]);
   } catch (err) {
     if (err instanceof ApiError && err.status === 403) return <NoAccess />;
     throw err;
@@ -159,59 +145,11 @@ export default async function AdminMembersPage({
         </CardContent>
       </Card>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Credentials</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {members.map((member) => (
-              <TableRow key={member.id}>
-                <TableCell className="font-medium whitespace-nowrap">
-                  <Link
-                    href={`/admin/members/${member.id}`}
-                    className="underline underline-offset-2 hover:text-foreground"
-                  >
-                    {member.lastName}, {member.firstName}
-                  </Link>
-                </TableCell>
-                <TableCell>{member.email}</TableCell>
-                <TableCell>
-                  {member.active ? (
-                    <Badge>Active</Badge>
-                  ) : (
-                    <Badge variant="secondary">Inactive</Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {member.credentials.length ? (
-                      summarizeCredentials(member.credentials).map((badge) => (
-                        <Badge
-                          key={badge.key}
-                          variant="secondary"
-                          title={badge.tooltip}
-                        >
-                          {badge.label}
-                        </Badge>
-                      ))
-                    ) : (
-                      <span className="text-xs text-muted-foreground">
-                        None
-                      </span>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      <MemberTable
+        members={members}
+        credentialTypes={credentialTypes}
+        showingInactive={showingInactive}
+      />
     </div>
   );
 }
