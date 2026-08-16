@@ -57,9 +57,13 @@ function NoAccess() {
 export default async function AdminMembersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; showInactive?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    showInactive?: string;
+    deactivated?: string;
+  }>;
 }) {
-  const { error, showInactive } = await searchParams;
+  const { error, showInactive, deactivated } = await searchParams;
   const permissions = await myPermissions();
   const maySeeInactive = permissions.has(VIEW_INACTIVE);
   const showingInactive = maySeeInactive && showInactive === '1';
@@ -81,12 +85,27 @@ export default async function AdminMembersPage({
         description="Roster administration: profiles, activation, and credentials."
       />
       <ErrorBanner message={error} />
-      {maySeeInactive ? (
-        <InactiveToggle
-          basePath="/admin/members"
-          showingInactive={showingInactive}
-        />
+      {deactivated ? (
+        <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+          Deactivated {deactivated} member{deactivated === '1' ? '' : 's'}.
+        </p>
       ) : null}
+      <div className="flex flex-wrap items-center gap-4">
+        {maySeeInactive ? (
+          <InactiveToggle
+            basePath="/admin/members"
+            showingInactive={showingInactive}
+          />
+        ) : null}
+        {maySeeInactive ? (
+          <Link
+            href="/admin/members/inactivity"
+            className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+          >
+            Deactivate inactive members…
+          </Link>
+        ) : null}
+      </div>
 
       <Card>
         <CardHeader>
