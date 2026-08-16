@@ -17,7 +17,7 @@ services:
       - '3000:3000'
     environment:
       AUTH_SECRET: ${AUTH_SECRET:-dev-only-secret-change-me}
-      AUTH_URL: http://localhost:3000
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
       AUTH_TRUST_HOST: 'true'
       AUTH_KEYCLOAK_ID: ${AUTH_KEYCLOAK_ID:-central}
       AUTH_KEYCLOAK_SECRET: ${AUTH_KEYCLOAK_SECRET:-dev-secret}
@@ -25,7 +25,7 @@ services:
       # Username/password form on the dashboard (server-side token exchange —
       # no browser trip to Keycloak, no /etc/hosts entry). Local dev only.
       AUTH_DEV_LOGIN: ${AUTH_DEV_LOGIN:-true}
-      RAMPART_API_URL: http://api:3001
+      RAMPART_API_URL: ${RAMPART_API_URL:-http://api:3001}
     depends_on:
       - api
       - keycloak

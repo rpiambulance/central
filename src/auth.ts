@@ -12,7 +12,11 @@ import Credentials from 'next-auth/providers/credentials';
  * grant) — no browser redirect to Keycloak, no /etc/hosts entry. Local
  * development only; never enable in production.
  */
-const devLoginEnabled = process.env.AUTH_DEV_LOGIN === 'true';
+// Never available in a production image, even if the env var leaks in:
+// the runtime Docker stage sets NODE_ENV=production.
+const devLoginEnabled =
+  process.env.AUTH_DEV_LOGIN === 'true' &&
+  process.env.NODE_ENV !== 'production';
 
 const providers = [
   Keycloak,
