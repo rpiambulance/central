@@ -16,5 +16,23 @@ export async function myPermissions(): Promise<Set<string>> {
   }
 }
 
+/** The member's remembered UI preferences, with safe fallbacks. */
+export async function myPreferences(): Promise<{
+  eventView: string;
+  navLayout: string;
+}> {
+  try {
+    const me = await api<{ eventView?: string; navLayout?: string }>(
+      '/v1/members/me',
+    );
+    return {
+      eventView: me.eventView ?? 'list',
+      navLayout: me.navLayout ?? 'sidebar',
+    };
+  } catch {
+    return { eventView: 'list', navLayout: 'sidebar' };
+  }
+}
+
 /** Permission governing whether inactive members may be listed at all. */
 export const VIEW_INACTIVE = 'members:deactivate';

@@ -18,6 +18,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { PageHeader } from '@/components/page-header';
+import { myPreferences } from '@/lib/me';
+import { setEventView } from './actions';
 import {
   CalendarLegend,
   EventCalendar,
@@ -75,8 +77,13 @@ export default async function EventsPage({
   }>;
 }) {
   const params = await searchParams;
+  // An explicit ?view= wins; otherwise fall back to the view this member last
+  // chose, which setEventView remembered for them.
+  const requested = params.view;
+  const remembered = requested ? undefined : (await myPreferences()).eventView;
+  const candidate = requested ?? remembered ?? 'list';
   const view = (
-    ['day', 'week', 'month'].includes(params.view ?? '') ? params.view : 'list'
+    ['day', 'week', 'month'].includes(candidate) ? candidate : 'list'
   ) as 'list' | CalendarView;
   const date = /^\d{4}-\d{2}-\d{2}$/.test(params.date ?? '')
     ? params.date!
@@ -261,16 +268,13 @@ function ViewTabs({ view, date }: { view: string; date: string }) {
   return (
     <nav className="flex flex-wrap gap-1">
       {VIEWS.map((entry) => (
-        <Link
-          key={entry.key}
-          href={linkTo({
-            view: entry.key === 'list' ? undefined : entry.key,
-            date: entry.key === 'list' ? undefined : date,
-          })}
-          className={tabCls(view === entry.key)}
-        >
-          {entry.label}
-        </Link>
+        <form key={entry.key} action={setEventView}>
+          <input type="hidden" name="view" value={entry.key} />
+          <input type="hidden" name="date" value={date} />
+          <button type="submit" className={tabCls(view === entry.key)}>
+            {entry.label}
+          </button>
+        </form>
       ))}
     </nav>
   );
