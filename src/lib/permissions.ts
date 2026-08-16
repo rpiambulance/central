@@ -20,6 +20,7 @@ export const PERMISSION_INFO: Record<string, string> = {
   'promotions:captain-approve': 'Give final captain approval on promotions',
   'trainings:manage': 'Manage annual trainings, classes, attendance, and completions',
   'schedule:crews:assign': 'Place or remove anyone in any crew slot, any date (including pre-public weeks)',
+  'schedule:crews:duty-sup': 'Take the duty supervisor seat on a night crew without holding the DS credential',
   'schedule:crews:manage-defaults': 'Edit the weekly default crew template and run availability polls',
   'schedule:settings': 'Change scheduling rules (signup opening, deadlines, window size)',
   'events:create': 'Create/edit events and run the coverage workflow (incl. requester messaging)',
