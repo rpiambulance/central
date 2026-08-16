@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { formatTime } from '@/lib/format';
-import { kindStyle, COLOURED_KINDS } from '@/lib/event-kinds';
+import { kindStyle, COLORED_KINDS } from '@/lib/event-kinds';
 import {
   addDays,
   isSameMonth,
@@ -63,7 +63,7 @@ function EventRow({ event }: { event: CalendarEvent }) {
 
 export function CalendarLegend({ kinds }: { kinds: string[] }) {
   // Show the seeded kinds plus whatever else actually appears.
-  const shown = [...new Set([...COLOURED_KINDS, ...kinds])];
+  const shown = [...new Set([...COLORED_KINDS, ...kinds])];
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
       {shown.map((kind) => (
@@ -117,7 +117,7 @@ function MonthView({
                   key={day}
                   className={cn(
                     'min-h-24 space-y-0.5 border-r p-1 last:border-r-0',
-                    // Days spilling in from the neighbouring months stay
+                    // Days spilling in from the neighboring months stay
                     // visible but recede.
                     isSameMonth(day, date) ? '' : 'bg-muted/30 opacity-60',
                   )}

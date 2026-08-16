@@ -1,10 +1,10 @@
 /**
- * Colour per event kind, so a calendar reads at a glance. The four seeded
+ * Color per event kind, so a calendar reads at a glance. The four seeded
  * kinds get distinct hues; anything an administrator adds later falls back to
  * a neutral so it is still legible rather than unstyled.
  *
  * Every entry defines both light and dark values — the calendar is dense, and
- * a swatch that only works in one theme is worse than no colour at all.
+ * a swatch that only works in one theme is worse than no color at all.
  */
 export interface KindStyle {
   /** Filled block, used in month cells. */
@@ -60,5 +60,5 @@ export function kindStyle(kindName: string): KindStyle {
   return STYLES[kindName] ?? FALLBACK;
 }
 
-/** Kinds with a dedicated colour, for the calendar legend. */
-export const COLOURED_KINDS = Object.keys(STYLES);
+/** Kinds with a dedicated color, for the calendar legend. */
+export const COLORED_KINDS = Object.keys(STYLES);

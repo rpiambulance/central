@@ -7,7 +7,7 @@ export const WORKFLOW_LABELS: Record<string, string> = {
   PENDING_APPROVAL: 'Pending approval',
   APPROVED: 'Approved',
   DENIED: 'Denied',
-  CANCELLED: 'Cancelled',
+  CANCELLED: 'Canceled',
 };
 
 const VARIANTS: Record<
