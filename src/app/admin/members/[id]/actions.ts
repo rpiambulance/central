@@ -59,6 +59,9 @@ export async function grantCredential(memberId: number, formData: FormData) {
       body: JSON.stringify({
         memberId,
         credentialTypeId: Number(formData.get('credentialTypeId')),
+        // Optional: leave blank to record the credential now and date it once
+        // the promotion date is known.
+        effectiveAt: String(formData.get('effectiveAt') ?? '') || undefined,
       }),
     });
   } catch (error) {
@@ -185,6 +188,24 @@ export async function removeAdjustment(memberId: number, adjustmentId: number) {
     await api(`/v1/promotions/adjustments/${adjustmentId}`, { method: 'DELETE' });
   } catch (error) {
     adjustFail(memberId, error);
+  }
+  revalidatePath(`/admin/members/${memberId}`);
+}
+
+export async function setCredentialDate(
+  memberId: number,
+  credentialTypeId: number,
+  formData: FormData,
+) {
+  const effectiveAt = String(formData.get('effectiveAt') ?? '').trim();
+  try {
+    await api(`/v1/credentials/${memberId}/${credentialTypeId}/effective-date`, {
+      method: 'PATCH',
+      // Blank clears the date back to unknown.
+      body: JSON.stringify({ effectiveAt: effectiveAt || null }),
+    });
+  } catch (error) {
+    fail(memberId, error);
   }
   revalidatePath(`/admin/members/${memberId}`);
 }

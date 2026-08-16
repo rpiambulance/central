@@ -14,6 +14,7 @@ import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import {appointDutySupervisor,
   grantCredential,
+  setCredentialDate,
   revokeCredential,
   setMemberActive,
   updateMember, waiveRequirement, addAdditionalRequirement, setAdjustmentSatisfied, removeAdjustment } from './actions';
@@ -42,6 +43,8 @@ type MemberDetail = {
     status: string;
     title: string | null;
     grantedAt: string;
+    /** When the member actually earned it; null while not yet recorded. */
+    effectiveAt: string | null;
     type: { id: number; key: string; name: string };
   }>;
   certifications: Array<{
@@ -322,6 +325,16 @@ async function AdjustmentsCard({
   );
 }
 
+/** YYYY-MM-DD today in America/New_York — a promotion cannot be in the future. */
+function todayNY(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'America/New_York',
+  }).format(new Date());
+}
+
 export default async function AdminMemberDetailPage({
   params,
   searchParams,
@@ -484,9 +497,41 @@ export default async function AdminMemberDetailPage({
                   >
                     {credential.status}
                   </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    granted {formatDate(credential.grantedAt)}
-                  </span>
+                  {credential.effectiveAt ? (
+                    <span className="text-xs text-muted-foreground">
+                      promoted {formatDate(credential.effectiveAt)}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">
+                      recorded {formatDate(credential.grantedAt)} · promotion
+                      date unknown
+                    </span>
+                  )}
+                  <form
+                    action={setCredentialDate.bind(
+                      null,
+                      memberId,
+                      credential.type.id,
+                    )}
+                    className="flex items-center gap-1"
+                  >
+                    <input
+                      type="date"
+                      name="effectiveAt"
+                      max={todayNY()}
+                      defaultValue={credential.effectiveAt?.slice(0, 10) ?? ''}
+                      aria-label={`Promotion date for ${credential.type.name}`}
+                      className="h-6 rounded-md border border-input bg-background px-1 text-xs"
+                    />
+                    <Button
+                      type="submit"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs text-muted-foreground"
+                    >
+                      save date
+                    </Button>
+                  </form>
                   {credential.status === 'ACTIVE' ? (
                     <form
                       action={revokeCredential.bind(
@@ -540,6 +585,15 @@ export default async function AdminMemberDetailPage({
                     </option>
                   ))}
               </select>
+            </label>
+            <label className="grid gap-1 text-xs text-muted-foreground">
+              Promotion date (optional)
+              <input
+                type="date"
+                name="effectiveAt"
+                max={todayNY()}
+                className={inputCls}
+              />
             </label>
             <Button type="submit" size="sm" variant="outline">
               Grant
