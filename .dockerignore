@@ -1,0 +1,23 @@
+# Never ship host build artifacts into the image: the host's node_modules
+# contains platform-native binaries (e.g. Next's SWC/Turbopack) that break
+# cross-platform builds, and a stale .next poisons the font/build cache.
+node_modules
+.next
+out
+
+# VCS + local tooling
+.git
+.gitignore
+.DS_Store
+*.log
+
+# Secrets — must never be baked into an image
+.env
+.env.*
+scripts/.env.deploy
+
+# Not needed to build
+Dockerfile
+.dockerignore
+docker-compose*.yml
+README.md

@@ -5,7 +5,9 @@ COPY package*.json ./
 RUN npm ci
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+# AUTH_SECRET is only needed to satisfy Auth.js during the build; it is NOT
+# persisted into the image (runtime gets the real one from the environment).
+RUN AUTH_SECRET=build-placeholder npm run build
 
 FROM node:22-alpine
 WORKDIR /app
