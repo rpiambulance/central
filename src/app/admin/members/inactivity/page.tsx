@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
 import { formatDate } from '@/lib/format';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -10,27 +9,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { deactivateSelected } from './actions';
-
-type Candidate = {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  createdAt: string;
-  lastParticipation: string | null;
-  joinedAfterCutoff: boolean;
-};
+import { CandidateTable, type Candidate } from './candidate-table';
 
 // The review reflects live participation; never serve it from a cache.
 export const dynamic = 'force-dynamic';
@@ -125,66 +107,13 @@ export default async function InactivityReviewPage({
                 no participation since {formatDate(`${since}T00:00:00Z`)}
               </CardTitle>
               <CardDescription>
-                Untick anyone who should stay active. Only ticked members are
-                deactivated, and you are never included in your own review.
+                Select all, or untick anyone who should stay active. Only
+                ticked members are deactivated, and you are never included in
+                your own review.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">Deactivate</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Last participation</TableHead>
-                      <TableHead>Joined</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {candidates.map((candidate) => (
-                      <TableRow key={candidate.id}>
-                        <TableCell>
-                          <input
-                            type="checkbox"
-                            name="memberIds"
-                            value={candidate.id}
-                            // New members never had the chance to take part,
-                            // so they start unticked rather than hidden.
-                            defaultChecked={!candidate.joinedAfterCutoff}
-                            aria-label={`Deactivate ${candidate.firstName} ${candidate.lastName}`}
-                            className="size-4"
-                          />
-                        </TableCell>
-                        <TableCell className="font-medium whitespace-nowrap">
-                          {candidate.lastName}, {candidate.firstName}
-                          {candidate.joinedAfterCutoff ? (
-                            <Badge
-                              variant="outline"
-                              className="ml-2 text-muted-foreground"
-                            >
-                              joined after cutoff
-                            </Badge>
-                          ) : null}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {candidate.email}
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          {candidate.lastParticipation ? (
-                            formatDate(candidate.lastParticipation)
-                          ) : (
-                            <span className="text-muted-foreground">never</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap text-muted-foreground">
-                          {formatDate(candidate.createdAt)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              <CandidateTable candidates={candidates} />
               <div className="flex items-center gap-3">
                 <Button type="submit" variant="destructive" size="sm">
                   Deactivate selected
