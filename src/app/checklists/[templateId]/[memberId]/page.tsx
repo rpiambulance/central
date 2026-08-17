@@ -12,6 +12,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { ErrorBanner } from '@/components/error-banner';
+import { FormGroup } from '@/components/form-group';
+import { formNodes } from '@/lib/form-nodes';
 import { PageHeader } from '@/components/page-header';
 import { ProgressBar } from '../../progress-bar';
 import { revokeSignoff, signItem } from '../../actions';
@@ -214,20 +216,19 @@ export default async function ChecklistProgressPage({
       </div>
 
       <div className="space-y-4">
-        {progress.items.map(line)}
-        {progress.groups.map((group) => (
-          <section key={group.id} className="space-y-3 rounded-md border p-4">
-            <h3 className="text-sm font-semibold tracking-tight">
-              {group.heading}
-            </h3>
-            {group.description ? (
-              <p className="text-sm text-muted-foreground">
-                {group.description}
-              </p>
-            ) : null}
-            {group.items.map(line)}
-          </section>
-        ))}
+        {formNodes(progress.items, progress.groups).map((node) =>
+          node.kind === 'GROUP' ? (
+            <FormGroup
+              key={`g${node.group.id}`}
+              heading={node.group.heading}
+              description={node.group.description}
+            >
+              {node.group.items.map(line)}
+            </FormGroup>
+          ) : (
+            line(node.item)
+          ),
+        )}
       </div>
 
       {progress.total === 0 ? (

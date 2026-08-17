@@ -11,6 +11,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { ErrorBanner } from '@/components/error-banner';
+import { FormGroup } from '@/components/form-group';
+import { formNodes } from '@/lib/form-nodes';
 import { PageHeader } from '@/components/page-header';
 import { deleteEval, saveScores, signEval } from './actions';
 
@@ -38,6 +40,7 @@ type Item = {
 
 type Group = {
   id: number;
+  order: number;
   heading: string;
   description: string | null;
   items: Item[];
@@ -448,6 +451,8 @@ export default async function EvalDetailPage({
   const badge = STATUS_BADGE[evaluation.status];
   const scoreByItem = new Map(evaluation.scores.map((s) => [s.itemId, s]));
   const groups = evaluation.template.groups ?? [];
+  // Groups sit wherever they were placed, so the two lists interleave.
+  const nodes = formNodes(evaluation.template.items, groups);
   // The save action needs every item on the form, wherever it sits.
   const items = [
     ...evaluation.template.items,
@@ -482,32 +487,30 @@ export default async function EvalDetailPage({
           className="space-y-6"
         >
           <div className="space-y-4">
-            {evaluation.template.items.map((item) => (
-              <EditableItem
-                key={item.id}
-                item={item}
-                score={scoreByItem.get(item.id)}
-              />
-            ))}
-            {groups.map((group) => (
-              <fieldset key={group.id} className="space-y-3 rounded-md border p-4">
-                <legend className="px-1 text-sm font-semibold tracking-tight">
-                  {group.heading}
-                </legend>
-                {group.description ? (
-                  <p className="text-sm text-muted-foreground">
-                    {group.description}
-                  </p>
-                ) : null}
-                {group.items.map((item) => (
-                  <EditableItem
-                    key={item.id}
-                    item={item}
-                    score={scoreByItem.get(item.id)}
-                  />
-                ))}
-              </fieldset>
-            ))}
+            {nodes.map((node) =>
+              node.kind === 'GROUP' ? (
+                <FormGroup
+                  key={`g${node.group.id}`}
+                  as="fieldset"
+                  heading={node.group.heading}
+                  description={node.group.description}
+                >
+                  {node.group.items.map((item) => (
+                    <EditableItem
+                      key={item.id}
+                      item={item}
+                      score={scoreByItem.get(item.id)}
+                    />
+                  ))}
+                </FormGroup>
+              ) : (
+                <EditableItem
+                  key={`i${node.item.id}`}
+                  item={node.item}
+                  score={scoreByItem.get(node.item.id)}
+                />
+              ),
+            )}
           </div>
           <div className="grid gap-4 rounded-md border p-4 sm:grid-cols-2">
             <label className="grid gap-1 text-sm">
@@ -567,32 +570,29 @@ export default async function EvalDetailPage({
         </form>
       ) : (
         <div className="space-y-4">
-          {evaluation.template.items.map((item) => (
-            <ReadOnlyItem
-              key={item.id}
-              item={item}
-              score={scoreByItem.get(item.id)}
-            />
-          ))}
-          {groups.map((group) => (
-            <section key={group.id} className="space-y-3 rounded-md border p-4">
-              <h3 className="text-sm font-semibold tracking-tight">
-                {group.heading}
-              </h3>
-              {group.description ? (
-                <p className="text-sm text-muted-foreground">
-                  {group.description}
-                </p>
-              ) : null}
-              {group.items.map((item) => (
-                <ReadOnlyItem
-                  key={item.id}
-                  item={item}
-                  score={scoreByItem.get(item.id)}
-                />
-              ))}
-            </section>
-          ))}
+          {nodes.map((node) =>
+            node.kind === 'GROUP' ? (
+              <FormGroup
+                key={`g${node.group.id}`}
+                heading={node.group.heading}
+                description={node.group.description}
+              >
+                {node.group.items.map((item) => (
+                  <ReadOnlyItem
+                    key={item.id}
+                    item={item}
+                    score={scoreByItem.get(item.id)}
+                  />
+                ))}
+              </FormGroup>
+            ) : (
+              <ReadOnlyItem
+                key={`i${node.item.id}`}
+                item={node.item}
+                score={scoreByItem.get(node.item.id)}
+              />
+            ),
+          )}
           <div className="space-y-1.5 rounded-md border p-4">
             <p className="text-sm font-medium">Overall notes</p>
             <p className="text-sm whitespace-pre-wrap">

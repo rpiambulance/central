@@ -9,6 +9,7 @@ export type Signoff = {
 
 export type ChecklistItem = {
   id: number;
+  order: number;
   prompt: string;
   scoreType: string;
   signoff: Signoff | null;
@@ -18,6 +19,7 @@ export type ChecklistItem = {
 
 export type ChecklistGroup = {
   id: number;
+  order: number;
   heading: string;
   description: string | null;
   items: ChecklistItem[];
