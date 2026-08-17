@@ -15,7 +15,14 @@ import {
 } from '@/components/ui/sidebar';
 import type { NavGroup } from '@/lib/nav';
 
-export function AppSidebar({ groups }: { groups: NavGroup[] }) {
+export function AppSidebar({
+  groups,
+  badges,
+}: {
+  groups: NavGroup[];
+  /** Counts shown against a nav item, keyed by href. */
+  badges?: Record<string, number>;
+}) {
   const pathname = usePathname();
 
   return (
@@ -59,6 +66,11 @@ export function AppSidebar({ groups }: { groups: NavGroup[] }) {
                       }
                     >
                       {item.label}
+                      {badges?.[item.href] ? (
+                        <span className="ml-auto rounded-full bg-primary px-1.5 text-[11px] font-medium text-primary-foreground">
+                          {badges[item.href]}
+                        </span>
+                      ) : null}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}

@@ -19,6 +19,10 @@ export interface NavGroup {
 
 export const NAV_GROUPS: NavGroup[] = [
   {
+    label: 'My Portal',
+    items: [{ href: '/inbox', label: 'Inbox' }],
+  },
+  {
     label: 'Scheduling',
     items: [
       { href: '/night-crews', label: 'Night Crews' },

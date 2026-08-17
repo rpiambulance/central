@@ -85,6 +85,11 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
     // inactive/unlinked members fall back to the default chrome
   }
   const groups = filterNavGroups(permissions);
+  // Outstanding work, shown against the Inbox link.
+  const inbox = await api<{ unread: number; tasks: number }>(
+    '/v1/inbox/summary',
+    { raw: true },
+  ).catch(() => ({ unread: 0, tasks: 0 }));
   const name = session.user.name ?? '';
 
   if (navLayout === 'topnav') {
@@ -113,7 +118,10 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <AppSidebar groups={groups} />
+      <AppSidebar
+        groups={groups}
+        badges={{ '/inbox': inbox.unread }}
+      />
       <SidebarInset>
         <div aria-hidden className="h-1 bg-primary" />
         <header className="flex h-13 items-center gap-2 border-b px-4">
