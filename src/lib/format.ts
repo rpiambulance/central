@@ -31,13 +31,30 @@ export function formatDateShort(iso: string): string {
 
 /** "7:00 PM" from an ISO timestamp, in America/New_York. */
 export function formatTime(iso: string, hour12 = false): string {
-  return new Intl.DateTimeFormat('en-US', {
-    // 24-hour time is zero-padded (09:00); a 12-hour clock is not (9:00 AM).
-    hour: hour12 ? 'numeric' : '2-digit',
-    minute: '2-digit',
-    hour12,
-    timeZone: TZ,
-  }).format(new Date(iso));
+  return lowercaseMeridiem(
+    new Intl.DateTimeFormat('en-US', {
+      // 24-hour time is zero-padded (09:00); a 12-hour clock is not (9:00 am).
+      hour: hour12 ? 'numeric' : '2-digit',
+      minute: '2-digit',
+      hour12,
+      timeZone: TZ,
+    }),
+    new Date(iso),
+  );
+}
+
+/**
+ * Renders through parts so the meridiem can be lowercased without touching
+ * anything else — the separator ICU puts before it is a narrow no-break
+ * space, not a plain one, so string replacement is unreliable.
+ */
+function lowercaseMeridiem(formatter: Intl.DateTimeFormat, date: Date): string {
+  return formatter
+    .formatToParts(date)
+    .map((part) =>
+      part.type === 'dayPeriod' ? part.value.toLowerCase() : part.value,
+    )
+    .join('');
 }
 
 /**
@@ -45,12 +62,15 @@ export function formatTime(iso: string, hour12 = false): string {
  * their profile, and pages pass that through as `hour12`.
  */
 export function formatDateTime(iso: string, hour12 = false): string {
-  return new Intl.DateTimeFormat('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    hour12,
-    timeZone: TZ,
-  }).format(new Date(iso));
+  return lowercaseMeridiem(
+    new Intl.DateTimeFormat('en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      hour12,
+      timeZone: TZ,
+    }),
+    new Date(iso),
+  );
 }
 
 /** YYYY-MM-DD key for grouping, in America/New_York. */

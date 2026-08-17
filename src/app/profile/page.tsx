@@ -194,7 +194,7 @@ export default async function ProfilePage({
                 <span>
                   <span className="font-medium">12-hour</span>
                   <span className="block text-muted-foreground">
-                    7:05 PM.
+                    7:05 pm.
                   </span>
                 </span>
               </label>
