@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { nyLocalToIso } from '@/lib/calendar';
 import { redirect } from 'next/navigation';
 import { api } from '@/lib/api';
 import { apiErrorMessage } from '@/lib/errors';
@@ -15,7 +16,7 @@ export async function addFuelEntry(formData: FormData) {
     await api('/v1/fuel', {
       method: 'POST',
       body: JSON.stringify({
-        loggedAt: new Date(loggedAtLocal).toISOString(),
+        loggedAt: nyLocalToIso(loggedAtLocal),
         vehicleId,
         amount,
         mileage,

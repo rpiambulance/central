@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { nyLocalToIso } from '@/lib/calendar';
 import { redirect } from 'next/navigation';
 import { api } from '@/lib/api';
 import { apiErrorMessage } from '@/lib/errors';
@@ -42,8 +43,8 @@ export async function draftEvent(requestId: number, formData: FormData) {
     });
   }
 
-  const toIso = (value: string) =>
-    value ? new Date(value).toISOString() : value;
+  // Read as New York wall time; the server's own clock is UTC.
+  const toIso = (value: string) => (value ? nyLocalToIso(value) : value);
 
   let eventId: number;
   try {

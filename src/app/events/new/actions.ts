@@ -1,6 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { nyLocalToIso } from '@/lib/calendar';
 import { api, ApiError } from '@/lib/api';
 import { apiErrorMessage } from '@/lib/errors';
 
@@ -30,8 +31,8 @@ export async function createEvent(formData: FormData) {
     title: String(formData.get('title') ?? ''),
     ...(description ? { description } : {}),
     ...(location ? { location } : {}),
-    startsAt: new Date(String(formData.get('startsAt'))).toISOString(),
-    endsAt: new Date(String(formData.get('endsAt'))).toISOString(),
+    startsAt: nyLocalToIso(String(formData.get('startsAt'))),
+    endsAt: nyLocalToIso(String(formData.get('endsAt'))),
     kindId: Number(formData.get('kindId')),
     ...(tierId ? { tierId: Number(tierId) } : {}),
     // API semantics: null = unlimited, -1 = closed to plain attendees

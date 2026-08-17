@@ -144,3 +144,37 @@ export function viewTitle(view: CalendarView, dateStr: string): string {
   if (view === 'day') return longDate(dateStr, true);
   return `Week of ${longDate(startOfWeek(dateStr))}`;
 }
+
+/**
+ * A datetime-local value ("2026-08-16T18:00") as a UTC instant, read as a wall
+ * time in New York.
+ *
+ * `new Date(value)` would read it in the *server's* timezone, and the server
+ * runs UTC — so 18:00 was stored as 18:00Z and read back as 14:00 in New York.
+ * The offset changes with DST, so it is resolved by trying both and keeping
+ * whichever formats back to the time that was typed.
+ */
+export function nyLocalToIso(value: string): string {
+  const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/.exec(value.trim());
+  if (!match) return value;
+  const [, dateStr, hh, mm] = match;
+  const naive = Date.parse(`${dateStr}T${hh}:${mm}:00Z`);
+  for (const offsetMinutes of [240, 300]) {
+    const candidate = new Date(naive + offsetMinutes * 60_000);
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: TZ,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: false,
+    }).formatToParts(candidate);
+    const get = (type: string) => parts.find((p) => p.type === type)!.value;
+    if (
+      `${get('year')}-${get('month')}-${get('day')}` === dateStr &&
+      Number(get('hour')) % 24 === Number(hh) &&
+      get('minute') === mm
+    ) {
+      return candidate.toISOString();
+    }
+  }
+  // Inside the spring-forward gap the time does not exist; EST keeps it sane.
+  return new Date(naive + 300 * 60_000).toISOString();
+}
