@@ -49,11 +49,48 @@ export default async function ProfilePage({
           <CardHeader>
             <CardTitle className="text-base">Contact information</CardTitle>
             <CardDescription>
-              {me.firstName} {me.lastName} — {me.email}. Name and portal email
-              changes go through an officer.
+              Everything below is yours to change, except your name and portal
+              email.
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Shown as fields rather than prose so they read as part of the
+                record, but disabled: only an officer can change them. */}
+            <div className="mb-3 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block text-sm">
+                  First name
+                  <input
+                    value={me.firstName}
+                    readOnly
+                    disabled
+                    className={`${FIELD} cursor-not-allowed opacity-70`}
+                  />
+                </label>
+                <label className="block text-sm">
+                  Last name
+                  <input
+                    value={me.lastName}
+                    readOnly
+                    disabled
+                    className={`${FIELD} cursor-not-allowed opacity-70`}
+                  />
+                </label>
+              </div>
+              <label className="block text-sm">
+                Portal email
+                <input
+                  value={me.email}
+                  readOnly
+                  disabled
+                  className={`${FIELD} cursor-not-allowed opacity-70`}
+                />
+              </label>
+              <p className="text-xs text-muted-foreground">
+                Only an officer can change your name or portal email — ask one
+                if either is wrong.
+              </p>
+            </div>
             <form
               key={JSON.stringify([me.personalEmail, me.cellPhone, me.homePhone, me.localAddress, me.homeAddress])}
               action={updateProfile}
