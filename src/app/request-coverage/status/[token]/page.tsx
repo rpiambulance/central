@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { prefers12Hour } from '@/lib/me';
-import { formatDate, formatDateTime, formatEndTime, formatTime } from '@/lib/format';
+import { formatDate, formatDateTime, formatEndTime } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import {
   Card,
