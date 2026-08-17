@@ -29,7 +29,7 @@ type EventDetail = {
   hidden: boolean;
   positions: Array<{
     position: string;
-    count: number;
+    count: number | null;
     requiredCredentialKey: string | null;
   }>;
 };
@@ -218,13 +218,14 @@ export default async function EditEventPage({
                     />
                   </span>
                   <label className="grid gap-1 text-xs text-muted-foreground">
-                    Count
+                    Count (blank = no limit)
                     <input
                       name={`count-${i}`}
                       type="number"
                       min={1}
-                      defaultValue={row?.count ?? 1}
-                      className={`${FIELD} w-20`}
+                      placeholder="any"
+                      defaultValue={row?.count ?? ''}
+                      className={`${FIELD} w-24`}
                     />
                   </label>
                   <label className="grid gap-1 text-xs text-muted-foreground">

@@ -8,7 +8,7 @@ import { apiErrorMessage } from '@/lib/errors';
 export async function createEvent(formData: FormData) {
   const positions: Array<{
     position: string;
-    count: number;
+    count: number | null;
     requiredCredentialKey?: string;
   }> = [];
   for (let i = 0; i < 5; i++) {
@@ -17,7 +17,11 @@ export async function createEvent(formData: FormData) {
     const credential = String(formData.get(`credential-${i}`) ?? '').trim();
     positions.push({
       position: position.toLowerCase(),
-      count: Math.max(1, Number(formData.get(`count-${i}`)) || 1),
+      // Blank means no limit; the API stores null and never fills it.
+      count: (() => {
+        const raw = String(formData.get(`count-${i}`) ?? '').trim();
+        return raw === '' ? null : Math.max(1, Number(raw) || 1);
+      })(),
       ...(credential ? { requiredCredentialKey: credential } : {}),
     });
   }

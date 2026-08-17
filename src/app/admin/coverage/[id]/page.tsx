@@ -38,7 +38,7 @@ type CoverageRequestDetail = {
     location: string | null;
     positions: Array<{
       position: string;
-      count: number;
+      count: number | null;
       requiredCredentialKey: string | null;
     }>;
     tier: { id: number; name: string } | null;
@@ -324,7 +324,8 @@ export default async function AdminCoverageDetailPage({
               ) : null}
               {request.event.positions.map((pos) => (
                 <Badge key={pos.position} variant="outline">
-                  {formatPosition(pos.position)} ×{pos.count}
+                  {formatPosition(pos.position)}
+                  {pos.count === null ? ' · any' : ` ×${pos.count}`}
                   {pos.requiredCredentialKey
                     ? ` (${formatCredKey(pos.requiredCredentialKey)})`
                     : ''}
@@ -445,7 +446,8 @@ export default async function AdminCoverageDetailPage({
                       type="number"
                       name={`count-${i}`}
                       min={1}
-                      placeholder="Count"
+                      placeholder="any"
+                      title="Blank for no limit"
                       className={`${inputCls} w-20`}
                     />
                     <select

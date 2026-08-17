@@ -28,17 +28,19 @@ export async function draftEvent(requestId: number, formData: FormData) {
 
   const positions: Array<{
     position: string;
-    count: number;
+    count: number | null;
     requiredCredentialKey?: string | null;
   }> = [];
   for (let i = 0; i < POSITION_ROWS; i += 1) {
     const position = str(`position-${i}`);
     if (!position) continue;
-    const count = Number(str(`count-${i}`) || '1');
+    // Blank means no limit rather than one.
+    const raw = str(`count-${i}`);
+    const count = raw === '' ? null : Number(raw);
     const credential = str(`credential-${i}`);
     positions.push({
       position,
-      count: Number.isInteger(count) && count > 0 ? count : 1,
+      count: count !== null && Number.isInteger(count) && count > 0 ? count : null,
       requiredCredentialKey: credential || null,
     });
   }

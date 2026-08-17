@@ -115,8 +115,14 @@ export default async function NewEventPage({
                     <PositionField index={i} className={FIELD} />
                   </span>
                   <label className="grid gap-1 text-xs text-muted-foreground">
-                    Count
-                    <input name={`count-${i}`} type="number" min={1} defaultValue={1} className={`${FIELD} w-20`} />
+                    Count (blank = no limit)
+                    <input
+                      name={`count-${i}`}
+                      type="number"
+                      min={1}
+                      placeholder="any"
+                      className={`${FIELD} w-24`}
+                    />
                   </label>
                   <label className="grid gap-1 text-xs text-muted-foreground">
                     Required credential (or above)

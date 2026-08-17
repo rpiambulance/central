@@ -40,7 +40,7 @@ type EventDetail = {
   kind: { name: string };
   positions: Array<{
     position: string;
-    count: number;
+    count: number | null;
     requiredCredentialKey: string | null;
   }>;
   signups: Array<{
@@ -424,7 +424,9 @@ export default async function EventDetailPage({
                 <div className="flex items-center gap-2 text-sm font-medium">
                   {formatPosition(pos.position)}
                   <span className="text-xs text-muted-foreground">
-                    {filled.length}/{pos.count}
+                    {pos.count === null
+                      ? `${filled.length} signed up · no limit`
+                      : `${filled.length}/${pos.count}`}
                     {pos.requiredCredentialKey
                       ? ` · requires ${formatCredKey(pos.requiredCredentialKey)}`
                       : ''}
