@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import { PositionField } from './position-field';
 import { formatCredKey } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import {
@@ -109,10 +110,10 @@ export default async function NewEventPage({
               </legend>
               {[0, 1, 2, 3, 4].map((i) => (
                 <div key={i} className="flex flex-wrap items-end gap-2">
-                  <label className="grid gap-1 text-xs text-muted-foreground">
-                    Position name
-                    <input name={`position-${i}`} placeholder="cc / driver / ees…" className={FIELD} />
-                  </label>
+                  <span className="grid gap-1 text-xs text-muted-foreground">
+                    Position
+                    <PositionField index={i} className={FIELD} />
+                  </span>
                   <label className="grid gap-1 text-xs text-muted-foreground">
                     Count
                     <input name={`count-${i}`} type="number" min={1} defaultValue={1} className={`${FIELD} w-20`} />

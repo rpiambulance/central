@@ -1,4 +1,5 @@
 import { summarizeCredentials } from '@/lib/credentials';
+import { formatPosition } from '@/lib/positions';
 import { prefers12Hour } from '@/lib/me';
 import { notFound } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
@@ -218,7 +219,7 @@ export default async function EventDetailPage({
                       value={pos.position}
                       className="size-4"
                     />
-                    {pos.position}
+                    {formatPosition(pos.position)}
                     {pos.requiredCredentialKey ? (
                       <span className="text-xs text-muted-foreground">
                         ({formatCredKey(pos.requiredCredentialKey)})
@@ -280,7 +281,7 @@ export default async function EventDetailPage({
                           )}
                         >
                           <Button type="submit" variant="outline" size="sm">
-                            Assign as {position}
+                            Assign as {formatPosition(position)}
                           </Button>
                         </form>
                       ))}
@@ -314,7 +315,7 @@ export default async function EventDetailPage({
             return (
               <div key={pos.position} className="space-y-1">
                 <div className="flex items-center gap-2 text-sm font-medium">
-                  {pos.position}
+                  {formatPosition(pos.position)}
                   <span className="text-xs text-muted-foreground">
                     {filled.length}/{pos.count}
                     {pos.requiredCredentialKey

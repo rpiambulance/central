@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { formatPosition } from '@/lib/positions';
 import { prefers12Hour } from '@/lib/me';
 import { notFound } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
@@ -270,7 +271,7 @@ export default async function AdminCoverageDetailPage({
               ) : null}
               {request.event.positions.map((pos) => (
                 <Badge key={pos.position} variant="outline">
-                  {pos.position} ×{pos.count}
+                  {formatPosition(pos.position)} ×{pos.count}
                   {pos.requiredCredentialKey
                     ? ` (${formatCredKey(pos.requiredCredentialKey)})`
                     : ''}
