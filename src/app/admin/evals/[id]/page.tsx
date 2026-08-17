@@ -86,7 +86,8 @@ export default async function ReviseTemplatePage({
         <CardHeader>
           <CardTitle>Items</CardTitle>
           <CardDescription>
-            Fill in up to 10 items; blank rows are dropped.
+            Add as many items as the form needs, in any order; items left
+            blank are dropped.
           </CardDescription>
         </CardHeader>
         <CardContent>
