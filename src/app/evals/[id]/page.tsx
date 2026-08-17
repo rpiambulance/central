@@ -109,23 +109,93 @@ function ReadOnlyScore({ item, score }: { item: Item; score?: Score }) {
   );
 }
 
+/**
+ * One choice in a {@link ChoiceGroup}: a radio wearing a button.
+ *
+ * The input stays in the markup (visually hidden, not `hidden`) so the group
+ * is still a real radio group — keyboard arrows, labels, and the form value
+ * all behave as they would with a plain set of radios.
+ */
+function Choice({
+  name,
+  value,
+  label,
+  checked,
+  tone = 'primary',
+}: {
+  name: string;
+  value: string;
+  label: string;
+  checked: boolean;
+  tone?: 'primary' | 'destructive' | 'muted';
+}) {
+  const selected =
+    tone === 'destructive'
+      ? 'peer-checked:border-destructive peer-checked:bg-destructive peer-checked:text-white'
+      : tone === 'muted'
+        ? 'peer-checked:border-foreground/40 peer-checked:bg-muted peer-checked:text-foreground'
+        : 'peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground';
+  return (
+    <label className="cursor-pointer">
+      <input
+        type="radio"
+        name={name}
+        value={value}
+        defaultChecked={checked}
+        className="peer sr-only"
+      />
+      <span
+        className={`block rounded-md border border-input px-3 py-1.5 text-sm transition-colors hover:bg-muted peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 ${selected}`}
+      >
+        {label}
+      </span>
+    </label>
+  );
+}
+
+/** A row of choices, with a way back to no answer at all. */
+function ChoiceGroup({
+  children,
+  clear,
+}: {
+  children: React.ReactNode;
+  clear: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {children}
+      <span className="ml-1 border-l pl-3">{clear}</span>
+    </div>
+  );
+}
+
 function ScoreInput({ item, score }: { item: Item; score?: Score }) {
   const name = `item-${item.id}`;
   if (item.scoreType === 'HEADING') return null;
   if (item.scoreType === 'OPTIONS') {
+    const chosen = score?.optionValue ?? '';
     return (
-      <select
-        name={name}
-        defaultValue={score?.optionValue ?? ''}
-        className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+      <ChoiceGroup
+        clear={
+          <Choice
+            name={name}
+            value=""
+            label="No answer"
+            checked={chosen === ''}
+            tone="muted"
+          />
+        }
       >
-        <option value="">&mdash;</option>
         {(item.options ?? []).map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
+          <Choice
+            key={option.value}
+            name={name}
+            value={option.value}
+            label={option.label}
+            checked={chosen === option.value}
+          />
         ))}
-      </select>
+      </ChoiceGroup>
     );
   }
   if (item.scoreType === 'SCALE_1_5') {
@@ -146,26 +216,31 @@ function ScoreInput({ item, score }: { item: Item; score?: Score }) {
   }
   if (item.scoreType === 'PASS_FAIL') {
     return (
-      <div className="flex items-center gap-4 text-sm">
-        <label className="flex items-center gap-1.5">
-          <input
-            type="radio"
+      <ChoiceGroup
+        clear={
+          <Choice
             name={name}
-            value="pass"
-            defaultChecked={score?.passed === true}
+            value=""
+            label="No answer"
+            checked={score?.passed === null || score?.passed === undefined}
+            tone="muted"
           />
-          Pass
-        </label>
-        <label className="flex items-center gap-1.5">
-          <input
-            type="radio"
-            name={name}
-            value="fail"
-            defaultChecked={score?.passed === false}
-          />
-          Fail
-        </label>
-      </div>
+        }
+      >
+        <Choice
+          name={name}
+          value="pass"
+          label="Pass"
+          checked={score?.passed === true}
+        />
+        <Choice
+          name={name}
+          value="fail"
+          label="Fail"
+          checked={score?.passed === false}
+          tone="destructive"
+        />
+      </ChoiceGroup>
     );
   }
   return (

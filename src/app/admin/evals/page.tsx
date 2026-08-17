@@ -49,6 +49,8 @@ function NoAccess() {
 function scoreTypeLabel(scoreType: TemplateItem['scoreType']): string {
   if (scoreType === 'SCALE_1_5') return 'scale 1–5';
   if (scoreType === 'PASS_FAIL') return 'pass/fail';
+  if (scoreType === 'OPTIONS') return 'choose one';
+  if (scoreType === 'HEADING') return 'heading';
   return 'text';
 }
 
