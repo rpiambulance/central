@@ -1,4 +1,6 @@
+import Link from 'next/link';
 import { summarizeCredentials } from '@/lib/credentials';
+import { dayKey, formatDay } from '@/lib/format';
 import { auth, devLoginEnabled, signIn } from '@/auth';
 import { api, ApiError } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -16,6 +18,17 @@ type Me = {
   lastName: string;
   credentials: Array<{ type: { key: string; name: string }; title: string | null }>;
 } | null;
+
+type MyShift = { crewId: number; date: string; position: string };
+type UpcomingEvent = { id: number; title: string; startsAt: string };
+
+const CREW_POSITION_LABELS: Record<string, string> = {
+  CC: 'Crew Chief',
+  DRIVER: 'Driver',
+  ATTENDANT: 'Rider',
+  OBSERVER: 'Rider',
+  DUTY_SUP: 'Duty Supervisor',
+};
 
 export default async function Dashboard({
   searchParams,
@@ -100,6 +113,19 @@ export default async function Dashboard({
     );
   }
 
+  // Only for an active member — an inactive one has already returned above.
+  const [myShifts, upcomingEvents] = await Promise.all([
+    api<MyShift[]>('/v1/crews/mine', { raw: true }).catch(() => []),
+    api<UpcomingEvent[]>(
+      `/v1/events?from=${encodeURIComponent(new Date().toISOString())}`,
+      { raw: true },
+    ).catch(() => []),
+  ]);
+  const nextShift = myShifts[0];
+  // The events list carries no per-viewer signup, so this is the next event
+  // for the corps rather than specifically yours.
+  const nextEvent = upcomingEvents[0];
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">
@@ -126,17 +152,44 @@ export default async function Dashboard({
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Night crews</CardTitle>
-            <CardDescription>Coming soon</CardDescription>
+            <CardTitle className="text-base">
+              <Link href="/night-crews" className="hover:underline">
+                Night crews
+              </Link>
+            </CardTitle>
+            <CardDescription>
+              {nextShift
+                ? `Next: ${formatDay(nextShift.date.slice(0, 10))} — ${
+                    CREW_POSITION_LABELS[nextShift.position] ?? nextShift.position
+                  }`
+                : 'No upcoming shifts'}
+            </CardDescription>
           </CardHeader>
-          <CardContent />
+          <CardContent className="text-sm text-muted-foreground">
+            {myShifts.length > 1
+              ? `${myShifts.length} shifts scheduled`
+              : myShifts.length === 1
+                ? '1 shift scheduled'
+                : 'Sign up on the night crew schedule.'}
+          </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Events</CardTitle>
-            <CardDescription>Coming soon</CardDescription>
+            <CardTitle className="text-base">
+              <Link href="/events" className="hover:underline">
+                Events
+              </Link>
+            </CardTitle>
+            <CardDescription>
+              {nextEvent
+                ? `Next up: ${nextEvent.title} — ${formatDay(dayKey(nextEvent.startsAt))}`
+                : 'Nothing scheduled'}
+            </CardDescription>
           </CardHeader>
-          <CardContent />
+          <CardContent className="text-sm text-muted-foreground">
+            {upcomingEvents.length} upcoming event
+            {upcomingEvents.length === 1 ? '' : 's'}
+          </CardContent>
         </Card>
       </div>
     </div>
