@@ -8,7 +8,7 @@ const API_URL = process.env.RAMPART_API_URL ?? 'http://localhost:3001';
 /** Public requester reply — no session; keyed by the status token. */
 export async function sendRequesterReply(token: string, formData: FormData) {
   const body = String(formData.get('body') ?? '').trim();
-  const path = `/coverage/status/${token}`;
+  const path = `/request-coverage/status/${token}`;
   if (!body) redirect(`${path}?error=${encodeURIComponent('Message is empty')}`);
 
   let errorMessage: string | null = null;
