@@ -82,3 +82,50 @@ export async function signupOther(
   }
   revalidatePath(`/events/${eventId}`);
 }
+
+export async function assignMember(eventId: number, formData: FormData) {
+  const memberId = Number(formData.get('memberId'));
+  const position = String(formData.get('position') ?? '').trim();
+  if (!memberId) {
+    redirect(
+      `/events/${eventId}?error=${encodeURIComponent('Pick a member to assign.')}`,
+    );
+  }
+  try {
+    await api(`/v1/events/${eventId}/signup/${memberId}`, {
+      method: 'POST',
+      // Blank means the open-attendee pool rather than a crew position.
+      body: JSON.stringify({ position: position || null }),
+    });
+  } catch (error) {
+    redirect(
+      `/events/${eventId}?error=${encodeURIComponent(apiErrorMessage(error))}`,
+    );
+  }
+  revalidatePath(`/events/${eventId}`);
+}
+
+export async function removeMember(eventId: number, memberId: number) {
+  try {
+    await api(`/v1/events/${eventId}/signup/${memberId}`, { method: 'DELETE' });
+  } catch (error) {
+    redirect(
+      `/events/${eventId}?error=${encodeURIComponent(apiErrorMessage(error))}`,
+    );
+  }
+  revalidatePath(`/events/${eventId}`);
+}
+
+export async function setEventLocked(eventId: number, locked: boolean) {
+  try {
+    await api(`/v1/events/${eventId}/lock`, {
+      method: 'PATCH',
+      body: JSON.stringify({ locked }),
+    });
+  } catch (error) {
+    redirect(
+      `/events/${eventId}?error=${encodeURIComponent(apiErrorMessage(error))}`,
+    );
+  }
+  revalidatePath(`/events/${eventId}`);
+}

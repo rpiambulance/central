@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import { PositionField } from './position-field';
+import { PositionField } from '../position-field';
 import { formatCredKey } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import {

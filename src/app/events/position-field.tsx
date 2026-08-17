@@ -14,11 +14,17 @@ const OTHER = '__other__';
 export function PositionField({
   index,
   className,
+  defaultValue = '',
 }: {
   index: number;
   className: string;
+  /** Existing position when editing; blank on a new event. */
+  defaultValue?: string;
 }) {
-  const [choice, setChoice] = useState('');
+  const known = COMMON_POSITIONS.includes(defaultValue);
+  const [choice, setChoice] = useState(
+    defaultValue ? (known ? defaultValue : OTHER) : '',
+  );
   const other = choice === OTHER;
 
   return (
@@ -43,7 +49,8 @@ export function PositionField({
         <input
           name={`position-${index}`}
           placeholder="Position name"
-          autoFocus
+          defaultValue={known ? '' : defaultValue}
+          autoFocus={!defaultValue}
           className={className}
         />
       ) : null}

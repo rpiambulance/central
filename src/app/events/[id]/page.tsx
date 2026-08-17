@@ -1,14 +1,16 @@
+import Link from 'next/link';
 import { summarizeCredentials } from '@/lib/credentials';
 import { formatPosition } from '@/lib/positions';
-import { prefers12Hour } from '@/lib/me';
+import { myPermissions, prefers12Hour } from '@/lib/me';
 import { notFound } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
-import { formatCredKey, formatDateTime, formatEndTime, formatTime } from '@/lib/format';
+import { formatCredKey, formatDateTime, formatEndTime } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -21,6 +23,9 @@ import {
   respondAvailability,
   signupForEvent,
   signupOther,
+  assignMember,
+  removeMember,
+  setEventLocked,
 } from './actions';
 
 type EventDetail = {
@@ -87,6 +92,10 @@ export default async function EventDetailPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const hour12 = await prefers12Hour();
+  const permissions = await myPermissions();
+  const mayAssign = permissions.has('events:assign-others');
+  const mayEdit = permissions.has('events:create');
+  const mayLock = permissions.has('events:lock');
   const [{ id }, { error }] = await Promise.all([params, searchParams]);
   const eventId = Number(id);
   if (!Number.isInteger(eventId)) notFound();
@@ -98,6 +107,13 @@ export default async function EventDetailPage({
     if (e instanceof ApiError && e.status === 404) notFound();
     throw e;
   }
+
+  // Only fetched when there is a control that needs it.
+  const roster = mayAssign
+    ? await api<Array<{ id: number; firstName: string; lastName: string }>>(
+        '/v1/members',
+      )
+    : [];
 
   const signedUp = event.myPosition !== undefined;
   const attendees = event.signups.filter((s) => !s.position);
@@ -303,6 +319,83 @@ export default async function EventDetailPage({
         </Card>
       ) : null}
 
+      {mayEdit || mayLock ? (
+        <div className="flex flex-wrap items-center gap-3">
+          {mayEdit ? (
+            <Button
+              render={<Link href={`/events/${eventId}/edit`} />}
+              variant="outline"
+              size="sm"
+            >
+              Edit event
+            </Button>
+          ) : null}
+          {mayLock ? (
+            <form action={setEventLocked.bind(null, eventId, !event.locked)}>
+              <Button type="submit" variant="outline" size="sm">
+                {event.locked ? 'Unlock signups' : 'Lock signups'}
+              </Button>
+            </form>
+          ) : null}
+        </div>
+      ) : null}
+
+      {mayAssign ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Assign a member</CardTitle>
+            <CardDescription>
+              Places anyone on this event directly, ignoring credential
+              requirements and the signup lock — the assignment is yours to
+              judge. Leave the position blank to add them as an attendee.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              action={assignMember.bind(null, eventId)}
+              className="flex flex-wrap items-end gap-2"
+            >
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Member
+                <select
+                  name="memberId"
+                  required
+                  defaultValue=""
+                  className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                >
+                  <option value="" disabled>
+                    Select member…
+                  </option>
+                  {roster.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.lastName}, {member.firstName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Position
+                <select
+                  name="position"
+                  defaultValue=""
+                  className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                >
+                  <option value="">Attendee (no position)</option>
+                  {event.positions.map((pos) => (
+                    <option key={pos.position} value={pos.position}>
+                      {formatPosition(pos.position)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Button type="submit" size="sm" variant="outline" className="h-8">
+                Assign
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Roster</CardTitle>
@@ -326,8 +419,22 @@ export default async function EventDetailPage({
                 {filled.length ? (
                   <ul className="text-sm text-muted-foreground">
                     {filled.map((s) => (
-                      <li key={s.member.id}>
+                      <li key={s.member.id} className="flex items-center gap-2">
                         {s.member.firstName} {s.member.lastName}
+                        {mayAssign ? (
+                          <form
+                            action={removeMember.bind(null, eventId, s.member.id)}
+                          >
+                            <Button
+                              type="submit"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-xs text-destructive"
+                            >
+                              remove
+                            </Button>
+                          </form>
+                        ) : null}
                       </li>
                     ))}
                   </ul>
