@@ -71,10 +71,12 @@ const WORKFLOW_ACTIONS: Record<string, Array<{ action: string; label: string }>>
     DRAFT: [
       { action: 'REQUEST_AVAILABILITY', label: 'Request availability' },
       { action: 'SUBMIT_FOR_APPROVAL', label: 'Submit for approval' },
+      { action: 'DENY', label: 'Decline request' },
       { action: 'CANCEL', label: 'Cancel' },
     ],
     AVAILABILITY_REQUESTED: [
       { action: 'SUBMIT_FOR_APPROVAL', label: 'Submit for approval' },
+      { action: 'DENY', label: 'Decline request' },
       { action: 'CANCEL', label: 'Cancel' },
     ],
     PENDING_APPROVAL: [
@@ -137,7 +139,11 @@ export default async function EventDetailPage({
   }
 
   const workflowActions = WORKFLOW_ACTIONS[event.workflowStatus] ?? [];
-  const showNotes = event.workflowStatus === 'PENDING_APPROVAL';
+  // Declining emails the requester at every stage, so the note field belongs
+  // anywhere DENY is offered, not only at the approval step.
+  const showNotes = workflowActions.some(
+    ({ action }) => action === 'DENY' || action === 'APPROVE',
+  );
 
   return (
     <div className="space-y-6">

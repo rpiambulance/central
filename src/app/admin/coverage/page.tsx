@@ -53,9 +53,14 @@ function Dash() {
 
 export default async function AdminCoveragePage() {
   const hour12 = await prefers12Hour();
-  // AUTH_URL is this app's own public origin, so the link is right in every
-  // environment without another variable to keep in step.
-  const publicRequestUrl = `${(process.env.AUTH_URL ?? '').replace(/\/$/, '')}/request-coverage`;
+  // The address to hand people asking for coverage. Set COVERAGE_REQUEST_URL
+  // when a friendlier link redirects here from elsewhere — that is what should
+  // be shared, not this app's own path. Otherwise fall back to this app's
+  // public origin, which is right in every environment without a second
+  // variable to keep in step.
+  const publicRequestUrl =
+    process.env.COVERAGE_REQUEST_URL?.trim() ||
+    `${(process.env.AUTH_URL ?? '').replace(/\/$/, '')}/request-coverage`;
   let requests: CoverageRequestRow[];
   try {
     requests = await api<CoverageRequestRow[]>('/v1/coverage-requests');

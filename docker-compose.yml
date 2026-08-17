@@ -18,6 +18,7 @@ services:
     environment:
       AUTH_SECRET: ${AUTH_SECRET:-dev-only-secret-change-me}
       AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+      COVERAGE_REQUEST_URL: ${COVERAGE_REQUEST_URL:-}
       AUTH_TRUST_HOST: 'true'
       AUTH_KEYCLOAK_ID: ${AUTH_KEYCLOAK_ID:-central}
       AUTH_KEYCLOAK_SECRET: ${AUTH_KEYCLOAK_SECRET:-dev-secret}
