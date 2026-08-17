@@ -14,13 +14,14 @@ import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { saveScores, signEval } from './actions';
 
-type ScoreType = 'SCALE_1_5' | 'PASS_FAIL' | 'TEXT';
+type ScoreType = 'SCALE_1_5' | 'PASS_FAIL' | 'TEXT' | 'OPTIONS' | 'HEADING';
 
 type Item = {
   id: number;
   order: number;
   prompt: string;
   scoreType: ScoreType;
+  options?: Array<{ value: string; label: string }> | null;
 };
 
 type Score = {
@@ -28,6 +29,7 @@ type Score = {
   scaleValue: number | null;
   passed: boolean | null;
   textValue: string | null;
+  optionValue: string | null;
 };
 
 type Evaluation = {
@@ -36,6 +38,8 @@ type Evaluation = {
   shiftDate: string | null;
   createdAt: string;
   notes: string | null;
+  outcome: 'NEEDS_IMPROVEMENT' | 'PASSED' | null;
+  readyForPromotion: boolean | null;
   signedByEvaluator: string | null;
   signedBySubject: string | null;
   template: { id: number; name: string; version: number; items: Item[] };
@@ -68,7 +72,19 @@ function NoAccess() {
 }
 
 function ReadOnlyScore({ item, score }: { item: Item; score?: Score }) {
+  // A heading asks nothing, so there is nothing to show against it.
+  if (item.scoreType === 'HEADING') return null;
   if (!score) return <span className="text-muted-foreground">&mdash;</span>;
+  if (item.scoreType === 'OPTIONS') {
+    const chosen = (item.options ?? []).find(
+      (option) => option.value === score.optionValue,
+    );
+    return chosen ? (
+      <span className="font-medium">{chosen.label}</span>
+    ) : (
+      <span className="text-muted-foreground">&mdash;</span>
+    );
+  }
   if (item.scoreType === 'SCALE_1_5') {
     return score.scaleValue !== null ? (
       <span className="font-medium">{score.scaleValue} / 5</span>
@@ -95,6 +111,23 @@ function ReadOnlyScore({ item, score }: { item: Item; score?: Score }) {
 
 function ScoreInput({ item, score }: { item: Item; score?: Score }) {
   const name = `item-${item.id}`;
+  if (item.scoreType === 'HEADING') return null;
+  if (item.scoreType === 'OPTIONS') {
+    return (
+      <select
+        name={name}
+        defaultValue={score?.optionValue ?? ''}
+        className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+      >
+        <option value="">&mdash;</option>
+        {(item.options ?? []).map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    );
+  }
   if (item.scoreType === 'SCALE_1_5') {
     return (
       <select
@@ -218,12 +251,54 @@ export default async function EvalDetailPage({
           className="space-y-6"
         >
           <div className="space-y-4">
-            {items.map((item) => (
-              <div key={item.id} className="space-y-1.5 rounded-md border p-4">
-                <p className="text-sm font-medium">{item.prompt}</p>
-                <ScoreInput item={item} score={scoreByItem.get(item.id)} />
-              </div>
-            ))}
+            {items.map((item) =>
+              item.scoreType === 'HEADING' ? (
+                <h3
+                  key={item.id}
+                  className="pt-2 text-sm font-semibold tracking-tight"
+                >
+                  {item.prompt}
+                </h3>
+              ) : (
+                <div key={item.id} className="space-y-1.5 rounded-md border p-4">
+                  <p className="text-sm font-medium">{item.prompt}</p>
+                  <ScoreInput item={item} score={scoreByItem.get(item.id)} />
+                </div>
+              ),
+            )}
+          </div>
+          <div className="grid gap-4 rounded-md border p-4 sm:grid-cols-2">
+            <label className="grid gap-1 text-sm">
+              <span className="font-medium">Overall result</span>
+              <select
+                name="outcome"
+                defaultValue={evaluation.outcome ?? ''}
+                className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              >
+                <option value="">&mdash;</option>
+                <option value="NEEDS_IMPROVEMENT">Needs improvement</option>
+                <option value="PASSED">Passed</option>
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span className="font-medium">Ready for promotion?</span>
+              <select
+                name="readyForPromotion"
+                defaultValue={
+                  evaluation.readyForPromotion === null ||
+                  evaluation.readyForPromotion === undefined
+                    ? ''
+                    : evaluation.readyForPromotion
+                      ? 'yes'
+                      : 'no'
+                }
+                className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              >
+                <option value="">&mdash;</option>
+                <option value="yes">Yes</option>
+                <option value="no">Not yet</option>
+              </select>
+            </label>
           </div>
           <label className="block space-y-1.5">
             <span className="text-sm font-medium">Overall notes</span>
@@ -265,6 +340,28 @@ export default async function EvalDetailPage({
                 <span className="text-muted-foreground">&mdash;</span>
               )}
             </p>
+          </div>
+          <div className="flex flex-wrap gap-4 rounded-md border p-4 text-sm">
+            <span>
+              <span className="font-medium">Overall result:</span>{' '}
+              {evaluation.outcome === 'PASSED' ? (
+                <Badge>Passed</Badge>
+              ) : evaluation.outcome === 'NEEDS_IMPROVEMENT' ? (
+                <Badge variant="destructive">Needs improvement</Badge>
+              ) : (
+                <span className="text-muted-foreground">&mdash;</span>
+              )}
+            </span>
+            <span>
+              <span className="font-medium">Ready for promotion:</span>{' '}
+              {evaluation.readyForPromotion === null ? (
+                <span className="text-muted-foreground">&mdash;</span>
+              ) : evaluation.readyForPromotion ? (
+                'Yes'
+              ) : (
+                'Not yet'
+              )}
+            </span>
           </div>
         </div>
       )}

@@ -12,7 +12,14 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { createTemplate } from './actions';
-import { TemplateItemRows, type TemplateItem } from './template-form';
+import { TemplateEditor } from './template-editor';
+
+type TemplateItem = {
+  order: number;
+  prompt: string;
+  scoreType: string;
+  options?: Array<{ value: string; label: string }> | null;
+};
 
 type Template = {
   id: number;
@@ -127,7 +134,7 @@ export default async function AdminEvalsPage({
                 className={`${inputCls} w-72`}
               />
             </label>
-            <TemplateItemRows />
+            <TemplateEditor />
             <Button type="submit" size="sm">
               Create template
             </Button>

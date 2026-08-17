@@ -7,7 +7,7 @@ import { apiErrorMessage } from '@/lib/errors';
 
 type ItemRef = {
   id: number;
-  scoreType: 'SCALE_1_5' | 'PASS_FAIL' | 'TEXT';
+  scoreType: 'SCALE_1_5' | 'PASS_FAIL' | 'TEXT' | 'OPTIONS' | 'HEADING';
 };
 
 type ScorePayload = {
@@ -15,6 +15,7 @@ type ScorePayload = {
   scaleValue?: number;
   passed?: boolean;
   textValue?: string;
+  optionValue?: string;
 };
 
 export async function saveScores(
@@ -24,6 +25,8 @@ export async function saveScores(
 ) {
   const submit = formData.get('intent') === 'submit';
   const notes = String(formData.get('notes') ?? '');
+  const outcome = String(formData.get('outcome') ?? '');
+  const readyRaw = String(formData.get('readyForPromotion') ?? '');
 
   const scores: ScorePayload[] = items.map((item) => {
     const raw = formData.get(`item-${item.id}`);
@@ -33,6 +36,8 @@ export async function saveScores(
       score.scaleValue = Number(raw);
     } else if (item.scoreType === 'PASS_FAIL') {
       score.passed = raw === 'pass';
+    } else if (item.scoreType === 'OPTIONS') {
+      score.optionValue = String(raw);
     } else {
       score.textValue = String(raw);
     }
@@ -42,7 +47,15 @@ export async function saveScores(
   try {
     await api(`/v1/evals/${evalId}/scores`, {
       method: 'PUT',
-      body: JSON.stringify({ scores, notes, submit }),
+      body: JSON.stringify({
+        scores,
+        notes,
+        submit,
+        ...(outcome === 'PASSED' || outcome === 'NEEDS_IMPROVEMENT'
+          ? { outcome }
+          : {}),
+        ...(readyRaw ? { readyForPromotion: readyRaw === 'yes' } : {}),
+      }),
     });
   } catch (error) {
     redirect(

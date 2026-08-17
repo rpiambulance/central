@@ -13,7 +13,14 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { reviseTemplate } from '../actions';
-import { TemplateItemRows, type TemplateItem } from '../template-form';
+import { TemplateEditor, type EditorItem } from '../template-editor';
+
+type TemplateItem = {
+  order: number;
+  prompt: string;
+  scoreType: string;
+  options?: Array<{ value: string; label: string }> | null;
+};
 
 type Template = {
   id: number;
@@ -88,7 +95,15 @@ export default async function ReviseTemplatePage({
             className="space-y-4"
           >
             <input type="hidden" name="name" value={template.name} />
-            <TemplateItemRows items={template.items} />
+            <TemplateEditor
+              initial={template.items.map((item): EditorItem => ({
+                prompt: item.prompt,
+                scoreType: item.scoreType,
+                optionsText: (item.options ?? [])
+                  .map((o: { value: string; label: string }) => `${o.value}|${o.label}`)
+                  .join('\n'),
+              }))}
+            />
             <Button type="submit" size="sm">
               Save revision
             </Button>
