@@ -209,7 +209,12 @@ function RequestTable({
 export default async function AdminCoveragePage({
   searchParams,
 }: {
-  searchParams: Promise<{ open?: string; done?: string; pageSize?: string }>;
+  searchParams: Promise<{
+    open?: string;
+    done?: string;
+    pageSize?: string;
+    declined?: string;
+  }>;
 }) {
   const params = await searchParams;
   const pageSize = PAGE_SIZES.includes(Number(params.pageSize))
@@ -257,6 +262,12 @@ export default async function AdminCoveragePage({
         title="Coverage requests"
         description="External requests for EMS event coverage."
       />
+
+      {params.declined ? (
+        <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+          Request declined. The requester has been emailed.
+        </p>
+      ) : null}
 
       <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
         <span className="text-muted-foreground">

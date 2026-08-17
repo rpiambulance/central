@@ -98,6 +98,9 @@ export default async function EventDetailPage({
   const mayAssign = permissions.has('events:assign-others');
   const mayEdit = permissions.has('events:create');
   const mayLock = permissions.has('events:lock');
+  const mayApprove = permissions.has('events:approve');
+  // Approving implies declining, so anyone who can approve can decline.
+  const mayDecline = mayApprove || permissions.has('events:decline');
   const [{ id }, { error }] = await Promise.all([params, searchParams]);
   const eventId = Number(id);
   if (!Number.isInteger(eventId)) notFound();
@@ -138,7 +141,12 @@ export default async function EventDetailPage({
     }
   }
 
-  const workflowActions = WORKFLOW_ACTIONS[event.workflowStatus] ?? [];
+  // Only offer what this member can actually carry out — a button that
+  // always answers 403 is worse than no button.
+  const workflowActions = (WORKFLOW_ACTIONS[event.workflowStatus] ?? []).filter(
+    ({ action }) =>
+      action === 'APPROVE' ? mayApprove : action === 'DENY' ? mayDecline : true,
+  );
   // Declining emails the requester at every stage, so the note field belongs
   // anywhere DENY is offered, not only at the approval step.
   const showNotes = workflowActions.some(

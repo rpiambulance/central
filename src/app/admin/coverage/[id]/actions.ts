@@ -84,5 +84,7 @@ export async function declineRequest(requestId: number, formData: FormData) {
       `/admin/coverage/${requestId}?error=${encodeURIComponent(apiErrorMessage(error))}`,
     );
   }
-  revalidatePath(`/admin/coverage/${requestId}`);
+  revalidatePath('/admin/coverage');
+  // Nothing further to do with a declined request, so go back to the list.
+  redirect('/admin/coverage?declined=1');
 }

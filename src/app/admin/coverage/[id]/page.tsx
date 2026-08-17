@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { formatPosition } from '@/lib/positions';
-import { prefers12Hour } from '@/lib/me';
+import { myPermissions, prefers12Hour } from '@/lib/me';
 import { notFound } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import { formatCredKey, formatDate, formatDateTime } from '@/lib/format';
@@ -85,6 +85,10 @@ export default async function AdminCoverageDetailPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const hour12 = await prefers12Hour();
+  const permissions = await myPermissions();
+  // Approving implies declining, so either permission offers the control.
+  const mayDecline =
+    permissions.has('events:approve') || permissions.has('events:decline');
   const [{ id }, { error }] = await Promise.all([params, searchParams]);
   const requestId = Number(id);
   if (!Number.isInteger(requestId)) notFound();
@@ -259,7 +263,7 @@ export default async function AdminCoverageDetailPage({
         </Card>
       ) : null}
 
-      {!request.event && request.status !== 'DENIED' ? (
+      {!request.event && request.status !== 'DENIED' && mayDecline ? (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Decline this request</CardTitle>
