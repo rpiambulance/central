@@ -1,27 +1,14 @@
 import Link from 'next/link';
-import { auth, signIn, signOut } from '@/auth';
+import { auth, signIn } from '@/auth';
 import { api } from '@/lib/api';
 import { AppSidebar } from '@/components/app-sidebar';
+import { InboxButton } from '@/components/inbox-button';
+import { UserMenu } from '@/components/user-menu';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { TopNavMenus } from '@/components/top-nav-menus';
 import { Button } from '@/components/ui/button';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { filterNavGroups } from '@/lib/nav';
-
-function SignOutButton({ name }: { name: string }) {
-  return (
-    <form
-      action={async () => {
-        'use server';
-        await signOut();
-      }}
-    >
-      <Button variant="outline" size="sm" type="submit">
-        Sign out {name}
-      </Button>
-    </form>
-  );
-}
 
 function SignInButton() {
   return (
@@ -91,6 +78,7 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
     { raw: true },
   ).catch(() => ({ unread: 0, tasks: 0 }));
   const name = session.user.name ?? '';
+  const email = session.user.email ?? undefined;
 
   if (navLayout === 'topnav') {
     return (
@@ -107,7 +95,8 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
             <TopNavMenus groups={groups} />
             <div className="ml-auto flex items-center gap-1">
               <ThemeToggle />
-              <SignOutButton name={name} />
+              <InboxButton unread={inbox.unread} tasks={inbox.tasks} />
+              <UserMenu name={name} email={email} />
             </div>
           </div>
         </header>
@@ -128,7 +117,8 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
           <SidebarTrigger />
           <div className="ml-auto flex items-center gap-1">
             <ThemeToggle />
-            <SignOutButton name={name} />
+            <InboxButton unread={inbox.unread} tasks={inbox.tasks} />
+            <UserMenu name={name} email={email} />
           </div>
         </header>
         <main className={MAIN}>{children}</main>

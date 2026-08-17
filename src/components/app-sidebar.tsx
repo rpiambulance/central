@@ -1,8 +1,10 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  useSidebar,
   Sidebar,
   SidebarContent,
   SidebarGroup,
@@ -24,6 +26,33 @@ export function AppSidebar({
   badges?: Record<string, number>;
 }) {
   const pathname = usePathname();
+  const { state, isMobile, setOpen, setOpenMobile } = useSidebar();
+
+  // Someone who keeps the sidebar closed opened it to get somewhere, so put
+  // it back once they are there. Someone who keeps it open expects it to stay
+  // open, which is why this tracks how the sidebar came to be showing rather
+  // than simply collapsing on every click.
+  const opened = useRef(false);
+  const previous = useRef(state);
+  useEffect(() => {
+    if (previous.current === 'collapsed' && state === 'expanded') {
+      opened.current = true;
+    } else if (state === 'collapsed') {
+      opened.current = false;
+    }
+    previous.current = state;
+  }, [state]);
+
+  const handleNavigate = (href: string) => {
+    // Staying on the page is not "going somewhere"; leave the sidebar alone.
+    if (href === pathname) return;
+    if (isMobile) {
+      setOpenMobile(false);
+    } else if (opened.current) {
+      opened.current = false;
+      setOpen(false);
+    }
+  };
 
   return (
     <Sidebar>
@@ -44,6 +73,7 @@ export function AppSidebar({
                 <SidebarMenuButton
                   render={<Link href="/" />}
                   isActive={pathname === '/'}
+                  onClick={() => handleNavigate('/')}
                 >
                   Dashboard
                 </SidebarMenuButton>
@@ -64,6 +94,7 @@ export function AppSidebar({
                         pathname === item.href ||
                         (item.href !== '/' && pathname.startsWith(`${item.href}/`))
                       }
+                      onClick={() => handleNavigate(item.href)}
                     >
                       {item.label}
                       {badges?.[item.href] ? (
