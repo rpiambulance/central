@@ -53,6 +53,9 @@ function Dash() {
 
 export default async function AdminCoveragePage() {
   const hour12 = await prefers12Hour();
+  // AUTH_URL is this app's own public origin, so the link is right in every
+  // environment without another variable to keep in step.
+  const publicRequestUrl = `${(process.env.AUTH_URL ?? '').replace(/\/$/, '')}/request-coverage`;
   let requests: CoverageRequestRow[];
   try {
     requests = await api<CoverageRequestRow[]>('/v1/coverage-requests');
@@ -67,6 +70,24 @@ export default async function AdminCoveragePage() {
         title="Coverage requests"
         description="External requests for EMS event coverage."
       />
+
+      <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+        <span className="text-muted-foreground">
+          Requesters submit these themselves at
+        </span>{' '}
+        <a
+          href={publicRequestUrl}
+          className="font-mono underline underline-offset-2"
+          target="_blank"
+          rel="noreferrer"
+        >
+          {publicRequestUrl}
+        </a>
+        <span className="text-muted-foreground">
+          {' '}
+          — no account needed. Share that link with anyone asking for coverage.
+        </span>
+      </div>
       {requests.length ? (
         <div className="rounded-md border">
           <Table>

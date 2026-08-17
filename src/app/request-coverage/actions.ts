@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 const API_URL = process.env.RAMPART_API_URL ?? 'http://localhost:3001';
 
 function errorPath(message: string): string {
-  return `/coverage?error=${encodeURIComponent(message)}`;
+  return `/request-coverage?error=${encodeURIComponent(message)}`;
 }
 
 /** Public intake — no session; hits the API's public throttled endpoint. */
