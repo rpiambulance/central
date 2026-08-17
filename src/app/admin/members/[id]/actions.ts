@@ -210,3 +210,25 @@ export async function setCredentialDate(
   }
   revalidatePath(`/admin/members/${memberId}`);
 }
+
+export async function recordCertification(memberId: number, formData: FormData) {
+  const typeId = Number(formData.get('typeId'));
+  if (!typeId) return;
+  const identifier = String(formData.get('identifier') ?? '').trim();
+  const issuedAt = String(formData.get('issuedAt') ?? '').trim();
+  const expiresAt = String(formData.get('expiresAt') ?? '').trim();
+  try {
+    await api(`/v1/certifications/member/${memberId}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        typeId,
+        ...(identifier ? { identifier } : {}),
+        ...(issuedAt ? { issuedAt: new Date(issuedAt).toISOString() } : {}),
+        ...(expiresAt ? { expiresAt: new Date(expiresAt).toISOString() } : {}),
+      }),
+    });
+  } catch (error) {
+    fail(memberId, error);
+  }
+  revalidatePath(`/admin/members/${memberId}`);
+}

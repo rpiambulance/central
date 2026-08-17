@@ -57,3 +57,26 @@ export async function api<T>(
   }
   return res.json() as Promise<T>;
 }
+
+/**
+ * Multipart upload against the Rampart API. Separate from api() because fetch
+ * must set its own Content-Type here — supplying one drops the multipart
+ * boundary and the upload arrives unparseable.
+ */
+export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
+  const session = await auth();
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: session?.accessToken
+      ? { Authorization: `Bearer ${session.accessToken}` }
+      : {},
+    body: form,
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    if (res.status === 401) redirect('/api/auth/signin');
+    if (res.status === 403) redirect('/?denied=1');
+    throw new ApiError(res.status, await res.json().catch(() => null));
+  }
+  return res.json() as Promise<T>;
+}

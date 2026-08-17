@@ -20,7 +20,11 @@ import {
 } from '@/components/ui/table';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
-import { registerForClass, requestPromotion } from './actions';
+import {
+  registerForClass,
+  requestPromotion,
+  submitCertification,
+} from './actions';
 
 type Certification = {
   id: number;
@@ -102,6 +106,9 @@ const EVAL_STATUS_BADGE: Record<
   SIGNED: { label: 'Signed', variant: 'default' },
 };
 
+const CERT_FIELD =
+  'h-8 rounded-md border border-input bg-background px-2 text-sm';
+
 export default async function TrainingPage({
   searchParams,
 }: {
@@ -117,6 +124,10 @@ export default async function TrainingPage({
       api<AnnualTraining[]>('/v1/trainings/annual'),
       api<TrainingClass[]>('/v1/trainings/classes'),
     ]);
+  const certTypes =
+    await api<Array<{ id: number; name: string; defaultValidityMonths: number | null }>>(
+      '/v1/certifications/types',
+    );
 
   return (
     <div className="space-y-8">
@@ -187,6 +198,66 @@ export default async function TrainingPage({
             No certifications on file.
           </p>
         )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Add a certification</CardTitle>
+            <CardDescription>
+              Submitted for verification by an officer. Attach a photo or scan
+              of the card if you have one — it speeds that up. Leave the expiry
+              blank and it is worked out from the issue date.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              action={submitCertification}
+              className="flex flex-wrap items-end gap-2"
+            >
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Certification
+                <select
+                  name="typeId"
+                  required
+                  defaultValue=""
+                  className={CERT_FIELD}
+                >
+                  <option value="" disabled>
+                    Select…
+                  </option>
+                  {certTypes.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Number (optional)
+                <input name="identifier" className={CERT_FIELD} />
+              </label>
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Issued
+                <input name="issuedAt" type="date" className={CERT_FIELD} />
+              </label>
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Expires (optional)
+                <input name="expiresAt" type="date" className={CERT_FIELD} />
+              </label>
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Card photo or scan (optional)
+                <input
+                  name="document"
+                  type="file"
+                  accept="image/*,application/pdf"
+                  className="text-sm"
+                />
+              </label>
+              <Button type="submit" size="sm" variant="outline" className="h-8">
+                Submit
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </section>
 
       <section className="space-y-3">

@@ -14,6 +14,7 @@ import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import {appointDutySupervisor,
   grantCredential,
+  recordCertification,
   setCredentialDate,
   revokeCredential,
   setMemberActive,
@@ -347,10 +348,12 @@ export default async function AdminMemberDetailPage({
 
   let member: MemberDetail;
   let credentialTypes: AdjCredentialType[];
+  let certificationTypes: Array<{ id: number; name: string }>;
   try {
-    [member, credentialTypes] = await Promise.all([
+    [member, credentialTypes, certificationTypes] = await Promise.all([
       api<MemberDetail>(`/v1/members/${memberId}`),
       api<AdjCredentialType[]>('/v1/credentials/types'),
+      api<Array<{ id: number; name: string }>>('/v1/certifications/types'),
     ]);
   } catch (err) {
     if (err instanceof ApiError && err.status === 403) return <NoAccess />;
@@ -679,6 +682,44 @@ export default async function AdminMemberDetailPage({
           ) : (
             <p className="text-sm text-muted-foreground">No certifications.</p>
           )}
+
+          <form
+            action={recordCertification.bind(null, memberId)}
+            className="mt-4 flex flex-wrap items-end gap-2"
+          >
+            <label className="grid gap-1 text-xs text-muted-foreground">
+              Certification
+              <select name="typeId" required defaultValue="" className={inputCls}>
+                <option value="" disabled>
+                  Select…
+                </option>
+                {certificationTypes.map((type) => (
+                  <option key={type.id} value={type.id}>
+                    {type.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1 text-xs text-muted-foreground">
+              Number (optional)
+              <input name="identifier" className={inputCls} />
+            </label>
+            <label className="grid gap-1 text-xs text-muted-foreground">
+              Issued
+              <input name="issuedAt" type="date" className={inputCls} />
+            </label>
+            <label className="grid gap-1 text-xs text-muted-foreground">
+              Expires (optional)
+              <input name="expiresAt" type="date" className={inputCls} />
+            </label>
+            <Button type="submit" size="sm" variant="outline">
+              Record
+            </Button>
+          </form>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Recorded certifications are marked verified — you are the one who
+            would approve them.
+          </p>
         </CardContent>
       </Card>
       <AdjustmentsCard
