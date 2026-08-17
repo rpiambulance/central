@@ -16,7 +16,12 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { WorkflowBadge } from '@/components/workflow-badge';
-import { declineRequest, draftEvent, messageRequester } from './actions';
+import {
+  declineRequest,
+  draftEvent,
+  messageRequester,
+  reopenRequest,
+} from './actions';
 
 type CoverageRequestDetail = {
   id: number;
@@ -260,6 +265,15 @@ export default async function AdminCoverageDetailPage({
               emailed.
             </CardDescription>
           </CardHeader>
+          {mayDecline ? (
+            <CardContent>
+              <form action={reopenRequest.bind(null, request.id)}>
+                <Button type="submit" size="sm" variant="outline">
+                  Reopen request
+                </Button>
+              </form>
+            </CardContent>
+          ) : null}
         </Card>
       ) : null}
 
@@ -344,7 +358,7 @@ export default async function AdminCoverageDetailPage({
             </p>
           </CardContent>
         </Card>
-      ) : (
+      ) : request.status === 'DENIED' ? null : (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Draft the event</CardTitle>

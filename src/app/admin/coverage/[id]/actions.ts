@@ -91,3 +91,14 @@ export async function declineRequest(requestId: number, formData: FormData) {
   // Nothing further to do with a declined request, so go back to the list.
   redirect('/admin/coverage?declined=1');
 }
+
+export async function reopenRequest(requestId: number) {
+  try {
+    await api(`/v1/coverage-requests/${requestId}/reopen`, { method: 'POST' });
+  } catch (error) {
+    redirect(
+      `/admin/coverage/${requestId}?error=${encodeURIComponent(apiErrorMessage(error))}`,
+    );
+  }
+  revalidatePath(`/admin/coverage/${requestId}`);
+}
