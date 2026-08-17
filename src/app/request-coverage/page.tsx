@@ -5,10 +5,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { ErrorBanner } from '@/components/error-banner';
 import { submitCoverageRequest } from './actions';
 import { EventRows } from './event-rows';
+import { SubmitWithCheck } from './submit-button';
 
 export const metadata = {
   title: 'Request EMS coverage — RPI Ambulance',
@@ -97,9 +97,7 @@ export default async function CoverageIntakePage({
               </Field>
             </div>
             <EventRows />
-            <Button type="submit" className="justify-self-start">
-              Submit request
-            </Button>
+            <SubmitWithCheck />
           </form>
         </CardContent>
       </Card>
