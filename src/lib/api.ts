@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 
 const API_URL = process.env.RAMPART_API_URL ?? 'http://localhost:3001';
@@ -11,27 +12,47 @@ export class ApiError extends Error {
   }
 }
 
+export interface ApiInit extends RequestInit {
+  /**
+   * Return the ApiError instead of redirecting on 401/403. Needed by the
+   * dashboard itself, which would otherwise redirect to itself forever, and
+   * by the nav shell, which renders for members the API will not talk to.
+   */
+  raw?: boolean;
+}
+
 /**
  * Server-side fetch against the Rampart API, forwarding the caller's
  * Keycloak access token. Use from server components / route handlers only.
+ *
+ * A member who reaches a page they cannot use — by typing the URL, following
+ * an old link, or losing a permission since the page was last open — is sent
+ * back to their dashboard rather than shown a dead end. An expired session is
+ * sent back through sign-in.
  */
 export async function api<T>(
   path: string,
-  init: RequestInit = {},
+  init: ApiInit = {},
 ): Promise<T> {
+  const { raw, ...requestInit } = init;
   const session = await auth();
   const res = await fetch(`${API_URL}${path}`, {
-    ...init,
+    ...requestInit,
     headers: {
       'Content-Type': 'application/json',
       ...(session?.accessToken
         ? { Authorization: `Bearer ${session.accessToken}` }
         : {}),
-      ...init.headers,
+      ...requestInit.headers,
     },
     cache: 'no-store',
   });
   if (!res.ok) {
+    if (!raw) {
+      // redirect() signals by throwing, so these return control immediately.
+      if (res.status === 401) redirect('/api/auth/signin');
+      if (res.status === 403) redirect('/?denied=1');
+    }
     throw new ApiError(res.status, await res.json().catch(() => null));
   }
   return res.json() as Promise<T>;

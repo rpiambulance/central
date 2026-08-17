@@ -17,7 +17,12 @@ type Me = {
   credentials: Array<{ type: { key: string; name: string }; title: string | null }>;
 } | null;
 
-export default async function Dashboard() {
+export default async function Dashboard({
+  searchParams,
+}: {
+  searchParams: Promise<{ denied?: string; missing?: string }>;
+}) {
+  const { denied, missing } = await searchParams;
   const session = await auth();
   if (!session?.user) {
     return (
@@ -66,7 +71,7 @@ export default async function Dashboard() {
   let me: Me = null;
   let inactive = false;
   try {
-    me = await api<Me>('/v1/members/me');
+    me = await api<Me>('/v1/members/me', { raw: true });
   } catch (error) {
     if (error instanceof ApiError && error.status === 403) {
       inactive = true;
@@ -74,6 +79,12 @@ export default async function Dashboard() {
       throw error;
     }
   }
+
+  const bounced = denied
+    ? "You don't have access to that page."
+    : missing
+      ? "That page doesn't exist."
+      : null;
 
   if (inactive) {
     return (
@@ -94,6 +105,11 @@ export default async function Dashboard() {
       <h1 className="text-2xl font-semibold tracking-tight">
         Welcome{me ? `, ${me.firstName}` : ''}
       </h1>
+      {bounced ? (
+        <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+          {bounced}
+        </p>
+      ) : null}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>

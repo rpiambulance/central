@@ -77,6 +77,7 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
   try {
     const me = await api<{ navLayout?: string; permissions?: string[] }>(
       '/v1/members/me',
+      { raw: true },
     );
     if (me?.navLayout) navLayout = me.navLayout;
     permissions = new Set(me?.permissions ?? []);
