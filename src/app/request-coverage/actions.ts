@@ -14,14 +14,39 @@ export async function submitCoverageRequest(formData: FormData) {
     const value = String(formData.get(name) ?? '').trim();
     return value ? value : undefined;
   };
+  // One row per event; the row keys come from the client component, so read
+  // whatever description fields are present rather than assuming an index.
+  const events: Array<{
+    description: string;
+    requestedDate?: string;
+    location?: string;
+  }> = [];
+  for (const [field, value] of formData.entries()) {
+    const match = /^event-description-(.+)$/.exec(field);
+    if (!match) continue;
+    const description = String(value).trim();
+    if (!description) continue;
+    const key = match[1];
+    const date = String(formData.get(`event-date-${key}`) ?? '').trim();
+    const location = String(formData.get(`event-location-${key}`) ?? '').trim();
+    events.push({
+      description,
+      ...(date ? { requestedDate: date } : {}),
+      ...(location ? { location } : {}),
+    });
+  }
+  if (!events.length) {
+    redirect(errorPath('Describe at least one event you need covered.'));
+  }
+
   const payload = {
     requesterName: String(formData.get('requesterName') ?? '').trim(),
     requesterOrg: optional('requesterOrg'),
     requesterEmail: String(formData.get('requesterEmail') ?? '').trim(),
     requesterPhone: optional('requesterPhone'),
-    description: String(formData.get('description') ?? '').trim(),
-    requestedDate: optional('requestedDate'),
-    location: optional('location'),
+    // Kept for the API's single-event shape; the array is what it uses.
+    description: events[0].description,
+    events,
   };
 
   let destination: string;
@@ -45,12 +70,15 @@ export async function submitCoverageRequest(formData: FormData) {
         : body?.message;
       destination = errorPath(message || `Request failed (${res.status})`);
     } else {
-      const data = (await res.json()) as { ok: boolean; statusUrl: string };
-      try {
-        destination = new URL(data.statusUrl).pathname;
-      } catch {
-        destination = data.statusUrl;
-      }
+      const data = (await res.json()) as {
+        ok: boolean;
+        statusUrl: string;
+        statusUrls?: string[];
+      };
+      const tokens = (data.statusUrls ?? [data.statusUrl])
+        .map((url) => url.split('/').pop() ?? '')
+        .filter(Boolean);
+      destination = `/request-coverage/thank-you?tokens=${encodeURIComponent(tokens.join(','))}`;
     }
   } catch {
     destination = errorPath('Could not reach the server — please try again.');

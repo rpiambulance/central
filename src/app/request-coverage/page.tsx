@@ -8,6 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ErrorBanner } from '@/components/error-banner';
 import { submitCoverageRequest } from './actions';
+import { EventRows } from './event-rows';
 
 export const metadata = {
   title: 'Request EMS coverage — RPI Ambulance',
@@ -94,28 +95,8 @@ export default async function CoverageIntakePage({
                   className={inputCls}
                 />
               </Field>
-              <Field label="Requested date (optional)">
-                <input type="date" name="requestedDate" className={inputCls} />
-              </Field>
-              <Field label="Location (optional)">
-                <input
-                  type="text"
-                  name="location"
-                  maxLength={300}
-                  className={inputCls}
-                />
-              </Field>
             </div>
-            <Field label="What do you need covered?">
-              <textarea
-                name="description"
-                required
-                maxLength={4000}
-                rows={5}
-                placeholder="Event type, expected attendance, start/end times, and anything else we should know."
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              />
-            </Field>
+            <EventRows />
             <Button type="submit" className="justify-self-start">
               Submit request
             </Button>
