@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { api } from '@/lib/api';
-import { dayKey, formatDate, formatTime } from '@/lib/format';
+import { dayKey, formatDate, formatEndTime, formatTime } from '@/lib/format';
 import { kindStyle } from '@/lib/event-kinds';
 import {
   addDays,
@@ -217,7 +217,7 @@ export default async function EventsPage({
                         ) : null}
                       </div>
                       <CardDescription>
-                        {formatTime(event.startsAt, hour12)} – {formatTime(event.endsAt, hour12)}
+                        {formatTime(event.startsAt, hour12)} – {formatEndTime(event.endsAt, hour12)}
                         {event.location ? ` · ${event.location}` : ''}
                         {` · ${event._count.signups} signed up`}
                       </CardDescription>

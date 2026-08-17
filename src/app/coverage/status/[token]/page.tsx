@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { prefers12Hour } from '@/lib/me';
-import { formatDate, formatDateTime, formatTime } from '@/lib/format';
+import { formatDate, formatDateTime, formatEndTime, formatTime } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -158,7 +158,7 @@ export default async function CoverageStatusPage({
                 <dt className="font-medium">When</dt>
                 <dd className="text-muted-foreground">
                   {formatDateTime(request.event.startsAt, hour12)} –{' '}
-                  {formatTime(request.event.endsAt, hour12)}
+                  {formatEndTime(request.event.endsAt, hour12)}
                 </dd>
               </div>
               {request.event.location ? (

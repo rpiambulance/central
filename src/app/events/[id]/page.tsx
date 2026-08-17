@@ -2,7 +2,7 @@ import { summarizeCredentials } from '@/lib/credentials';
 import { prefers12Hour } from '@/lib/me';
 import { notFound } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
-import { formatDateTime, formatTime, formatCredKey } from '@/lib/format';
+import { formatCredKey, formatDateTime, formatEndTime, formatTime } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -126,7 +126,7 @@ export default async function EventDetailPage({
     <div className="space-y-6">
       <PageHeader
         title={event.title}
-        description={`${formatDateTime(event.startsAt, hour12)} – ${formatTime(event.endsAt, hour12)}${
+        description={`${formatDateTime(event.startsAt, hour12)} – ${formatEndTime(event.endsAt, hour12)}${
           event.location ? ` · ${event.location}` : ''
         }`}
       />

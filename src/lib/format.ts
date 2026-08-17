@@ -1,32 +1,45 @@
 const TZ = 'America/New_York';
 
-/** "Mon, Sep 8" from a YYYY-MM-DD date string (interpreted as a plain date). */
+/**
+ * Dates are written day-first with an abbreviated month and no comma:
+ * "16 Aug 2026", or "Sun 16 Aug" where the weekday matters more than the year.
+ * Assembled from parts rather than a locale preset so the exact house style
+ * survives an ICU update.
+ */
+function parts(date: Date, timeZone: string, withWeekday: boolean, withYear: boolean) {
+  // en-US for the names themselves: en-GB abbreviates September as "Sept".
+  const found = new Intl.DateTimeFormat('en-US', {
+    ...(withWeekday ? { weekday: 'short' as const } : {}),
+    day: 'numeric',
+    month: 'short',
+    ...(withYear ? { year: 'numeric' as const } : {}),
+    timeZone,
+  }).formatToParts(date);
+  const get = (type: string) => found.find((p) => p.type === type)?.value ?? '';
+  return [
+    withWeekday ? get('weekday') : '',
+    get('day'),
+    get('month'),
+    withYear ? get('year') : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+/** "Sun 16 Aug" from a YYYY-MM-DD date string (interpreted as a plain date). */
 export function formatDay(dateStr: string): string {
   const [y, m, d] = dateStr.split('-').map(Number);
-  return new Intl.DateTimeFormat('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(Date.UTC(y, m - 1, d)));
+  return parts(new Date(Date.UTC(y, m - 1, d)), 'UTC', true, false);
 }
 
-/** "September 8, 2025" from an ISO timestamp, in America/New_York. */
+/** "16 Aug 2026" from an ISO timestamp, in America/New_York. */
 export function formatDate(iso: string): string {
-  return new Intl.DateTimeFormat('en-US', {
-    dateStyle: 'long',
-    timeZone: TZ,
-  }).format(new Date(iso));
+  return parts(new Date(iso), TZ, false, true);
 }
 
-/** "Mon, Sep 8" from an ISO timestamp, in America/New_York. */
+/** "Sun 16 Aug" from an ISO timestamp, in America/New_York. */
 export function formatDateShort(iso: string): string {
-  return new Intl.DateTimeFormat('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    timeZone: TZ,
-  }).format(new Date(iso));
+  return parts(new Date(iso), TZ, true, false);
 }
 
 /** "7:00 PM" from an ISO timestamp, in America/New_York. */
@@ -62,15 +75,18 @@ function lowercaseMeridiem(formatter: Intl.DateTimeFormat, date: Date): string {
  * their profile, and pages pass that through as `hour12`.
  */
 export function formatDateTime(iso: string, hour12 = false): string {
-  return lowercaseMeridiem(
-    new Intl.DateTimeFormat('en-US', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-      hour12,
-      timeZone: TZ,
-    }),
-    new Date(iso),
-  );
+  return `${formatDate(iso)}, ${formatTime(iso, hour12)}`;
+}
+
+/**
+ * An end time, where midnight reads as 24:00 rather than 00:00 — so a shift
+ * written 22:00–24:00 cannot be misread as ending before it began. Start
+ * times keep 00:00, and a 12-hour clock is left alone, where "12:00 am"
+ * already carries the distinction.
+ */
+export function formatEndTime(iso: string, hour12 = false): string {
+  const rendered = formatTime(iso, hour12);
+  return !hour12 && rendered === '00:00' ? '24:00' : rendered;
 }
 
 /** YYYY-MM-DD key for grouping, in America/New_York. */

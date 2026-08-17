@@ -113,32 +113,34 @@ export function monthGrid(dateStr: string): string[][] {
 
 export const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-/** "September 2026" / "Week of Sep 8" / "Monday, Sep 8" for the view heading. */
-export function viewTitle(view: CalendarView, dateStr: string): string {
+/**
+ * Day-first, matching the rest of the site: "September 2026",
+ * "Week of 16 Aug 2026", "Sunday 16 Aug 2026".
+ */
+export function longDate(dateStr: string, withWeekday = false): string {
   const [y, m, d] = dateStr.split('-').map(Number);
-  const date = new Date(Date.UTC(y, m - 1, d));
+  const found = new Intl.DateTimeFormat('en-US', {
+    ...(withWeekday ? { weekday: 'long' as const } : {}),
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).formatToParts(new Date(Date.UTC(y, m - 1, d)));
+  const get = (type: string) => found.find((p) => p.type === type)?.value ?? '';
+  return [withWeekday ? get('weekday') : '', get('day'), get('month'), get('year')]
+    .filter(Boolean)
+    .join(' ');
+}
+
+export function viewTitle(view: CalendarView, dateStr: string): string {
   if (view === 'month') {
+    const [y, m, d] = dateStr.split('-').map(Number);
     return new Intl.DateTimeFormat('en-US', {
       month: 'long',
       year: 'numeric',
       timeZone: 'UTC',
-    }).format(date);
+    }).format(new Date(Date.UTC(y, m - 1, d)));
   }
-  if (view === 'day') {
-    return new Intl.DateTimeFormat('en-US', {
-      weekday: 'long',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      timeZone: 'UTC',
-    }).format(date);
-  }
-  const start = startOfWeek(dateStr);
-  const [sy, sm, sd] = start.split('-').map(Number);
-  return `Week of ${new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(Date.UTC(sy, sm - 1, sd)))}`;
+  if (view === 'day') return longDate(dateStr, true);
+  return `Week of ${longDate(startOfWeek(dateStr))}`;
 }

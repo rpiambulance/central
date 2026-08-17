@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { formatTime } from '@/lib/format';
+import { formatEndTime, formatTime } from '@/lib/format';
 import { kindStyle, COLORED_KINDS } from '@/lib/event-kinds';
 import {
   addDays,
@@ -52,7 +52,7 @@ function EventRow({ event, hour12 }: { event: CalendarEvent; hour12: boolean }) 
       <div className="flex flex-wrap items-baseline gap-x-2">
         <span className="font-medium">{event.title}</span>
         <span className="text-xs text-muted-foreground">
-          {formatTime(event.startsAt, hour12)} – {formatTime(event.endsAt, hour12)}
+          {formatTime(event.startsAt, hour12)} – {formatEndTime(event.endsAt, hour12)}
           {event.location ? ` · ${event.location}` : ''}
         </span>
       </div>
@@ -165,13 +165,17 @@ function WeekView({
     <div className="space-y-3">
       {days.map((day) => {
         const dayEvents = grouped.get(day) ?? [];
+        // Day-first, matching the rest of the site: "Sunday 16 Aug".
         const [y, m, d] = day.split('-').map(Number);
-        const label = new Intl.DateTimeFormat('en-US', {
+        const found = new Intl.DateTimeFormat('en-US', {
           weekday: 'long',
-          month: 'short',
           day: 'numeric',
+          month: 'short',
           timeZone: 'UTC',
-        }).format(new Date(Date.UTC(y, m - 1, d)));
+        }).formatToParts(new Date(Date.UTC(y, m - 1, d)));
+        const get = (type: string) =>
+          found.find((part) => part.type === type)?.value ?? '';
+        const label = `${get('weekday')} ${get('day')} ${get('month')}`;
         return (
           <section key={day} className="space-y-1.5">
             <h3
