@@ -14,7 +14,16 @@ import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { deleteEval, saveScores, signEval } from './actions';
 
-type ScoreType = 'SCALE_1_5' | 'PASS_FAIL' | 'TEXT' | 'OPTIONS' | 'HEADING';
+type ScoreType =
+  | 'SCALE_1_5'
+  | 'PASS_FAIL'
+  | 'TEXT'
+  | 'SHORT_TEXT'
+  | 'NUMBER'
+  | 'OPTIONS'
+  | 'MULTI_SELECT'
+  | 'HEADING'
+  | 'SIGNOFF';
 
 type Item = {
   id: number;
@@ -22,6 +31,16 @@ type Item = {
   prompt: string;
   scoreType: ScoreType;
   options?: Array<{ value: string; label: string }> | null;
+  minValue?: number | null;
+  maxValue?: number | null;
+  unit?: string | null;
+};
+
+type Group = {
+  id: number;
+  heading: string;
+  description: string | null;
+  items: Item[];
 };
 
 type Score = {
@@ -30,6 +49,8 @@ type Score = {
   passed: boolean | null;
   textValue: string | null;
   optionValue: string | null;
+  optionValues: string[] | null;
+  numberValue: number | null;
 };
 
 type Evaluation = {
@@ -42,7 +63,13 @@ type Evaluation = {
   readyForPromotion: boolean | null;
   signedByEvaluator: string | null;
   signedBySubject: string | null;
-  template: { id: number; name: string; version: number; items: Item[] };
+  template: {
+    id: number;
+    name: string;
+    version: number;
+    items: Item[];
+    groups?: Group[];
+  };
   scores: Score[];
   evaluator: { id: number; firstName: string; lastName: string };
   subject: { id: number; firstName: string; lastName: string };
@@ -81,6 +108,32 @@ function ReadOnlyScore({ item, score }: { item: Item; score?: Score }) {
     );
     return chosen ? (
       <span className="font-medium">{chosen.label}</span>
+    ) : (
+      <span className="text-muted-foreground">&mdash;</span>
+    );
+  }
+  if (item.scoreType === 'MULTI_SELECT') {
+    const chosen = (item.options ?? []).filter((option) =>
+      (score.optionValues ?? []).includes(option.value),
+    );
+    return chosen.length ? (
+      <span className="flex flex-wrap gap-1">
+        {chosen.map((option) => (
+          <Badge key={option.value} variant="secondary">
+            {option.label}
+          </Badge>
+        ))}
+      </span>
+    ) : (
+      <span className="text-muted-foreground">&mdash;</span>
+    );
+  }
+  if (item.scoreType === 'NUMBER') {
+    return score.numberValue !== null ? (
+      <span className="font-medium">
+        {score.numberValue}
+        {item.unit ? ` ${item.unit}` : ''}
+      </span>
     ) : (
       <span className="text-muted-foreground">&mdash;</span>
     );
@@ -198,6 +251,61 @@ function ScoreInput({ item, score }: { item: Item; score?: Score }) {
       </ChoiceGroup>
     );
   }
+  if (item.scoreType === 'MULTI_SELECT') {
+    // Checkboxes rather than a multi-select list: a list box hides how many
+    // are picked and needs a modifier key to pick a second one.
+    const chosen = score?.optionValues ?? [];
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        {(item.options ?? []).map((option) => (
+          <label key={option.value} className="cursor-pointer">
+            <input
+              type="checkbox"
+              name={name}
+              value={option.value}
+              defaultChecked={chosen.includes(option.value)}
+              className="peer sr-only"
+            />
+            <span className="block rounded-md border border-input px-3 py-1.5 text-sm transition-colors hover:bg-muted peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2">
+              {option.label}
+            </span>
+          </label>
+        ))}
+      </div>
+    );
+  }
+  if (item.scoreType === 'NUMBER') {
+    return (
+      <span className="flex items-center gap-2">
+        <input
+          type="number"
+          name={name}
+          step="any"
+          {...(item.minValue !== null && item.minValue !== undefined
+            ? { min: item.minValue }
+            : {})}
+          {...(item.maxValue !== null && item.maxValue !== undefined
+            ? { max: item.maxValue }
+            : {})}
+          defaultValue={score?.numberValue ?? ''}
+          className="h-9 w-32 rounded-md border border-input bg-background px-2 text-sm"
+        />
+        {item.unit ? (
+          <span className="text-sm text-muted-foreground">{item.unit}</span>
+        ) : null}
+      </span>
+    );
+  }
+  if (item.scoreType === 'SHORT_TEXT') {
+    return (
+      <input
+        type="text"
+        name={name}
+        defaultValue={score?.textValue ?? ''}
+        className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+      />
+    );
+  }
   if (item.scoreType === 'SCALE_1_5') {
     return (
       <select
@@ -253,6 +361,41 @@ function ScoreInput({ item, score }: { item: Item; score?: Score }) {
   );
 }
 
+/** One question on the form, ready to answer. A heading only labels. */
+function EditableItem({ item, score }: { item: Item; score?: Score }) {
+  if (item.scoreType === 'HEADING') {
+    return (
+      <h3 className="pt-2 text-sm font-semibold tracking-tight">
+        {item.prompt}
+      </h3>
+    );
+  }
+  return (
+    <div className="space-y-1.5 rounded-md border p-4">
+      <p className="text-sm font-medium">{item.prompt}</p>
+      <ScoreInput item={item} score={score} />
+    </div>
+  );
+}
+
+function ReadOnlyItem({ item, score }: { item: Item; score?: Score }) {
+  if (item.scoreType === 'HEADING') {
+    return (
+      <h3 className="pt-2 text-sm font-semibold tracking-tight">
+        {item.prompt}
+      </h3>
+    );
+  }
+  return (
+    <div className="space-y-1.5 rounded-md border p-4">
+      <p className="text-sm font-medium">{item.prompt}</p>
+      <div className="text-sm">
+        <ReadOnlyScore item={item} score={score} />
+      </div>
+    </div>
+  );
+}
+
 function SignatureLine({
   label,
   name,
@@ -304,7 +447,12 @@ export default async function EvalDetailPage({
 
   const badge = STATUS_BADGE[evaluation.status];
   const scoreByItem = new Map(evaluation.scores.map((s) => [s.itemId, s]));
-  const items = evaluation.template.items;
+  const groups = evaluation.template.groups ?? [];
+  // The save action needs every item on the form, wherever it sits.
+  const items = [
+    ...evaluation.template.items,
+    ...groups.flatMap((group) => group.items),
+  ];
   const editable =
     evaluation.status !== 'SIGNED' && me.id === evaluation.evaluator.id;
   // Discarding an unfinished evaluation and erasing a finished one are held
@@ -334,21 +482,32 @@ export default async function EvalDetailPage({
           className="space-y-6"
         >
           <div className="space-y-4">
-            {items.map((item) =>
-              item.scoreType === 'HEADING' ? (
-                <h3
-                  key={item.id}
-                  className="pt-2 text-sm font-semibold tracking-tight"
-                >
-                  {item.prompt}
-                </h3>
-              ) : (
-                <div key={item.id} className="space-y-1.5 rounded-md border p-4">
-                  <p className="text-sm font-medium">{item.prompt}</p>
-                  <ScoreInput item={item} score={scoreByItem.get(item.id)} />
-                </div>
-              ),
-            )}
+            {evaluation.template.items.map((item) => (
+              <EditableItem
+                key={item.id}
+                item={item}
+                score={scoreByItem.get(item.id)}
+              />
+            ))}
+            {groups.map((group) => (
+              <fieldset key={group.id} className="space-y-3 rounded-md border p-4">
+                <legend className="px-1 text-sm font-semibold tracking-tight">
+                  {group.heading}
+                </legend>
+                {group.description ? (
+                  <p className="text-sm text-muted-foreground">
+                    {group.description}
+                  </p>
+                ) : null}
+                {group.items.map((item) => (
+                  <EditableItem
+                    key={item.id}
+                    item={item}
+                    score={scoreByItem.get(item.id)}
+                  />
+                ))}
+              </fieldset>
+            ))}
           </div>
           <div className="grid gap-4 rounded-md border p-4 sm:grid-cols-2">
             <label className="grid gap-1 text-sm">
@@ -408,13 +567,31 @@ export default async function EvalDetailPage({
         </form>
       ) : (
         <div className="space-y-4">
-          {items.map((item) => (
-            <div key={item.id} className="space-y-1.5 rounded-md border p-4">
-              <p className="text-sm font-medium">{item.prompt}</p>
-              <div className="text-sm">
-                <ReadOnlyScore item={item} score={scoreByItem.get(item.id)} />
-              </div>
-            </div>
+          {evaluation.template.items.map((item) => (
+            <ReadOnlyItem
+              key={item.id}
+              item={item}
+              score={scoreByItem.get(item.id)}
+            />
+          ))}
+          {groups.map((group) => (
+            <section key={group.id} className="space-y-3 rounded-md border p-4">
+              <h3 className="text-sm font-semibold tracking-tight">
+                {group.heading}
+              </h3>
+              {group.description ? (
+                <p className="text-sm text-muted-foreground">
+                  {group.description}
+                </p>
+              ) : null}
+              {group.items.map((item) => (
+                <ReadOnlyItem
+                  key={item.id}
+                  item={item}
+                  score={scoreByItem.get(item.id)}
+                />
+              ))}
+            </section>
           ))}
           <div className="space-y-1.5 rounded-md border p-4">
             <p className="text-sm font-medium">Overall notes</p>

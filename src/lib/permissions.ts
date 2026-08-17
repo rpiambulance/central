@@ -17,6 +17,7 @@ export const PERMISSION_INFO: Record<string, string> = {
   'evals:read-all': "View any member's evaluations",
   'evals:delete-draft': 'Delete an evaluation that is still unfinished (draft)',
   'evals:delete-completed': 'Delete an evaluation that has been submitted or signed',
+  'checklists:revoke-signoff': "Withdraw another trainer's checklist sign-off",
   'promotions:review': 'View promotion requests, checklists, and votes',
   'promotions:vote': 'Vote on promotion requests (Training Committee)',
   'promotions:captain-approve': 'Give final captain approval on promotions',

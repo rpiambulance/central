@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -12,25 +11,10 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { createTemplate } from './actions';
-import { TemplateEditor } from './template-editor';
+import { NewTemplateForm } from './new-template-form';
+import type { ApiTemplate } from './template-shape';
 
-type TemplateItem = {
-  order: number;
-  prompt: string;
-  scoreType: string;
-  options?: Array<{ value: string; label: string }> | null;
-};
-
-type Template = {
-  id: number;
-  name: string;
-  version: number;
-  active: boolean;
-  items: TemplateItem[];
-};
-
-const inputCls =
-  'h-8 rounded-md border border-input bg-background px-2 text-sm';
+type Credential = { id: number; key: string; name: string };
 
 function NoAccess() {
   return (
@@ -46,12 +30,20 @@ function NoAccess() {
   );
 }
 
-function scoreTypeLabel(scoreType: TemplateItem['scoreType']): string {
-  if (scoreType === 'SCALE_1_5') return 'scale 1–5';
-  if (scoreType === 'PASS_FAIL') return 'pass/fail';
-  if (scoreType === 'OPTIONS') return 'choose one';
-  if (scoreType === 'HEADING') return 'heading';
-  return 'text';
+const SCORE_TYPE_LABEL: Record<string, string> = {
+  SCALE_1_5: 'scale 1–5',
+  PASS_FAIL: 'pass/fail',
+  SHORT_TEXT: 'short text',
+  TEXT: 'long text',
+  NUMBER: 'number',
+  OPTIONS: 'choose one',
+  MULTI_SELECT: 'choose any',
+  HEADING: 'heading',
+  SIGNOFF: 'sign-off',
+};
+
+function scoreTypeLabel(scoreType: string): string {
+  return SCORE_TYPE_LABEL[scoreType] ?? scoreType.toLowerCase();
 }
 
 export default async function AdminEvalsPage({
@@ -61,9 +53,13 @@ export default async function AdminEvalsPage({
 }) {
   const { error } = await searchParams;
 
-  let templates: Template[];
+  let templates: ApiTemplate[];
+  let credentials: Credential[];
   try {
-    templates = await api<Template[]>('/v1/evals/templates');
+    [templates, credentials] = await Promise.all([
+      api<ApiTemplate[]>('/v1/evals/templates'),
+      api<Credential[]>('/v1/credentials/types'),
+    ]);
   } catch (err) {
     if (err instanceof ApiError && err.status === 403) return <NoAccess />;
     throw err;
@@ -72,8 +68,8 @@ export default async function AdminEvalsPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Evaluation forms"
-        description="Author the templates trainers fill out for ride evaluations."
+        title="Evaluation and checklist forms"
+        description="Author the forms trainers fill out, and the checklists they sign off."
       />
       <ErrorBanner message={error} />
 
@@ -84,23 +80,43 @@ export default async function AdminEvalsPage({
               <CardTitle className="flex items-center gap-2">
                 {template.name}
                 <Badge variant="secondary">v{template.version}</Badge>
+                {template.kind === 'CHECKLIST' ? <Badge>Checklist</Badge> : null}
                 {template.active ? null : (
                   <Badge variant="secondary">Inactive</Badge>
                 )}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {template.items.length ? (
-                <ol className="list-decimal space-y-1 pl-5 text-sm">
-                  {template.items.map((item) => (
-                    <li key={item.order}>
-                      {item.prompt}{' '}
-                      <span className="text-xs text-muted-foreground">
-                        ({scoreTypeLabel(item.scoreType)})
-                      </span>
-                    </li>
+              {template.items.length || template.groups?.length ? (
+                <div className="space-y-2 text-sm">
+                  {template.items.length ? (
+                    <ol className="list-decimal space-y-1 pl-5">
+                      {template.items.map((item) => (
+                        <li key={`i${item.id ?? item.order}`}>
+                          {item.prompt}{' '}
+                          <span className="text-xs text-muted-foreground">
+                            ({scoreTypeLabel(item.scoreType)})
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : null}
+                  {(template.groups ?? []).map((group) => (
+                    <div key={group.id}>
+                      <p className="font-medium">{group.heading}</p>
+                      <ol className="list-decimal space-y-1 pl-5">
+                        {group.items.map((item) => (
+                          <li key={`g${item.id ?? item.order}`}>
+                            {item.prompt}{' '}
+                            <span className="text-xs text-muted-foreground">
+                              ({scoreTypeLabel(item.scoreType)})
+                            </span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
                   ))}
-                </ol>
+                </div>
               ) : (
                 <p className="text-sm text-muted-foreground">No items.</p>
               )}
@@ -118,32 +134,7 @@ export default async function AdminEvalsPage({
         ) : null}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>New template</CardTitle>
-          <CardDescription>
-            Add as many items as the form needs, in any order; items left
-            blank are dropped.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form action={createTemplate} className="space-y-4">
-            <label className="grid gap-1 text-xs text-muted-foreground">
-              Name
-              <input
-                type="text"
-                name="name"
-                required
-                className={`${inputCls} w-72`}
-              />
-            </label>
-            <TemplateEditor />
-            <Button type="submit" size="sm">
-              Create template
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      <NewTemplateForm action={createTemplate} credentials={credentials} />
     </div>
   );
 }

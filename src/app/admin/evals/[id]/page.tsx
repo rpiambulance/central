@@ -13,22 +13,10 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { reviseTemplate } from '../actions';
-import { TemplateEditor, type EditorItem } from '../template-editor';
+import { TemplateEditor } from '../template-editor';
+import { toEditorNodes, type ApiTemplate } from '../template-shape';
 
-type TemplateItem = {
-  order: number;
-  prompt: string;
-  scoreType: string;
-  options?: Array<{ value: string; label: string }> | null;
-};
-
-type Template = {
-  id: number;
-  name: string;
-  version: number;
-  active: boolean;
-  items: TemplateItem[];
-};
+type Credential = { id: number; key: string; name: string };
 
 function NoAccess() {
   return (
@@ -54,9 +42,13 @@ export default async function ReviseTemplatePage({
   const [{ id }, { error }] = await Promise.all([params, searchParams]);
   const templateId = Number(id);
 
-  let templates: Template[];
+  let templates: ApiTemplate[];
+  let credentials: Credential[];
   try {
-    templates = await api<Template[]>('/v1/evals/templates');
+    [templates, credentials] = await Promise.all([
+      api<ApiTemplate[]>('/v1/evals/templates'),
+      api<Credential[]>('/v1/credentials/types'),
+    ]);
   } catch (err) {
     if (err instanceof ApiError && err.status === 403) return <NoAccess />;
     throw err;
@@ -64,12 +56,17 @@ export default async function ReviseTemplatePage({
 
   const template = templates.find((t) => t.id === templateId);
   if (!template) notFound();
+  const checklist = template.kind === 'CHECKLIST';
 
   return (
     <div className="space-y-6">
       <PageHeader
         title={`Revise: ${template.name}`}
-        description="Editing a template that is already in use creates a new version."
+        description={
+          checklist
+            ? 'Checklists are edited in place. Sign-offs already recorded stay against the lines they were given for.'
+            : 'Editing a template that is already in use creates a new version.'
+        }
       />
       <div className="flex items-center gap-2">
         <Link
@@ -79,6 +76,7 @@ export default async function ReviseTemplatePage({
           &larr; All templates
         </Link>
         <Badge variant="secondary">v{template.version}</Badge>
+        {checklist ? <Badge>Checklist</Badge> : null}
       </div>
       <ErrorBanner message={error} />
 
@@ -86,8 +84,9 @@ export default async function ReviseTemplatePage({
         <CardHeader>
           <CardTitle>Items</CardTitle>
           <CardDescription>
-            Add as many items as the form needs, in any order; items left
-            blank are dropped.
+            Add as many items as the form needs, in any order, loose or inside
+            a group. Items left blank are dropped, and so is a group with
+            nothing in it.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -96,14 +95,35 @@ export default async function ReviseTemplatePage({
             className="space-y-4"
           >
             <input type="hidden" name="name" value={template.name} />
+            <input type="hidden" name="kind" value={template.kind ?? 'EVALUATION'} />
+            {checklist ? (
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Signed off by
+                <select
+                  name="signoffCredentialTypeId"
+                  required
+                  defaultValue={
+                    template.signoffCredentialTypeId
+                      ? String(template.signoffCredentialTypeId)
+                      : ''
+                  }
+                  className="h-8 w-72 rounded-md border border-input bg-background px-2 text-sm"
+                >
+                  <option value="" disabled>
+                    Select a credential…
+                  </option>
+                  {credentials.map((credential) => (
+                    <option key={credential.id} value={credential.id}>
+                      {credential.name} or above
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
             <TemplateEditor
-              initial={template.items.map((item): EditorItem => ({
-                prompt: item.prompt,
-                scoreType: item.scoreType,
-                optionsText: (item.options ?? [])
-                  .map((o: { value: string; label: string }) => `${o.value}|${o.label}`)
-                  .join('\n'),
-              }))}
+              initial={toEditorNodes(template)}
+              checklist={checklist}
+              credentials={credentials}
             />
             <Button type="submit" size="sm">
               Save revision

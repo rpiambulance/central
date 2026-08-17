@@ -7,7 +7,16 @@ import { apiErrorMessage } from '@/lib/errors';
 
 type ItemRef = {
   id: number;
-  scoreType: 'SCALE_1_5' | 'PASS_FAIL' | 'TEXT' | 'OPTIONS' | 'HEADING';
+  scoreType:
+    | 'SCALE_1_5'
+    | 'PASS_FAIL'
+    | 'TEXT'
+    | 'SHORT_TEXT'
+    | 'NUMBER'
+    | 'OPTIONS'
+    | 'MULTI_SELECT'
+    | 'HEADING'
+    | 'SIGNOFF';
 };
 
 type ScorePayload = {
@@ -16,6 +25,8 @@ type ScorePayload = {
   passed?: boolean;
   textValue?: string;
   optionValue?: string;
+  optionValues?: string[];
+  numberValue?: number;
 };
 
 export async function saveScores(
@@ -29,8 +40,15 @@ export async function saveScores(
   const readyRaw = String(formData.get('readyForPromotion') ?? '');
 
   const scores: ScorePayload[] = items.map((item) => {
-    const raw = formData.get(`item-${item.id}`);
     const score: ScorePayload = { itemId: item.id };
+    // Several checkboxes share one name, so this one is read as a list.
+    if (item.scoreType === 'MULTI_SELECT') {
+      const chosen = formData.getAll(`item-${item.id}`).map(String).filter(Boolean);
+      if (chosen.length) score.optionValues = chosen;
+      return score;
+    }
+
+    const raw = formData.get(`item-${item.id}`);
     if (raw === null || raw === '') return score;
     if (item.scoreType === 'SCALE_1_5') {
       score.scaleValue = Number(raw);
@@ -38,6 +56,11 @@ export async function saveScores(
       score.passed = raw === 'pass';
     } else if (item.scoreType === 'OPTIONS') {
       score.optionValue = String(raw);
+    } else if (item.scoreType === 'NUMBER') {
+      const parsed = Number(raw);
+      // A field holding something unparseable leaves the answer cleared
+      // rather than writing NaN, which the API would reject.
+      if (Number.isFinite(parsed)) score.numberValue = parsed;
     } else {
       score.textValue = String(raw);
     }
