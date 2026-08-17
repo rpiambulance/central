@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/table';
 import { PageHeader } from '@/components/page-header';
 import { ProgressBar } from '../progress-bar';
-import type { ChecklistSummary } from '../types';
+import { signersLabel, type ChecklistSummary } from '../types';
 
 type Row = {
   member: { id: number; firstName: string; lastName: string };
@@ -123,8 +123,8 @@ export default async function ChecklistSubjectsPage({
       <PageHeader
         title={checklist?.name ?? 'Checklist'}
         description={
-          checklist?.signoffCredentialType
-            ? `Signed by ${checklist.signoffCredentialType.name} or above, except where a line asks for more.`
+          checklist?.signoffCredentialTypes.length
+            ? `Signed by ${signersLabel(checklist.signoffCredentialTypes)}, except where a line names its own.`
             : 'Everyone this checklist currently applies to.'
         }
       />

@@ -12,7 +12,7 @@ type RawItem = {
   minValue?: string;
   maxValue?: string;
   unit?: string;
-  signoffCredentialTypeId?: string;
+  signoffCredentialTypeIds?: number[];
 };
 
 type RawNode =
@@ -53,7 +53,9 @@ function toItem(raw: RawItem) {
   const options = HAS_OPTIONS.includes(scoreType)
     ? parseOptions(raw.optionsText ?? '')
     : [];
-  const signoff = toNumber(raw.signoffCredentialTypeId);
+  const signoff = (raw.signoffCredentialTypeIds ?? []).filter(
+    (id) => typeof id === 'number' && Number.isFinite(id),
+  );
   return {
     prompt,
     scoreType,
@@ -65,7 +67,7 @@ function toItem(raw: RawItem) {
           unit: (raw.unit ?? '').trim() || undefined,
         }
       : {}),
-    ...(signoff !== undefined ? { signoffCredentialTypeId: signoff } : {}),
+    ...(signoff.length ? { signoffCredentialTypeIds: signoff } : {}),
   };
 }
 
@@ -103,13 +105,28 @@ function nodesFromForm(formData: FormData) {
   return nodes;
 }
 
+/** The checklist's own signing set, submitted as JSON by the picker. */
+function signoffLevels(formData: FormData): number[] {
+  try {
+    const parsed: unknown = JSON.parse(
+      String(formData.get('signoffCredentialTypeIds') ?? '[]'),
+    );
+    return Array.isArray(parsed)
+      ? parsed.filter((id): id is number => typeof id === 'number')
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 function templateBody(formData: FormData) {
   const kind = String(formData.get('kind') ?? 'EVALUATION');
-  const signoff = toNumber(String(formData.get('signoffCredentialTypeId') ?? ''));
   return {
     name: String(formData.get('name') ?? '').trim(),
     kind,
-    ...(kind === 'CHECKLIST' ? { signoffCredentialTypeId: signoff ?? null } : {}),
+    ...(kind === 'CHECKLIST'
+      ? { signoffCredentialTypeIds: signoffLevels(formData) }
+      : {}),
     nodes: nodesFromForm(formData),
   };
 }

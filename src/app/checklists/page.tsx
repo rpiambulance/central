@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/card';
 import { PageHeader } from '@/components/page-header';
 import { ProgressBar } from './progress-bar';
-import type { ChecklistSummary, Progress } from './types';
+import { signersLabel, type ChecklistSummary, type Progress } from './types';
 
 // Sign-offs land as trainers make them; never serve this from a cache.
 export const dynamic = 'force-dynamic';
@@ -96,8 +96,8 @@ export default async function ChecklistsPage() {
                     <Badge variant="secondary">v{checklist.version}</Badge>
                   </div>
                   <CardDescription>
-                    {checklist.signoffCredentialType
-                      ? `Signed by ${checklist.signoffCredentialType.name} or above.`
+                    {checklist.signoffCredentialTypes.length
+                      ? `Signed by ${signersLabel(checklist.signoffCredentialTypes)}.`
                       : 'No signing level set — nobody can sign this yet.'}
                     {checklist.leadsTo.length
                       ? ` Required for ${checklist.leadsTo

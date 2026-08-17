@@ -9,7 +9,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { TemplateEditor, type CredentialOption } from './template-editor';
+import {
+  ChecklistLevelField,
+  TemplateEditor,
+  type CredentialOption,
+} from './template-editor';
 
 const FIELD = 'h-8 rounded-md border border-input bg-background px-2 text-sm';
 
@@ -66,27 +70,11 @@ export function NewTemplateForm({
                 <option value="CHECKLIST">Checklist</option>
               </select>
             </label>
-            {checklist ? (
-              <label className="grid gap-1 text-xs text-muted-foreground">
-                Signed off by
-                <select
-                  name="signoffCredentialTypeId"
-                  required
-                  defaultValue=""
-                  className={`${FIELD} w-64`}
-                >
-                  <option value="" disabled>
-                    Select a credential…
-                  </option>
-                  {credentials.map((credential) => (
-                    <option key={credential.id} value={credential.id}>
-                      {credential.name} or above
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
           </div>
+
+          {checklist ? (
+            <ChecklistLevelField credentials={credentials} />
+          ) : null}
 
           <TemplateEditor checklist={checklist} credentials={credentials} />
 

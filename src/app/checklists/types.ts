@@ -13,8 +13,8 @@ export type ChecklistItem = {
   prompt: string;
   scoreType: string;
   signoff: Signoff | null;
-  /** The credential this line calls for, item override already applied. */
-  requires: Credential | null;
+  /** Who may sign this line — any one of them. Item override applied. */
+  requires: Credential[];
 };
 
 export type ChecklistGroup = {
@@ -30,7 +30,7 @@ export type Progress = {
     id: number;
     name: string;
     version: number;
-    signoffCredentialType: Credential | null;
+    signoffCredentialTypes: Credential[];
   };
   member: { id: number; firstName: string; lastName: string };
   leadsTo: { id: number; key: string; name: string } | null;
@@ -45,6 +45,19 @@ export type ChecklistSummary = {
   id: number;
   name: string;
   version: number;
-  signoffCredentialType: Credential | null;
+  signoffCredentialTypes: Credential[];
   leadsTo: Array<{ id: number; key: string; name: string }>;
 };
+
+/**
+ * Who may sign, in prose. Any one of the named credentials is enough, and
+ * anything above it on the ladder counts as holding it.
+ */
+export function signersLabel(credentials: Credential[]): string {
+  const names = credentials.map((credential) => credential.name);
+  if (!names.length) return '';
+  if (names.length === 1) return `${names[0]} or above`;
+  // The trailing comma matters with several: "A or B, or above" reads as one
+  // of A or B, while "A or B or above" reads as a third alternative.
+  return `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}, or above`;
+}

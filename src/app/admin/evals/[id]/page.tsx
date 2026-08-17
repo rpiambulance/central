@@ -13,7 +13,7 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { reviseTemplate } from '../actions';
-import { TemplateEditor } from '../template-editor';
+import { ChecklistLevelField, TemplateEditor } from '../template-editor';
 import { toEditorNodes, type ApiTemplate } from '../template-shape';
 
 type Credential = { id: number; key: string; name: string };
@@ -97,28 +97,12 @@ export default async function ReviseTemplatePage({
             <input type="hidden" name="name" value={template.name} />
             <input type="hidden" name="kind" value={template.kind ?? 'EVALUATION'} />
             {checklist ? (
-              <label className="grid gap-1 text-xs text-muted-foreground">
-                Signed off by
-                <select
-                  name="signoffCredentialTypeId"
-                  required
-                  defaultValue={
-                    template.signoffCredentialTypeId
-                      ? String(template.signoffCredentialTypeId)
-                      : ''
-                  }
-                  className="h-8 w-72 rounded-md border border-input bg-background px-2 text-sm"
-                >
-                  <option value="" disabled>
-                    Select a credential…
-                  </option>
-                  {credentials.map((credential) => (
-                    <option key={credential.id} value={credential.id}>
-                      {credential.name} or above
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <ChecklistLevelField
+                credentials={credentials}
+                initial={(template.signoffCredentialTypes ?? []).map(
+                  (credential) => credential.id,
+                )}
+              />
             ) : null}
             <TemplateEditor
               initial={toEditorNodes(template)}

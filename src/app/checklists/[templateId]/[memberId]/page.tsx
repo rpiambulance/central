@@ -17,7 +17,7 @@ import { formNodes } from '@/lib/form-nodes';
 import { PageHeader } from '@/components/page-header';
 import { ProgressBar } from '../../progress-bar';
 import { revokeSignoff, signItem } from '../../actions';
-import type { ChecklistItem, Progress } from '../../types';
+import { signersLabel, type ChecklistItem, type Progress } from '../../types';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,8 +86,8 @@ function Line({
             </p>
           ) : (
             <p className="text-xs text-muted-foreground">
-              {item.requires
-                ? `Needs ${item.requires.name} or above.`
+              {item.requires.length
+                ? `Needs ${signersLabel(item.requires)}.`
                 : 'Nobody can sign this: the checklist has no signing level.'}
             </p>
           )}

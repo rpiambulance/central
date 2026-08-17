@@ -9,7 +9,7 @@ export type ApiItem = {
   minValue?: number | null;
   maxValue?: number | null;
   unit?: string | null;
-  signoffCredentialTypeId?: number | null;
+  signoffCredentialTypes?: Array<{ id: number; key: string; name: string }>;
 };
 
 export type ApiGroup = {
@@ -26,8 +26,7 @@ export type ApiTemplate = {
   kind?: 'EVALUATION' | 'CHECKLIST';
   version: number;
   active: boolean;
-  signoffCredentialTypeId?: number | null;
-  signoffCredentialType?: { id: number; key: string; name: string } | null;
+  signoffCredentialTypes?: Array<{ id: number; key: string; name: string }>;
   items: ApiItem[];
   groups?: ApiGroup[];
 };
@@ -42,9 +41,9 @@ function toEditorItem(item: ApiItem): EditorItem {
     minValue: item.minValue === null || item.minValue === undefined ? '' : String(item.minValue),
     maxValue: item.maxValue === null || item.maxValue === undefined ? '' : String(item.maxValue),
     unit: item.unit ?? '',
-    signoffCredentialTypeId: item.signoffCredentialTypeId
-      ? String(item.signoffCredentialTypeId)
-      : '',
+    signoffCredentialTypeIds: (item.signoffCredentialTypes ?? []).map(
+      (credential) => credential.id,
+    ),
   };
 }
 

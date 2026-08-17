@@ -12,8 +12,8 @@ export type EditorItem = {
   minValue: string;
   maxValue: string;
   unit: string;
-  /** Checklist items: '' inherits the checklist's own signing level. */
-  signoffCredentialTypeId: string;
+  /** Checklist items: empty inherits the checklist's own signing level. */
+  signoffCredentialTypeIds: number[];
 };
 
 export type EditorNode =
@@ -50,7 +50,7 @@ function blankItem(checklist: boolean): EditorItem {
     minValue: '',
     maxValue: '',
     unit: '',
-    signoffCredentialTypeId: '',
+    signoffCredentialTypeIds: [],
   };
 }
 
@@ -104,37 +104,114 @@ function ItemFields({
           ))}
         </select>
       </label>
-      {checklist && item.scoreType === 'SIGNOFF' ? (
-        <label className="grid gap-1 text-xs text-muted-foreground">
-          Signed by
-          <select
-            value={item.signoffCredentialTypeId}
-            onChange={(event) =>
-              onChange({ signoffCredentialTypeId: event.target.value })
-            }
-            className={FIELD}
-          >
-            <option value="">(the checklist&apos;s level)</option>
-            {credentials.map((credential) => (
-              <option key={credential.id} value={credential.id}>
-                {credential.name} or above
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : null}
     </>
+  );
+}
+
+/**
+ * A set of credentials, any one of which is enough. Checkboxes rather than a
+ * multi-select list: the list is short, and a list box hides how many are
+ * picked behind a scrollbar and needs a modifier key to pick a second.
+ */
+export function CredentialPicker({
+  credentials,
+  selected,
+  onChange,
+  emptyLabel,
+}: {
+  credentials: CredentialOption[];
+  selected: number[];
+  onChange: (ids: number[]) => void;
+  /** What no selection means, when that is allowed. */
+  emptyLabel?: string;
+}) {
+  const toggle = (id: number) =>
+    onChange(
+      selected.includes(id)
+        ? selected.filter((value) => value !== id)
+        : [...selected, id],
+    );
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {credentials.map((credential) => (
+        <label key={credential.id} className="cursor-pointer">
+          <input
+            type="checkbox"
+            checked={selected.includes(credential.id)}
+            onChange={() => toggle(credential.id)}
+            className="peer sr-only"
+          />
+          <span className="block rounded-md border border-input px-2 py-1 text-xs transition-colors hover:bg-muted peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring">
+            {credential.name}
+          </span>
+        </label>
+      ))}
+      {!selected.length && emptyLabel ? (
+        <span className="text-xs text-muted-foreground">{emptyLabel}</span>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * The checklist's own signing set, as a form field.
+ *
+ * Submitted as JSON in one hidden input: a checkbox group posts nothing at
+ * all when everything is unchecked, which would read as "unchanged" rather
+ * than "cleared" on the server.
+ */
+export function ChecklistLevelField({
+  credentials,
+  initial = [],
+}: {
+  credentials: CredentialOption[];
+  initial?: number[];
+}) {
+  const [selected, setSelected] = useState<number[]>(initial);
+  return (
+    <div className="grid gap-1 text-xs text-muted-foreground">
+      Signed off by — anyone holding any of these, or anything above it
+      <input
+        type="hidden"
+        name="signoffCredentialTypeIds"
+        value={JSON.stringify(selected)}
+      />
+      <CredentialPicker
+        credentials={credentials}
+        selected={selected}
+        onChange={setSelected}
+        emptyLabel="Pick at least one, or nobody can sign this checklist."
+      />
+    </div>
   );
 }
 
 /** The parts that need their own row: choices, and a number's bounds. */
 function ItemExtras({
   item,
+  checklist,
+  credentials,
   onChange,
 }: {
   item: EditorItem;
+  checklist: boolean;
+  credentials: CredentialOption[];
   onChange: (patch: Partial<EditorItem>) => void;
 }) {
+  if (checklist && item.scoreType === 'SIGNOFF') {
+    return (
+      <div className="mt-2 grid gap-1 text-xs text-muted-foreground">
+        Signed by — leave empty to use the checklist&apos;s own
+        <CredentialPicker
+          credentials={credentials}
+          selected={item.signoffCredentialTypeIds}
+          onChange={(ids) => onChange({ signoffCredentialTypeIds: ids })}
+          emptyLabel="(the checklist's own)"
+        />
+      </div>
+    );
+  }
   if (HAS_OPTIONS.includes(item.scoreType)) {
     return (
       <label className="mt-2 grid gap-1 text-xs text-muted-foreground">
@@ -420,6 +497,8 @@ export function TemplateEditor({
                   </div>
                   <ItemExtras
                     item={item}
+                    checklist={checklist}
+                    credentials={credentials}
                     onChange={(patch) =>
                       patchNode(index, {
                         ...node,
@@ -494,6 +573,8 @@ export function TemplateEditor({
             </div>
             <ItemExtras
               item={node.item}
+              checklist={checklist}
+              credentials={credentials}
               onChange={(patch) =>
                 patchNode(index, { ...node, item: { ...node.item, ...patch } })
               }
