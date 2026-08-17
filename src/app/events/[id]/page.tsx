@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { summarizeCredentials } from '@/lib/credentials';
-import { formatPosition } from '@/lib/positions';
+import { formatPosition, formatPositionShort } from '@/lib/positions';
 import { myPermissions, prefers12Hour } from '@/lib/me';
 import { notFound } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
@@ -297,7 +297,7 @@ export default async function EventDetailPage({
                           )}
                         >
                           <Button type="submit" variant="outline" size="sm">
-                            Assign as {formatPosition(position)}
+                            Assign as {formatPositionShort(position)}
                           </Button>
                         </form>
                       ))}
@@ -481,7 +481,7 @@ export default async function EventDetailPage({
               action={signupForEvent.bind(null, event.id, position)}
             >
               <Button type="submit" variant="outline" size="sm">
-                Sign up as {position}
+                Sign up as {formatPositionShort(position)}
               </Button>
             </form>
           ))}

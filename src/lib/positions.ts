@@ -33,6 +33,26 @@ export function formatPosition(position: string): string {
     .join(' ');
 }
 
+/**
+ * The short form, for inline use in a button: "Sign up as CC". Positions that
+ * are known by an abbreviation keep it, in capitals; the rest fall back to the
+ * full name, since "Sign up as Driver" has no shorter form.
+ */
+const SHORT: Record<string, string> = {
+  cc: 'CC',
+  crew_chief: 'CC',
+  ees: 'EES',
+  fr_cc: 'FR-CC',
+  ds: 'DS',
+  duty_sup: 'DS',
+  dutysup: 'DS',
+};
+
+export function formatPositionShort(position: string): string {
+  const key = position.trim().toLowerCase().replace(/[\s-]+/g, '_');
+  return SHORT[key] ?? formatPosition(position);
+}
+
 /** The positions an event normally has, offered when building one. */
 export const COMMON_POSITIONS = [
   'cc',
