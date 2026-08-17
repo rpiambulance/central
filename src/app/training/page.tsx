@@ -21,9 +21,11 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import {
+  amendCertification,
   registerForClass,
   requestPromotion,
   submitCertification,
+  withdrawCertification,
 } from './actions';
 
 type Certification = {
@@ -37,17 +39,19 @@ type Certification = {
   documents: Array<{ id: number; fileName: string }>;
 };
 
+type ChecklistItem = {
+  kind: string;
+  label: string;
+  satisfied: boolean;
+  detail?: string;
+};
+
 type PromotionPath = {
   credentialTypeId: number;
   key: string;
   name: string;
   requestable: boolean;
-  checklist: Array<{
-    kind: string;
-    label: string;
-    satisfied: boolean;
-    detail?: string;
-  }>;
+  checklist: ChecklistItem[];
 };
 
 type Evaluation = {
@@ -112,7 +116,7 @@ const CERT_FIELD =
 export default async function TrainingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; checklistFor?: string }>;
 }) {
   const hour12 = await prefers12Hour();
   const [{ error }, certs, promotions, evals, annual, classes] =
@@ -124,6 +128,21 @@ export default async function TrainingPage({
       api<AnnualTraining[]>('/v1/trainings/annual'),
       api<TrainingClass[]>('/v1/trainings/classes'),
     ]);
+  // "What do I need for X?" — works for any credential, including ones the
+  // member is not yet eligible to request, which the promotion paths omit.
+  const { checklistFor } = await searchParams;
+  const allCredentialTypes = await api<
+    Array<{ id: number; key: string; name: string }>
+  >('/v1/credentials/types');
+  const chosenCredential = allCredentialTypes.find(
+    (t) => String(t.id) === checklistFor,
+  );
+  const chosenChecklist = chosenCredential
+    ? await api<ChecklistItem[]>(
+        `/v1/credentials/my-checklist/${chosenCredential.id}`,
+      )
+    : null;
+
   const certTypes =
     await api<Array<{ id: number; name: string; defaultValidityMonths: number | null }>>(
       '/v1/certifications/types',
@@ -150,6 +169,7 @@ export default async function TrainingPage({
                   <TableHead>Status</TableHead>
                   <TableHead>Expires</TableHead>
                   <TableHead>Documents</TableHead>
+                  <TableHead />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -186,6 +206,67 @@ export default async function TrainingPage({
                         {cert.documents.length
                           ? `${cert.documents.length} file${cert.documents.length === 1 ? '' : 's'}`
                           : '—'}
+                      </TableCell>
+                      <TableCell>
+                        {/* Editing a verified record sends it back for
+                            checking, so the disclosure says so. */}
+                        <details>
+                          <summary className="cursor-pointer text-xs text-muted-foreground">
+                            Correct
+                          </summary>
+                          <div className="mt-2 space-y-2">
+                            <form
+                              action={amendCertification.bind(null, cert.id)}
+                              className="flex flex-wrap items-end gap-2"
+                            >
+                              <label className="grid gap-1 text-xs text-muted-foreground">
+                                Number
+                                <input
+                                  name="identifier"
+                                  defaultValue={cert.identifier ?? ''}
+                                  className={CERT_FIELD}
+                                />
+                              </label>
+                              <label className="grid gap-1 text-xs text-muted-foreground">
+                                Issued
+                                <input
+                                  name="issuedAt"
+                                  type="date"
+                                  defaultValue={cert.issuedAt?.slice(0, 10) ?? ''}
+                                  className={CERT_FIELD}
+                                />
+                              </label>
+                              <label className="grid gap-1 text-xs text-muted-foreground">
+                                Expires
+                                <input
+                                  name="expiresAt"
+                                  type="date"
+                                  defaultValue={cert.expiresAt?.slice(0, 10) ?? ''}
+                                  className={CERT_FIELD}
+                                />
+                              </label>
+                              <Button type="submit" size="sm" variant="outline">
+                                Save
+                              </Button>
+                            </form>
+                            <form action={withdrawCertification.bind(null, cert.id)}>
+                              <Button
+                                type="submit"
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 px-2 text-xs text-destructive"
+                              >
+                                Withdraw this certification
+                              </Button>
+                            </form>
+                            {cert.status === 'VERIFIED' ? (
+                              <p className="text-xs text-muted-foreground">
+                                Saving a change sends this back for
+                                verification.
+                              </p>
+                            ) : null}
+                          </div>
+                        </details>
                       </TableCell>
                     </TableRow>
                   );
@@ -256,6 +337,72 @@ export default async function TrainingPage({
                 Submit
               </Button>
             </form>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-medium tracking-tight">
+          Requirements for any credential
+        </h2>
+        <Card>
+          <CardHeader>
+            <CardDescription>
+              Check what a credential needs, whether or not you can request it
+              yet.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <form method="get" className="flex flex-wrap items-end gap-2">
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Credential
+                <select
+                  name="checklistFor"
+                  defaultValue={checklistFor ?? ''}
+                  className={CERT_FIELD}
+                >
+                  <option value="">Select…</option>
+                  {allCredentialTypes.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {formatCredKey(type.key)} — {type.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Button type="submit" size="sm" variant="outline" className="h-8">
+                Show
+              </Button>
+            </form>
+            {chosenChecklist ? (
+              chosenChecklist.length ? (
+                <ul className="space-y-1 text-sm">
+                  {chosenChecklist.map((item, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <span
+                        className={
+                          item.satisfied
+                            ? 'text-green-600 dark:text-green-500'
+                            : 'text-muted-foreground'
+                        }
+                      >
+                        {item.satisfied ? '✓' : '○'}
+                      </span>
+                      <span
+                        className={
+                          item.satisfied ? '' : 'text-muted-foreground'
+                        }
+                      >
+                        {item.label}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {chosenCredential?.name} has no recorded requirements.
+                </p>
+              )
+            ) : null}
           </CardContent>
         </Card>
       </section>

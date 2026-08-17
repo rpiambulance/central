@@ -73,3 +73,31 @@ export async function submitCertification(formData: FormData) {
   }
   revalidatePath('/training');
 }
+
+export async function amendCertification(certId: number, formData: FormData) {
+  const identifier = String(formData.get('identifier') ?? '').trim();
+  const issuedAt = String(formData.get('issuedAt') ?? '').trim();
+  const expiresAt = String(formData.get('expiresAt') ?? '').trim();
+  try {
+    await api(`/v1/certifications/${certId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        ...(identifier ? { identifier } : {}),
+        ...(issuedAt ? { issuedAt: new Date(issuedAt).toISOString() } : {}),
+        ...(expiresAt ? { expiresAt: new Date(expiresAt).toISOString() } : {}),
+      }),
+    });
+  } catch (error) {
+    redirect(`/training?error=${encodeURIComponent(apiErrorMessage(error))}`);
+  }
+  revalidatePath('/training');
+}
+
+export async function withdrawCertification(certId: number) {
+  try {
+    await api(`/v1/certifications/${certId}`, { method: 'DELETE' });
+  } catch (error) {
+    redirect(`/training?error=${encodeURIComponent(apiErrorMessage(error))}`);
+  }
+  revalidatePath('/training');
+}

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import { prefers12Hour } from '@/lib/me';
@@ -52,11 +53,23 @@ function NoAccess() {
   );
 }
 
-export default async function DispatchesPage() {
+export default async function DispatchesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; from?: string; to?: string }>;
+}) {
+  const { q, from, to } = await searchParams;
+  const query = new URLSearchParams();
+  if (q?.trim()) query.set('q', q.trim());
+  if (/^\d{4}-\d{2}-\d{2}$/.test(from ?? '')) query.set('from', from!);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(to ?? '')) query.set('to', to!);
+  const filtering = [...query.keys()].length > 0;
   const hour12 = await prefers12Hour();
   let dispatches: Dispatch[];
   try {
-    dispatches = await api<Dispatch[]>('/v1/dispatches');
+    dispatches = await api<Dispatch[]>(
+      `/v1/dispatches${query.toString() ? `?${query}` : ''}`,
+    );
   } catch (err) {
     if (err instanceof ApiError && err.status === 403) return <NoAccess />;
     throw err;
@@ -68,6 +81,57 @@ export default async function DispatchesPage() {
         title="Dispatch Log"
         description="Text-message dispatches ingested from Herald, newest first."
       />
+
+      <form
+        method="get"
+        className="flex flex-wrap items-end gap-2 rounded-md border p-3"
+      >
+        <label className="grid gap-1 text-xs text-muted-foreground">
+          Search
+          <input
+            type="search"
+            name="q"
+            defaultValue={q ?? ''}
+            placeholder="Complaint, location, unit…"
+            className="h-8 w-64 rounded-md border border-input bg-background px-2 text-sm"
+          />
+        </label>
+        <label className="grid gap-1 text-xs text-muted-foreground">
+          From
+          <input
+            type="date"
+            name="from"
+            defaultValue={from ?? ''}
+            className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+          />
+        </label>
+        <label className="grid gap-1 text-xs text-muted-foreground">
+          To
+          <input
+            type="date"
+            name="to"
+            defaultValue={to ?? ''}
+            className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+          />
+        </label>
+        <button
+          type="submit"
+          className="h-8 rounded-md border px-3 text-sm hover:bg-muted"
+        >
+          Filter
+        </button>
+        {filtering ? (
+          <Link
+            href="/ops/dispatches"
+            className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+          >
+            Clear
+          </Link>
+        ) : null}
+        <span className="ml-auto text-sm text-muted-foreground">
+          {dispatches.length} shown
+        </span>
+      </form>
       {dispatches.length ? (
         <div className="rounded-md border">
           <Table>

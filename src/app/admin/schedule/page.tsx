@@ -19,6 +19,7 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { SlotSelect } from './slot-select';
+import { bulkWeek } from './actions';
 import { UndoButton } from './undo-button';
 import { UndoProvider } from './undo-context';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -261,6 +262,41 @@ export default async function AdminSchedulePage({
         </Link>
         <span className="text-muted-foreground">
           Week of {formatDay(weekStart)}
+        </span>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 rounded-md border p-3 text-sm">
+        <span className="text-muted-foreground">
+          Whole week ({formatDay(weekStart)}):
+        </span>
+        <form action={bulkWeek.bind(null, weekStart, 'apply-defaults')}>
+          <button
+            type="submit"
+            className="h-8 rounded-md border px-3 text-sm hover:bg-muted"
+          >
+            Fill vacancies from template
+          </button>
+        </form>
+        {/* Two steps: clearing a week is not a one-click action. */}
+        <details>
+          <summary className="cursor-pointer text-muted-foreground">
+            Clear week…
+          </summary>
+          <form
+            action={bulkWeek.bind(null, weekStart, 'clear')}
+            className="mt-2"
+          >
+            <button
+              type="submit"
+              className="h-8 rounded-md border border-destructive px-3 text-sm text-destructive hover:bg-destructive/10"
+            >
+              Empty every slot this week
+            </button>
+          </form>
+        </details>
+        <span className="text-xs text-muted-foreground">
+          Filling never displaces anyone already scheduled. Nights that have
+          already happened are left alone.
         </span>
       </div>
 

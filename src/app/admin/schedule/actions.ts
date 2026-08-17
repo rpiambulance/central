@@ -93,3 +93,22 @@ export async function setDefaultSlotValue(
   revalidatePath('/admin/schedule');
   return { ok: true };
 }
+
+export async function bulkWeek(
+  weekStart: string,
+  action: 'clear' | 'apply-defaults',
+) {
+  try {
+    await api('/v1/crews/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ weekStart, action }),
+    });
+  } catch (error) {
+    redirect(
+      `/admin/schedule?viewDate=${weekStart}&error=${encodeURIComponent(
+        apiErrorMessage(error),
+      )}`,
+    );
+  }
+  revalidatePath('/admin/schedule');
+}

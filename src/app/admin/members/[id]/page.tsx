@@ -128,6 +128,72 @@ type Adjustment = {
   createdBy: { firstName: string; lastName: string };
 };
 
+type EvalAbout = {
+  id: number;
+  createdAt: string;
+  status: string;
+  template: { id: number; name: string };
+  evaluator: { id: number; firstName: string; lastName: string };
+};
+
+/**
+ * Evaluations written about this member. Needs evals:read-all, which is the
+ * permission an officer assessing a promotion candidate holds — without this
+ * there was no way to read a candidate's history.
+ */
+async function EvaluationsAboutCard({ memberId }: { memberId: number }) {
+  let evaluations: EvalAbout[];
+  try {
+    evaluations = await api<EvalAbout[]>(`/v1/evals/about/${memberId}`, {
+      raw: true,
+    });
+  } catch (error) {
+    // Not everyone who can edit a member may read their evaluations.
+    if (error instanceof ApiError && error.status === 403) return null;
+    throw error;
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Evaluations</CardTitle>
+        <CardDescription>
+          Written about this member, newest first.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {evaluations.length ? (
+          <ul className="space-y-1">
+            {evaluations.map((evaluation) => (
+              <li
+                key={evaluation.id}
+                className="flex flex-wrap items-center gap-2 text-sm"
+              >
+                <Link
+                  href={`/evals/${evaluation.id}`}
+                  className="font-medium underline underline-offset-2"
+                >
+                  {evaluation.template.name}
+                </Link>
+                <Badge variant="secondary">{evaluation.status}</Badge>
+                <span className="text-xs text-muted-foreground">
+                  by {evaluation.evaluator.firstName}{' '}
+                  {evaluation.evaluator.lastName} ·{' '}
+                  {formatDate(evaluation.createdAt)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No evaluations on file.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 async function AdjustmentsCard({
   memberId,
   credentialTypes,
@@ -722,6 +788,7 @@ export default async function AdminMemberDetailPage({
           </p>
         </CardContent>
       </Card>
+      <EvaluationsAboutCard memberId={memberId} />
       <AdjustmentsCard
         memberId={memberId}
         credentialTypes={credentialTypes}
