@@ -7,7 +7,9 @@ import { api } from './api';
  */
 export async function myPermissions(): Promise<Set<string>> {
   try {
-    const me = await api<{ permissions?: string[] }>('/v1/members/me');
+    const me = await api<{ permissions?: string[] }>('/v1/members/me', {
+      raw: true,
+    });
     return new Set(me.permissions ?? []);
   } catch {
     // No session, no member record, or the API is unhappy — render as though
@@ -19,7 +21,7 @@ export async function myPermissions(): Promise<Set<string>> {
 /** The signed-in member's own id, or null if they have no member record. */
 export async function myMemberId(): Promise<number | null> {
   try {
-    const me = await api<{ id?: number }>('/v1/members/me');
+    const me = await api<{ id?: number }>('/v1/members/me', { raw: true });
     return me.id ?? null;
   } catch {
     return null;
@@ -37,7 +39,7 @@ export async function myPreferences(): Promise<{
       eventView?: string;
       navLayout?: string;
       timeFormat?: string;
-    }>('/v1/members/me');
+    }>('/v1/members/me', { raw: true });
     return {
       eventView: me.eventView ?? 'list',
       navLayout: me.navLayout ?? 'sidebar',

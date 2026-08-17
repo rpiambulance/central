@@ -16,7 +16,7 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { WorkflowBadge } from '@/components/workflow-badge';
-import { draftEvent, messageRequester } from './actions';
+import { declineRequest, draftEvent, messageRequester } from './actions';
 
 type CoverageRequestDetail = {
   id: number;
@@ -244,6 +244,55 @@ export default async function AdminCoverageDetailPage({
           </CardContent>
         </Card>
       </div>
+
+      {!request.event && request.status === 'DENIED' ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3 text-base">
+              Declined <WorkflowBadge status="DENIED" />
+            </CardTitle>
+            <CardDescription>
+              Turned down before an event was drafted. The requester has been
+              emailed.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      ) : null}
+
+      {!request.event && request.status !== 'DENIED' ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Decline this request</CardTitle>
+            <CardDescription>
+              For a request you already know cannot be staffed, so it need not
+              be drafted first. The requester is emailed either way.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              action={declineRequest.bind(null, request.id)}
+              className="flex flex-wrap items-end gap-2"
+            >
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Reason (optional, shared with the requester)
+                <input
+                  type="text"
+                  name="reason"
+                  className="h-8 w-80 rounded-md border border-input bg-background px-2 text-sm"
+                />
+              </label>
+              <Button
+                type="submit"
+                size="sm"
+                variant="outline"
+                className="text-destructive"
+              >
+                Decline request
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {request.event ? (
         <Card>

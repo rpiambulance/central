@@ -71,3 +71,18 @@ export async function draftEvent(requestId: number, formData: FormData) {
   revalidatePath(`/admin/coverage/${requestId}`);
   redirect(`/events/${eventId}`);
 }
+
+export async function declineRequest(requestId: number, formData: FormData) {
+  const reason = String(formData.get('reason') ?? '').trim();
+  try {
+    await api(`/v1/coverage-requests/${requestId}/decline`, {
+      method: 'POST',
+      body: JSON.stringify(reason ? { reason } : {}),
+    });
+  } catch (error) {
+    redirect(
+      `/admin/coverage/${requestId}?error=${encodeURIComponent(apiErrorMessage(error))}`,
+    );
+  }
+  revalidatePath(`/admin/coverage/${requestId}`);
+}

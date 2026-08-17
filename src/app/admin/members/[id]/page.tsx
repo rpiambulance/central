@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { unstable_rethrow } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import {formatDate, formatCredKey } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
@@ -227,8 +228,10 @@ async function AdjustmentsCard({
       checklist = cl;
       adjustments = adj;
       addFormData = { certTypes, evalTemplates, classes };
-    } catch {
-      // promotions:review required — hide detail
+    } catch (error) {
+      // promotions:review required — hide the detail rather than the page.
+      // Rethrow control-flow signals so a redirect is not swallowed here.
+      unstable_rethrow(error);
     }
   }
 
