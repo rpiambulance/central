@@ -27,8 +27,10 @@ docker buildx build \
   "$REPO_ROOT"
 
 echo "==> Triggering Coolify redeploy of $COOLIFY_APP_UUID"
-curl --fail-with-body -sS -X GET \
+# Coolify's /deploy is POST-only; uuid and force stay in the query string.
+curl --fail-with-body -sS -X POST \
   -H "Authorization: Bearer $COOLIFY_API_TOKEN" \
+  -H "Accept: application/json" \
   "$COOLIFY_URL/api/v1/deploy?uuid=$COOLIFY_APP_UUID&force=false"
 
 echo
