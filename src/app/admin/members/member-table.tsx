@@ -25,6 +25,7 @@ export type MemberRow = {
   email: string;
   cellPhone: string | null;
   active: boolean;
+  nineHundredNumber: string | null;
   credentials: Array<{
     title: string | null;
     type: { key: string; name: string };
@@ -49,6 +50,7 @@ function matches(member: MemberRow, needle: string): boolean {
     `${member.firstName} ${member.lastName}`,
     member.email,
     member.cellPhone ?? '',
+    member.nineHundredNumber ?? '',
     // Searching "CC" should find crew chiefs.
     ...member.credentials.map((c) => formatCredKey(c.type.key)),
     ...member.credentials.map((c) => c.type.name),
@@ -217,6 +219,11 @@ export function MemberTable({
                     >
                       {member.lastName}, {member.firstName}
                     </Link>
+                    {member.nineHundredNumber ? (
+                      <small className="ml-[5px] font-normal text-muted-foreground">
+                        {member.nineHundredNumber}
+                      </small>
+                    ) : null}
                   </TableCell>
                   <TableCell>{member.email}</TableCell>
                   <TableCell>

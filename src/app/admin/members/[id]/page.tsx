@@ -30,6 +30,7 @@ type MemberDetail = {
   homeAddress: string | null;
   dob: string | null;
   rcsId: string | null;
+  nineHundredNumber: string | null;
   rin: string | null;
   active: boolean;
   roles: Array<{
@@ -407,7 +408,7 @@ export default async function AdminMemberDetailPage({
         </CardHeader>
         <CardContent>
           <form
-            key={JSON.stringify([member.firstName, member.lastName, member.email, member.dob, member.personalEmail, member.cellPhone, member.localAddress, member.homeAddress, member.rcsId, member.rin])}
+            key={JSON.stringify([member.firstName, member.lastName, member.email, member.dob, member.personalEmail, member.cellPhone, member.localAddress, member.homeAddress, member.rcsId, member.rin, member.nineHundredNumber])}
             action={updateMember.bind(null, memberId)}
             className="space-y-4"
           >
@@ -467,6 +468,11 @@ export default async function AdminMemberDetailPage({
                 label="RIN"
                 name="rin"
                 defaultValue={member.rin ?? ''}
+              />
+              <TextField
+                label="900 number"
+                name="nineHundredNumber"
+                defaultValue={member.nineHundredNumber ?? ''}
               />
             </div>
             <Button type="submit" size="sm">

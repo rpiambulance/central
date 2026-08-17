@@ -26,6 +26,7 @@ type Member = {
   email: string;
   cellPhone: string | null;
   active: boolean;
+  nineHundredNumber: string | null;
   credentials: Array<{
     title: string | null;
     type: { key: string; name: string };
@@ -92,6 +93,11 @@ export default async function MembersPage({
               <TableRow key={member.id}>
                 <TableCell className="font-medium whitespace-nowrap">
                   {member.lastName}, {member.firstName}
+                  {member.nineHundredNumber ? (
+                    <small className="ml-[5px] text-muted-foreground">
+                      {member.nineHundredNumber}
+                    </small>
+                  ) : null}
                   {member.active ? null : (
                     <Badge variant="outline" className="ml-2 text-muted-foreground">
                       inactive
