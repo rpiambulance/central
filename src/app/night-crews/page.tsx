@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { myMemberId } from '@/lib/me';
+import { operationalToday } from '@/lib/calendar';
 import { formatDay } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import {
@@ -102,15 +104,20 @@ function SlotCell({
   crewId,
   slot,
   historical,
+  myId,
 }: {
   crewId: number;
   slot: Slot;
   historical: boolean;
+  myId: number | null;
 }) {
   if (slot.member) {
+    const isMe = slot.member.id === myId;
     return (
       <div className="flex items-center gap-2">
-        <span>{slot.member.name}</span>
+        <span className={isMe ? 'font-semibold text-primary' : undefined}>
+          {slot.member.name}
+        </span>
         {slot.canDrop && !historical ? (
           <form action={dropFromSlot.bind(null, crewId, slot.position)}>
             <Button
@@ -158,7 +165,17 @@ function SlotCell({
   );
 }
 
-function WeekTable({ title, days }: { title: string; days: Day[] }) {
+function WeekTable({
+  title,
+  days,
+  myId,
+  onDutyDate,
+}: {
+  title: string;
+  days: Day[];
+  myId: number | null;
+  onDutyDate: string;
+}) {
   if (days.length === 0) {
     return (
       <section className="space-y-2">
@@ -184,22 +201,45 @@ function WeekTable({ title, days }: { title: string; days: Day[] }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {days.map((day) => (
-              <TableRow key={day.crewId}>
-                <TableCell className="font-medium whitespace-nowrap">
-                  {formatDay(day.date)}
-                </TableCell>
-                {POSITIONS.map((position) => (
-                  <TableCell key={position} className="align-top">
-                    <SlotCell
-                      crewId={day.crewId}
-                      slot={day.slots[position]}
-                      historical={day.historical}
-                    />
+            {days.map((day) => {
+              const onDuty = day.date === onDutyDate;
+              const mine = POSITIONS.some(
+                (position) => day.slots[position]?.member?.id === myId,
+              );
+              return (
+                <TableRow
+                  key={day.crewId}
+                  className={
+                    onDuty
+                      ? 'bg-primary/5 outline outline-primary/30 -outline-offset-1'
+                      : mine
+                        ? 'bg-muted/50'
+                        : undefined
+                  }
+                >
+                  <TableCell className="font-medium whitespace-nowrap">
+                    <span className={onDuty ? 'text-primary' : undefined}>
+                      {formatDay(day.date)}
+                    </span>
+                    {onDuty ? (
+                      <Badge variant="outline" className="ml-2 text-primary">
+                        on duty
+                      </Badge>
+                    ) : null}
                   </TableCell>
-                ))}
-              </TableRow>
-            ))}
+                  {POSITIONS.map((position) => (
+                    <TableCell key={position} className="align-top">
+                      <SlotCell
+                        crewId={day.crewId}
+                        slot={day.slots[position]}
+                        historical={day.historical}
+                        myId={myId}
+                      />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
@@ -216,10 +256,12 @@ export default async function NightCrewsPage({
   const viewDate = /^\d{4}-\d{2}-\d{2}$/.test(rawViewDate ?? '')
     ? rawViewDate
     : undefined;
-  const [data, myShifts, absences] = await Promise.all([
+  const onDutyDate = operationalToday();
+  const [data, myShifts, absences, myId] = await Promise.all([
     api<CrewsResponse>(`/v1/crews${viewDate ? `?viewDate=${viewDate}` : ''}`),
     api<MyShift[]>('/v1/crews/mine'),
     api<Absence[]>('/v1/crews/absences/mine'),
+    myMemberId(),
   ]);
 
   const onCurrentWeek = data.weekStart === data.thisWeek;
@@ -270,6 +312,8 @@ export default async function NightCrewsPage({
       <WeekTable
         title={onCurrentWeek ? 'This week' : `Week of ${formatDay(data.weekStart)}`}
         days={data.currentWeek}
+        myId={myId}
+        onDutyDate={onDutyDate}
       />
       <WeekTable
         title={
@@ -278,6 +322,8 @@ export default async function NightCrewsPage({
             : `Week of ${formatDay(addDays(data.weekStart, 7))}`
         }
         days={data.nextWeek}
+        myId={myId}
+        onDutyDate={onDutyDate}
       />
 
       <div className="grid gap-6 md:grid-cols-2">

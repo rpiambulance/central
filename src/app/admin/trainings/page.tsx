@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { prefers12Hour } from '@/lib/me';
 import { api, ApiError } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
@@ -66,6 +67,7 @@ export default async function AdminTrainingsPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
+  const hour12 = await prefers12Hour();
   const { error } = await searchParams;
 
   let annual: AnnualRequirement[];
@@ -245,7 +247,7 @@ export default async function AdminTrainingsPage({
                       </Link>
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
-                      {cls.sessionAt ? formatDateTime(cls.sessionAt) : <Dash />}
+                      {cls.sessionAt ? formatDateTime(cls.sessionAt, hour12) : <Dash />}
                     </TableCell>
                     <TableCell>{cls.location ?? <Dash />}</TableCell>
                     <TableCell>{cls._count?.attendance ?? 0}</TableCell>

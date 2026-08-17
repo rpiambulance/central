@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { prefers12Hour } from '@/lib/me';
 import { formatDate, formatDateTime, formatTime } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import {
@@ -84,6 +85,7 @@ export default async function CoverageStatusPage({
   params: Promise<{ token: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
+  const hour12 = await prefers12Hour();
   const [{ token }, { error }] = await Promise.all([params, searchParams]);
 
   const res = await fetch(
@@ -101,7 +103,7 @@ export default async function CoverageStatusPage({
           Your coverage request
         </h1>
         <p className="text-sm text-muted-foreground">
-          Submitted {formatDateTime(request.createdAt)} by{' '}
+          Submitted {formatDateTime(request.createdAt, hour12)} by{' '}
           {request.requesterName}. Bookmark this page — it&apos;s your window
           into the request.
         </p>
@@ -155,8 +157,8 @@ export default async function CoverageStatusPage({
               <div>
                 <dt className="font-medium">When</dt>
                 <dd className="text-muted-foreground">
-                  {formatDateTime(request.event.startsAt)} –{' '}
-                  {formatTime(request.event.endsAt)}
+                  {formatDateTime(request.event.startsAt, hour12)} –{' '}
+                  {formatTime(request.event.endsAt, hour12)}
                 </dd>
               </div>
               {request.event.location ? (
@@ -202,7 +204,7 @@ export default async function CoverageStatusPage({
                         }`}
                       >
                         {fromRequester ? 'You' : 'RPI Ambulance'} ·{' '}
-                        {formatDateTime(message.createdAt)}
+                        {formatDateTime(message.createdAt, hour12)}
                       </p>
                     </div>
                   </li>

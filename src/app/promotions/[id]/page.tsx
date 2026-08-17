@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { prefers12Hour } from '@/lib/me';
 import { api, ApiError } from '@/lib/api';
 import { formatDate, formatDateTime } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
@@ -108,6 +109,7 @@ export default async function PromotionReviewPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
+  const hour12 = await prefers12Hour();
   const [{ id }, { error }] = await Promise.all([params, searchParams]);
   const requestId = Number(id);
 
@@ -253,7 +255,7 @@ export default async function PromotionReviewPage({
                       )}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
-                      {formatDateTime(vote.castAt)}
+                      {formatDateTime(vote.castAt, hour12)}
                     </TableCell>
                   </TableRow>
                 ))}

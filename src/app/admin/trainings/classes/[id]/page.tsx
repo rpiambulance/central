@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { prefers12Hour } from '@/lib/me';
 import { api, ApiError } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import { Button } from '@/components/ui/button';
@@ -58,6 +59,7 @@ export default async function ClassRosterPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
+  const hour12 = await prefers12Hour();
   const [{ id }, { error }] = await Promise.all([params, searchParams]);
   const classId = Number(id);
 
@@ -75,7 +77,7 @@ export default async function ClassRosterPage({
         title={cls.name}
         description={[
           cls.description,
-          cls.sessionAt ? formatDateTime(cls.sessionAt) : null,
+          cls.sessionAt ? formatDateTime(cls.sessionAt, hour12) : null,
           cls.location,
         ]
           .filter(Boolean)

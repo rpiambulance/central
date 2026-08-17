@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import { prefers12Hour } from '@/lib/me';
 import { formatDateTime } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,6 +35,7 @@ export default async function FuelLogPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
+  const hour12 = await prefers12Hour();
   const [{ error }, entries, vehicles] = await Promise.all([
     searchParams,
     api<FuelEntry[]>('/v1/fuel'),
@@ -129,7 +131,7 @@ export default async function FuelLogPage({
               {entries.map((entry) => (
                 <TableRow key={entry.id}>
                   <TableCell className="whitespace-nowrap">
-                    {formatDateTime(entry.loggedAt)}
+                    {formatDateTime(entry.loggedAt, hour12)}
                   </TableCell>
                   <TableCell className="font-medium">{entry.vehicle}</TableCell>
                   <TableCell>{entry.amount}</TableCell>

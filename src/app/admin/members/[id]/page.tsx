@@ -56,7 +56,6 @@ type MemberDetail = {
   }>;
 };
 
-type CredentialType = { id: number; key: string; name: string };
 
 const inputCls =
   'h-8 rounded-md border border-input bg-background px-2 text-sm';

@@ -30,18 +30,25 @@ export function formatDateShort(iso: string): string {
 }
 
 /** "7:00 PM" from an ISO timestamp, in America/New_York. */
-export function formatTime(iso: string): string {
+export function formatTime(iso: string, hour12 = false): string {
   return new Intl.DateTimeFormat('en-US', {
-    timeStyle: 'short',
+    // 24-hour time is zero-padded (09:00); a 12-hour clock is not (9:00 AM).
+    hour: hour12 ? 'numeric' : '2-digit',
+    minute: '2-digit',
+    hour12,
     timeZone: TZ,
   }).format(new Date(iso));
 }
 
-/** "Sep 8, 2025, 7:00 PM" from an ISO timestamp, in America/New_York. */
-export function formatDateTime(iso: string): string {
+/**
+ * The site shows 24-hour time. Members who prefer a 12-hour clock set it in
+ * their profile, and pages pass that through as `hour12`.
+ */
+export function formatDateTime(iso: string, hour12 = false): string {
   return new Intl.DateTimeFormat('en-US', {
     dateStyle: 'medium',
     timeStyle: 'short',
+    hour12,
     timeZone: TZ,
   }).format(new Date(iso));
 }

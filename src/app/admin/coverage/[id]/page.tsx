@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { prefers12Hour } from '@/lib/me';
 import { notFound } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import { formatCredKey, formatDate, formatDateTime } from '@/lib/format';
@@ -82,6 +83,7 @@ export default async function AdminCoverageDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
+  const hour12 = await prefers12Hour();
   const [{ id }, { error }] = await Promise.all([params, searchParams]);
   const requestId = Number(id);
   if (!Number.isInteger(requestId)) notFound();
@@ -111,7 +113,7 @@ export default async function AdminCoverageDetailPage({
     <div className="space-y-6">
       <PageHeader
         title={`Coverage request #${request.id}`}
-        description={`Received ${formatDateTime(request.createdAt)}`}
+        description={`Received ${formatDateTime(request.createdAt, hour12)}`}
       />
       <div className="flex flex-wrap items-center gap-2">
         <WorkflowBadge status={request.status} />
@@ -212,7 +214,7 @@ export default async function AdminCoverageDetailPage({
                             : message.author
                               ? `${message.author.firstName} ${message.author.lastName}`
                               : 'RPI Ambulance'}{' '}
-                          · {formatDateTime(message.createdAt)}
+                          · {formatDateTime(message.createdAt, hour12)}
                         </p>
                       </div>
                     </li>
@@ -258,7 +260,7 @@ export default async function AdminCoverageDetailPage({
                 {request.event.title}
               </Link>{' '}
               <span className="text-muted-foreground">
-                {formatDateTime(request.event.startsAt)}
+                {formatDateTime(request.event.startsAt, hour12)}
                 {request.event.location ? ` · ${request.event.location}` : ''}
               </span>
             </p>

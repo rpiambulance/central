@@ -47,3 +47,21 @@ export async function updateNavLayout(formData: FormData) {
   // the shell reads the preference in the root layout
   revalidatePath('/', 'layout');
 }
+
+export async function updateTimeFormat(formData: FormData) {
+  const timeFormat = formData.get('timeFormat');
+  if (timeFormat !== '24h' && timeFormat !== '12h') return;
+  try {
+    await api('/v1/members/me', {
+      method: 'PATCH',
+      body: JSON.stringify({ timeFormat }),
+    });
+  } catch (error) {
+    if (error instanceof ApiError) {
+      redirect(`/profile?error=${encodeURIComponent(apiErrorMessage(error))}`);
+    }
+    throw error;
+  }
+  // Times are rendered on every page, so refresh the whole tree.
+  revalidatePath('/', 'layout');
+}

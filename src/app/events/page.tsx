@@ -80,7 +80,9 @@ export default async function EventsPage({
   // An explicit ?view= wins; otherwise fall back to the view this member last
   // chose, which setEventView remembered for them.
   const requested = params.view;
-  const remembered = requested ? undefined : (await myPreferences()).eventView;
+  const prefs = await myPreferences();
+  const hour12 = prefs.timeFormat === '12h';
+  const remembered = requested ? undefined : prefs.eventView;
   const candidate = requested ?? remembered ?? 'list';
   const view = (
     ['day', 'week', 'month'].includes(candidate) ? candidate : 'list'
@@ -124,7 +126,12 @@ export default async function EventsPage({
           <span className="text-sm font-medium">{viewTitle(view, date)}</span>
         </div>
         <CalendarLegend kinds={[...new Set(events.map((e) => e.kind.name))]} />
-        <EventCalendar view={view} date={date} events={calendarEvents} />
+        <EventCalendar
+          view={view}
+          date={date}
+          events={calendarEvents}
+          hour12={hour12}
+        />
       </div>
     );
   }
@@ -210,7 +217,7 @@ export default async function EventsPage({
                         ) : null}
                       </div>
                       <CardDescription>
-                        {formatTime(event.startsAt)} – {formatTime(event.endsAt)}
+                        {formatTime(event.startsAt, hour12)} – {formatTime(event.endsAt, hour12)}
                         {event.location ? ` · ${event.location}` : ''}
                         {` · ${event._count.signups} signed up`}
                       </CardDescription>

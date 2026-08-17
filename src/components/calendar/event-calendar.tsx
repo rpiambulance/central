@@ -23,23 +23,23 @@ export interface CalendarEvent {
   day: string;
 }
 
-function EventChip({ event }: { event: CalendarEvent }) {
+function EventChip({ event, hour12 }: { event: CalendarEvent; hour12: boolean }) {
   const style = kindStyle(event.kind.name);
   return (
     <Link
       href={`/events/${event.id}`}
-      title={`${event.title} · ${formatTime(event.startsAt)}`}
+      title={`${event.title} · ${formatTime(event.startsAt, hour12)}`}
       className={cn(
         'block truncate rounded border px-1 py-0.5 text-[11px] leading-tight hover:opacity-80',
         style.block,
       )}
     >
-      {formatTime(event.startsAt)} {event.title}
+      {formatTime(event.startsAt, hour12)} {event.title}
     </Link>
   );
 }
 
-function EventRow({ event }: { event: CalendarEvent }) {
+function EventRow({ event, hour12 }: { event: CalendarEvent; hour12: boolean }) {
   const style = kindStyle(event.kind.name);
   return (
     <Link
@@ -52,7 +52,7 @@ function EventRow({ event }: { event: CalendarEvent }) {
       <div className="flex flex-wrap items-baseline gap-x-2">
         <span className="font-medium">{event.title}</span>
         <span className="text-xs text-muted-foreground">
-          {formatTime(event.startsAt)} – {formatTime(event.endsAt)}
+          {formatTime(event.startsAt, hour12)} – {formatTime(event.endsAt, hour12)}
           {event.location ? ` · ${event.location}` : ''}
         </span>
       </div>
@@ -87,9 +87,11 @@ function byDay(events: CalendarEvent[]): Map<string, CalendarEvent[]> {
 function MonthView({
   date,
   events,
+  hour12,
 }: {
   date: string;
   events: CalendarEvent[];
+  hour12: boolean;
 }) {
   const grid = monthGrid(date);
   const grouped = byDay(events);
@@ -133,7 +135,7 @@ function MonthView({
                     {Number(day.slice(8, 10))}
                   </div>
                   {dayEvents.map((event) => (
-                    <EventChip key={event.id} event={event} />
+                    <EventChip key={event.id} event={event} hour12={hour12} />
                   ))}
                 </div>
               );
@@ -145,7 +147,15 @@ function MonthView({
   );
 }
 
-function WeekView({ date, events }: { date: string; events: CalendarEvent[] }) {
+function WeekView({
+  date,
+  events,
+  hour12,
+}: {
+  date: string;
+  events: CalendarEvent[];
+  hour12: boolean;
+}) {
   const start = startOfWeek(date);
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const grouped = byDay(events);
@@ -176,7 +186,7 @@ function WeekView({ date, events }: { date: string; events: CalendarEvent[] }) {
             {dayEvents.length ? (
               <div className="space-y-1.5">
                 {dayEvents.map((event) => (
-                  <EventRow key={event.id} event={event} />
+                  <EventRow key={event.id} event={event} hour12={hour12} />
                 ))}
               </div>
             ) : (
@@ -189,7 +199,7 @@ function WeekView({ date, events }: { date: string; events: CalendarEvent[] }) {
   );
 }
 
-function DayView({ events }: { events: CalendarEvent[] }) {
+function DayView({ events, hour12 }: { events: CalendarEvent[]; hour12: boolean }) {
   if (!events.length) {
     return (
       <p className="rounded-md border px-3 py-8 text-center text-sm text-muted-foreground">
@@ -200,7 +210,7 @@ function DayView({ events }: { events: CalendarEvent[] }) {
   return (
     <div className="space-y-2">
       {events.map((event) => (
-        <EventRow key={event.id} event={event} />
+        <EventRow key={event.id} event={event} hour12={hour12} />
       ))}
     </div>
   );
@@ -210,12 +220,16 @@ export function EventCalendar({
   view,
   date,
   events,
+  hour12,
 }: {
   view: CalendarView;
   date: string;
   events: CalendarEvent[];
+  hour12: boolean;
 }) {
-  if (view === 'month') return <MonthView date={date} events={events} />;
-  if (view === 'week') return <WeekView date={date} events={events} />;
-  return <DayView events={events} />;
+  if (view === 'month')
+    return <MonthView date={date} events={events} hour12={hour12} />;
+  if (view === 'week')
+    return <WeekView date={date} events={events} hour12={hour12} />;
+  return <DayView events={events} hour12={hour12} />;
 }

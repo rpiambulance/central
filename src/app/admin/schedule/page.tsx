@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
 import { formatDay } from '@/lib/format';
-import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -144,12 +143,10 @@ function WeekTable({
   title,
   days,
   members,
-  viewDate,
 }: {
   title: string;
   days: Day[];
   members: Member[];
-  viewDate?: string;
 }) {
   return (
     <section className="space-y-2">
@@ -277,13 +274,11 @@ export default async function AdminSchedulePage({
         title={`Week of ${formatDay(weekStart)}`}
         days={crews.currentWeek}
         members={members}
-        viewDate={viewDate}
       />
       <WeekTable
         title={`Week of ${formatDay(addDays(weekStart, 7))}`}
         days={crews.nextWeek}
         members={members}
-        viewDate={viewDate}
       />
 
       <section className="space-y-2">

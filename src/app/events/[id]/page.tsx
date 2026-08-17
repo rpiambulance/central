@@ -1,4 +1,5 @@
 import { summarizeCredentials } from '@/lib/credentials';
+import { prefers12Hour } from '@/lib/me';
 import { notFound } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import { formatDateTime, formatTime, formatCredKey } from '@/lib/format';
@@ -84,6 +85,7 @@ export default async function EventDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
+  const hour12 = await prefers12Hour();
   const [{ id }, { error }] = await Promise.all([params, searchParams]);
   const eventId = Number(id);
   if (!Number.isInteger(eventId)) notFound();
@@ -124,7 +126,7 @@ export default async function EventDetailPage({
     <div className="space-y-6">
       <PageHeader
         title={event.title}
-        description={`${formatDateTime(event.startsAt)} – ${formatTime(event.endsAt)}${
+        description={`${formatDateTime(event.startsAt, hour12)} – ${formatTime(event.endsAt, hour12)}${
           event.location ? ` · ${event.location}` : ''
         }`}
       />

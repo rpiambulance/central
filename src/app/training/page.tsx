@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import { prefers12Hour } from '@/lib/me';
 import { formatDate, formatDateTime, formatCredKey } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -106,6 +107,7 @@ export default async function TrainingPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
+  const hour12 = await prefers12Hour();
   const [{ error }, certs, promotions, evals, annual, classes] =
     await Promise.all([
       searchParams,
@@ -364,7 +366,7 @@ export default async function TrainingPage({
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
                         {cls.sessionAt ? (
-                          formatDateTime(cls.sessionAt)
+                          formatDateTime(cls.sessionAt, hour12)
                         ) : (
                           <span className="text-muted-foreground">TBD</span>
                         )}

@@ -17,6 +17,27 @@ export function todayNY(): string {
   }).format(new Date());
 }
 
+/**
+ * The crew day currently on duty. A night crew works past midnight, so until
+ * 6am the shift that is still running belongs to the previous calendar date —
+ * that is the row a member looking at the schedule at 2am cares about.
+ */
+export function operationalToday(now: Date = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    hour12: false,
+    timeZone: TZ,
+  }).formatToParts(now);
+  const get = (type: string) => parts.find((p) => p.type === type)!.value;
+  const dateStr = `${get('year')}-${get('month')}-${get('day')}`;
+  // Intl can report hour 24 for midnight; treat it as 0.
+  const hour = Number(get('hour')) % 24;
+  return hour < 6 ? addDays(dateStr, -1) : dateStr;
+}
+
 export function addDays(dateStr: string, n: number): string {
   const [y, m, d] = dateStr.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);

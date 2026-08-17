@@ -1,5 +1,4 @@
 import { summarizeCredentials } from '@/lib/credentials';
-import { formatCredKey } from '@/lib/format';
 import { api, ApiError } from '@/lib/api';
 import { myPermissions, VIEW_INACTIVE } from '@/lib/me';
 import { InactiveToggle } from '@/components/inactive-toggle';

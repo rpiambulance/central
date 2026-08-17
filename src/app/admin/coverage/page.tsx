@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
+import { prefers12Hour } from '@/lib/me';
 import {
   Card,
   CardDescription,
@@ -51,6 +52,7 @@ function Dash() {
 }
 
 export default async function AdminCoveragePage() {
+  const hour12 = await prefers12Hour();
   let requests: CoverageRequestRow[];
   try {
     requests = await api<CoverageRequestRow[]>('/v1/coverage-requests');
@@ -91,7 +93,7 @@ export default async function AdminCoveragePage() {
                   </TableCell>
                   <TableCell>{request.requesterOrg ?? <Dash />}</TableCell>
                   <TableCell className="whitespace-nowrap">
-                    {formatDateTime(request.createdAt)}
+                    {formatDateTime(request.createdAt, hour12)}
                   </TableCell>
                   <TableCell>
                     <WorkflowBadge status={request.status} />

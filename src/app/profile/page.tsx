@@ -9,7 +9,8 @@ import {
 } from '@/components/ui/card';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
-import { updateNavLayout, updateProfile } from './actions';
+import { updateNavLayout,
+  updateTimeFormat, updateProfile } from './actions';
 
 type Me = {
   firstName: string;
@@ -21,6 +22,7 @@ type Me = {
   localAddress: string | null;
   homeAddress: string | null;
   navLayout: 'sidebar' | 'topnav';
+  timeFormat: '24h' | '12h';
 };
 
 const FIELD =
@@ -148,6 +150,56 @@ export default async function ProfilePage({
               </label>
               <Button type="submit" size="sm">
                 Save layout
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Time format</CardTitle>
+            <CardDescription>
+              How times are shown to you across the site.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              key={me.timeFormat}
+              action={updateTimeFormat}
+              className="space-y-3"
+            >
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="timeFormat"
+                  value="24h"
+                  defaultChecked={me.timeFormat !== '12h'}
+                  className="mt-1"
+                />
+                <span>
+                  <span className="font-medium">24-hour</span>
+                  <span className="block text-muted-foreground">
+                    19:05 (default).
+                  </span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="timeFormat"
+                  value="12h"
+                  defaultChecked={me.timeFormat === '12h'}
+                  className="mt-1"
+                />
+                <span>
+                  <span className="font-medium">12-hour</span>
+                  <span className="block text-muted-foreground">
+                    7:05 PM.
+                  </span>
+                </span>
+              </label>
+              <Button type="submit" size="sm">
+                Save time format
               </Button>
             </form>
           </CardContent>

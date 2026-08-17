@@ -1,4 +1,5 @@
 import { api, ApiError } from '@/lib/api';
+import { prefers12Hour } from '@/lib/me';
 import { formatDate, formatDateTime } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -148,17 +149,19 @@ function SignatureLine({
   label,
   name,
   signedAt,
+  hour12,
 }: {
   label: string;
   name: string;
   signedAt: string | null;
+  hour12: boolean;
 }) {
   return (
     <p className="text-sm">
       <span className="font-medium">{label}</span> ({name}):{' '}
       {signedAt ? (
         <span className="text-green-600 dark:text-green-500">
-          signed {formatDateTime(signedAt)}
+          signed {formatDateTime(signedAt, hour12)}
         </span>
       ) : (
         <span className="text-muted-foreground">not signed</span>
@@ -174,6 +177,7 @@ export default async function EvalDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
+  const hour12 = await prefers12Hour();
   const [{ id }, { error }] = await Promise.all([params, searchParams]);
   const evalId = Number(id);
 
@@ -276,11 +280,13 @@ export default async function EvalDetailPage({
           </CardHeader>
           <CardContent className="space-y-3">
             <SignatureLine
+              hour12={hour12}
               label="Evaluator"
               name={`${evaluation.evaluator.firstName} ${evaluation.evaluator.lastName}`}
               signedAt={evaluation.signedByEvaluator}
             />
             <SignatureLine
+              hour12={hour12}
               label="Subject"
               name={`${evaluation.subject.firstName} ${evaluation.subject.lastName}`}
               signedAt={evaluation.signedBySubject}

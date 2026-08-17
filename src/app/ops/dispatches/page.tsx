@@ -1,5 +1,6 @@
 import { api, ApiError } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
+import { prefers12Hour } from '@/lib/me';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -52,6 +53,7 @@ function NoAccess() {
 }
 
 export default async function DispatchesPage() {
+  const hour12 = await prefers12Hour();
   let dispatches: Dispatch[];
   try {
     dispatches = await api<Dispatch[]>('/v1/dispatches');
@@ -82,7 +84,7 @@ export default async function DispatchesPage() {
               {dispatches.map((d) => (
                 <TableRow key={d.id}>
                   <TableCell className="whitespace-nowrap">
-                    {formatDateTime(d.receivedAt)}
+                    {formatDateTime(d.receivedAt, hour12)}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
