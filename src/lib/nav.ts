@@ -34,6 +34,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Training',
     items: [
       { href: '/training', label: 'My Training' },
+      { href: '/training/clearances', label: 'Clear for Calls' },
       { href: '/evals', label: 'Evaluations' },
       { href: '/promotions', label: 'Promotions' },
     ],
