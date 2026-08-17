@@ -65,6 +65,18 @@ export async function saveScores(
   revalidatePath(`/evals/${evalId}`);
 }
 
+export async function deleteEval(evalId: number) {
+  try {
+    await api(`/v1/evals/${evalId}`, { method: 'DELETE' });
+  } catch (error) {
+    redirect(
+      `/evals/${evalId}?error=${encodeURIComponent(apiErrorMessage(error))}`,
+    );
+  }
+  revalidatePath('/evals');
+  redirect('/evals?deleted=1');
+}
+
 export async function signEval(evalId: number) {
   try {
     await api(`/v1/evals/${evalId}/sign`, { method: 'POST' });

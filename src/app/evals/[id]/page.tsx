@@ -1,5 +1,5 @@
 import { api, ApiError } from '@/lib/api';
-import { prefers12Hour } from '@/lib/me';
+import { myPermissions, prefers12Hour } from '@/lib/me';
 import { formatDate, formatDateTime } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/card';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
-import { saveScores, signEval } from './actions';
+import { deleteEval, saveScores, signEval } from './actions';
 
 type ScoreType = 'SCALE_1_5' | 'PASS_FAIL' | 'TEXT' | 'OPTIONS' | 'HEADING';
 
@@ -211,6 +211,7 @@ export default async function EvalDetailPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const hour12 = await prefers12Hour();
+  const permissions = await myPermissions();
   const [{ id }, { error }] = await Promise.all([params, searchParams]);
   const evalId = Number(id);
 
@@ -231,6 +232,13 @@ export default async function EvalDetailPage({
   const items = evaluation.template.items;
   const editable =
     evaluation.status !== 'SIGNED' && me.id === evaluation.evaluator.id;
+  // Discarding an unfinished evaluation and erasing a finished one are held
+  // separately, so which permission counts depends on where this one stands.
+  const canDelete = permissions.has(
+    evaluation.status === 'DRAFT'
+      ? 'evals:delete-draft'
+      : 'evals:delete-completed',
+  );
 
   return (
     <div className="space-y-6">
@@ -395,6 +403,36 @@ export default async function EvalDetailPage({
                 </Button>
               </form>
             ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {canDelete ? (
+        <Card className="border-destructive/40">
+          <CardHeader>
+            <CardTitle className="text-base">Delete this evaluation</CardTitle>
+            <CardDescription>
+              {evaluation.status === 'DRAFT'
+                ? 'This one was never submitted, so nobody has seen it. Deleting it removes the draft and everything written so far.'
+                : `This evaluation is part of ${evaluation.subject.firstName} ${evaluation.subject.lastName}'s record and may already count toward a promotion. Deleting it also withdraws any request to sign it.`}{' '}
+              This cannot be undone.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Two steps on purpose: not reachable by one stray click. */}
+            <details>
+              <summary className="cursor-pointer text-sm text-muted-foreground">
+                I want to delete this evaluation
+              </summary>
+              <form
+                action={deleteEval.bind(null, evaluation.id)}
+                className="mt-3"
+              >
+                <Button type="submit" size="sm" variant="destructive">
+                  Delete this {evaluation.template.name}
+                </Button>
+              </form>
+            </details>
           </CardContent>
         </Card>
       ) : null}

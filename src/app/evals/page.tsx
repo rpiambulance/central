@@ -70,9 +70,9 @@ function NoAccess() {
 export default async function EvalsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; deleted?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, deleted } = await searchParams;
 
   let evals: Evaluation[];
   let templates: Template[];
@@ -105,6 +105,11 @@ export default async function EvalsPage({
         description="Evaluations you wrote or are the subject of."
       />
       <ErrorBanner message={error} />
+      {deleted ? (
+        <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+          Evaluation deleted.
+        </p>
+      ) : null}
 
       {members ? (
         <Card>
