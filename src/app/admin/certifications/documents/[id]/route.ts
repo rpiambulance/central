@@ -11,7 +11,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  if (!/^\d+$/.test(id)) {
+  // Document ids are UUIDs. Checking the shape here keeps anything else from
+  // reaching the API as a path segment.
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+  ) {
     return new Response('Not found', { status: 404 });
   }
 

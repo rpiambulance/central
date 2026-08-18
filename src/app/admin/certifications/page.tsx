@@ -26,7 +26,7 @@ type PendingCert = {
   expiresAt: string | null;
   type: { name: string };
   member: { id: number; firstName: string; lastName: string };
-  documents: Array<{ id: number; fileName: string }>;
+  documents: Array<{ id: string; fileName: string }>;
 };
 
 type ExpiringCert = {
