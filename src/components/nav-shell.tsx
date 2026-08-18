@@ -9,6 +9,7 @@ import { TopNavMenus } from '@/components/top-nav-menus';
 import { Button } from '@/components/ui/button';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { filterNavGroups } from '@/lib/nav';
+import { recordPageView } from '@/lib/page-view';
 
 function SignInButton() {
   return (
@@ -72,6 +73,9 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
     // inactive/unlinked members fall back to the default chrome
   }
   const groups = filterNavGroups(permissions);
+  // Every signed-in page renders through here, so this is the one place a
+  // page view can be recorded without touching each page.
+  await recordPageView();
   // Outstanding work, shown against the Inbox link.
   const inbox = await api<{ unread: number; tasks: number }>(
     '/v1/inbox/summary',
