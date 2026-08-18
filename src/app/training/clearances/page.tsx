@@ -32,6 +32,12 @@ type Member = {
   }>;
 };
 
+type Candidates = {
+  key: string;
+  name: string;
+  members: Member[];
+};
+
 // Reflects live credentials; never cache.
 export const dynamic = 'force-dynamic';
 
@@ -41,10 +47,7 @@ export default async function ClearancesPage({
   searchParams: Promise<{ error?: string; cleared?: string }>;
 }) {
   const { error, cleared } = await searchParams;
-  const [grants, members] = await Promise.all([
-    api<string[]>('/v1/credentials/trainer-grants'),
-    api<Member[]>('/v1/members'),
-  ]);
+  const tracks = await api<Candidates[]>('/v1/credentials/trainer-candidates');
 
   return (
     <div className="space-y-6">
@@ -60,7 +63,7 @@ export default async function ClearancesPage({
         </p>
       ) : null}
 
-      {grants.length === 0 ? (
+      {tracks.length === 0 ? (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">
@@ -73,84 +76,80 @@ export default async function ClearancesPage({
           </CardHeader>
         </Card>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">
-              You can clear members for{' '}
-              {grants.map((key) => formatCredKey(key)).join(' and ')}
-            </CardTitle>
-            <CardDescription>
-              Only members who do not already hold the credential are listed.
-              Clearing takes effect immediately and tells the member.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Member</TableHead>
-                    <TableHead>Credentials</TableHead>
-                    <TableHead>Clear for</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {members.map((member) => {
-                    const held = new Set(
-                      member.credentials.map((c) => c.type.key),
-                    );
-                    const available = grants.filter((key) => !held.has(key));
-                    if (!available.length) return null;
-                    return (
-                      <TableRow key={member.id}>
-                        <TableCell className="font-medium whitespace-nowrap">
-                          {member.lastName}, {member.firstName}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {summarizeCredentials(member.credentials).map(
-                              (badge) => (
-                                <Badge
-                                  key={badge.key}
-                                  variant="secondary"
-                                  title={badge.tooltip}
-                                >
-                                  {badge.label}
-                                </Badge>
-                              ),
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-2">
-                            {available.map((key) => (
-                              <form
-                                key={key}
-                                action={clearForCalls.bind(
-                                  null,
-                                  member.id,
-                                  key,
-                                )}
-                              >
-                                <Button
-                                  type="submit"
-                                  size="sm"
-                                  variant="outline"
-                                >
-                                  Clear as {formatCredKey(key)}
-                                </Button>
-                              </form>
-                            ))}
-                          </div>
-                        </TableCell>
+        tracks.map((track) => (
+          <Card key={track.key}>
+            <CardHeader>
+              <CardTitle className="text-base">
+                Ready to clear as {formatCredKey(track.key)}
+              </CardTitle>
+              <CardDescription>
+                {track.name}. Everyone here has finished what it asks for and
+                is not already at that level or above. Clearing takes effect
+                immediately and tells the member.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {track.members.length ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Member</TableHead>
+                        <TableHead>Credentials</TableHead>
+                        <TableHead />
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {track.members.map((member) => (
+                        <TableRow key={member.id}>
+                          <TableCell className="font-medium whitespace-nowrap">
+                            {member.lastName}, {member.firstName}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {summarizeCredentials(member.credentials).map(
+                                (badge) => (
+                                  <Badge
+                                    key={badge.key}
+                                    variant="secondary"
+                                    title={badge.tooltip}
+                                  >
+                                    {badge.label}
+                                  </Badge>
+                                ),
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <form
+                              action={clearForCalls.bind(
+                                null,
+                                member.id,
+                                track.key,
+                              )}
+                            >
+                              <Button type="submit" size="sm" variant="outline">
+                                Clear as {formatCredKey(track.key)}
+                              </Button>
+                            </form>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                // Empty means "nobody is ready", not "something is broken",
+                // so it says which of the two it is.
+                <p className="text-sm text-muted-foreground">
+                  Nobody is ready for {formatCredKey(track.key)} right now.
+                  Members appear here once they hold what it requires and have
+                  finished its checklist.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        ))
       )}
     </div>
   );
