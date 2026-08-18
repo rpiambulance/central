@@ -1,6 +1,6 @@
 import { api, ApiError } from '@/lib/api';
 import { myPermissions, prefers12Hour } from '@/lib/me';
-import { formatDate, formatDateTime } from '@/lib/format';
+import { formatDate, formatDateOnly, formatDateTime } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -472,7 +472,7 @@ export default async function EvalDetailPage({
     <div className="space-y-6">
       <PageHeader
         title={evaluation.template.name}
-        description={`${evaluation.evaluator.firstName} ${evaluation.evaluator.lastName} evaluating ${evaluation.subject.firstName} ${evaluation.subject.lastName} — ${formatDate(evaluation.shiftDate ?? evaluation.createdAt)}`}
+        description={`${evaluation.evaluator.firstName} ${evaluation.evaluator.lastName} evaluating ${evaluation.subject.firstName} ${evaluation.subject.lastName} — ${evaluation.shiftDate ? formatDateOnly(evaluation.shiftDate) : formatDate(evaluation.createdAt)}`}
       />
       <ErrorBanner message={error} />
 

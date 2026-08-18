@@ -1,5 +1,5 @@
 import { api, ApiError } from '@/lib/api';
-import { formatDate } from '@/lib/format';
+import { formatDate, formatDateOnly } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -108,10 +108,10 @@ export default async function AdminCertificationsPage({
                     <TableCell>{cert.type.name}</TableCell>
                     <TableCell>{cert.identifier ?? <Dash />}</TableCell>
                     <TableCell className="whitespace-nowrap">
-                      {cert.issuedAt ? formatDate(cert.issuedAt) : <Dash />}
+                      {cert.issuedAt ? formatDateOnly(cert.issuedAt) : <Dash />}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
-                      {cert.expiresAt ? formatDate(cert.expiresAt) : <Dash />}
+                      {cert.expiresAt ? formatDateOnly(cert.expiresAt) : <Dash />}
                     </TableCell>
                     <TableCell>
                       {cert.documents.length ? (
@@ -119,7 +119,7 @@ export default async function AdminCertificationsPage({
                           {cert.documents.map((doc) => (
                             <li key={doc.id}>
                               <a
-                                href={`/admin/certifications/documents/${doc.id}`}
+                                href={`/certifications/documents/${doc.id}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="text-sm underline underline-offset-2 hover:text-foreground"
@@ -195,7 +195,7 @@ export default async function AdminCertificationsPage({
                     </TableCell>
                     <TableCell>{cert.type.name}</TableCell>
                     <TableCell className="whitespace-nowrap">
-                      {cert.expiresAt ? formatDate(cert.expiresAt) : <Dash />}
+                      {cert.expiresAt ? formatDateOnly(cert.expiresAt) : <Dash />}
                     </TableCell>
                   </TableRow>
                 ))}

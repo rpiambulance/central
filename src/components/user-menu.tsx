@@ -64,15 +64,21 @@ export function UserMenu({ name, email }: { name: string; email?: string }) {
           My profile
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        {/* The action redirects on the server; the router follows it. */}
-        <DropdownMenuItem
-          onClick={() => {
-            void signOutAction();
-          }}
-        >
-          <LogOut aria-hidden className="size-4" />
-          Sign out
-        </DropdownMenuItem>
+        {/*
+          A form submit rather than an onClick calling the action directly.
+          Signing out redirects, and a server action's redirect only gets
+          applied when the call is made through a form or a transition —
+          called bare from an event handler it throws instead.
+        */}
+        <form action={signOutAction}>
+          <DropdownMenuItem
+            nativeButton
+            render={<button type="submit" className="w-full" />}
+          >
+            <LogOut aria-hidden className="size-4" />
+            Sign out
+          </DropdownMenuItem>
+        </form>
       </DropdownMenuContent>
     </DropdownMenu>
   );

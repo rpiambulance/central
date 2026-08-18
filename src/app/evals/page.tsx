@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
-import { formatDate } from '@/lib/format';
+import { formatDate, formatDateOnly } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -202,7 +202,7 @@ export default async function EvalsPage({
                         {ev.subject.firstName} {ev.subject.lastName}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
-                        {formatDate(ev.shiftDate ?? ev.createdAt)}
+                        {ev.shiftDate ? formatDateOnly(ev.shiftDate) : formatDate(ev.createdAt)}
                       </TableCell>
                       <TableCell>
                         <Badge variant={badge.variant}>{badge.label}</Badge>

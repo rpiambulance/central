@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
-import { formatDate } from '@/lib/format';
+import { formatDate, formatDateOnly } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -147,7 +147,7 @@ export default async function ExpiringCertificationsPage({
                       ) : null}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
-                      {row.expiresAt ? formatDate(row.expiresAt) : '—'}
+                      {row.expiresAt ? formatDateOnly(row.expiresAt) : '—'}
                       {remaining === null ? null : remaining < 0 ? (
                         <Badge variant="destructive" className="ml-2">
                           lapsed

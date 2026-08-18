@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { prefers12Hour } from '@/lib/me';
-import { formatDate, formatDateTime, formatEndTime } from '@/lib/format';
+import { formatDate, formatDateOnly, formatDateTime, formatEndTime } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -129,7 +129,7 @@ export default async function CoverageStatusPage({
               <div>
                 <dt className="font-medium">Requested date</dt>
                 <dd className="text-muted-foreground">
-                  {formatDate(request.requestedDate)}
+                  {formatDateOnly(request.requestedDate)}
                 </dd>
               </div>
             ) : null}

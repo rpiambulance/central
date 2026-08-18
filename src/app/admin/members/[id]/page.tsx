@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { unstable_rethrow } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
-import {formatDate, formatCredKey } from '@/lib/format';
+import { formatCredKey, formatDate, formatDateOnly } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -576,7 +576,7 @@ export default async function AdminMemberDetailPage({
                   </Badge>
                   {credential.effectiveAt ? (
                     <span className="text-xs text-muted-foreground">
-                      promoted {formatDate(credential.effectiveAt)}
+                      promoted {formatDateOnly(credential.effectiveAt)}
                     </span>
                   ) : (
                     <span className="text-xs text-muted-foreground">
@@ -709,10 +709,10 @@ export default async function AdminMemberDetailPage({
                 >
                   <span>{assignment.role.name}</span>
                   <span className="text-xs text-muted-foreground">
-                    {formatDate(assignment.startDate)}
+                    {formatDateOnly(assignment.startDate)}
                     {' – '}
                     {assignment.endDate
-                      ? formatDate(assignment.endDate)
+                      ? formatDateOnly(assignment.endDate)
                       : 'present'}
                   </span>
                 </li>
@@ -740,7 +740,7 @@ export default async function AdminMemberDetailPage({
                   <Badge variant="secondary">{certification.status}</Badge>
                   <span className="text-xs text-muted-foreground">
                     {certification.expiresAt ? (
-                      <>expires {formatDate(certification.expiresAt)}</>
+                      <>expires {formatDateOnly(certification.expiresAt)}</>
                     ) : (
                       <Dash />
                     )}

@@ -1,6 +1,6 @@
 import { api } from '@/lib/api';
 import { prefers12Hour } from '@/lib/me';
-import { formatDate, formatDateTime, formatCredKey } from '@/lib/format';
+import { formatCredKey, formatDate, formatDateOnly, formatDateTime } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,7 +36,7 @@ type Certification = {
   status: 'PENDING_VERIFICATION' | 'VERIFIED' | 'REJECTED';
   rejectionReason: string | null;
   type: { id: number; name: string };
-  documents: Array<{ id: number; fileName: string }>;
+  documents: Array<{ id: string; fileName: string }>;
 };
 
 type ChecklistItem = {
@@ -186,26 +186,48 @@ export default async function TrainingPage({
                         ) : null}
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={badge.variant}
-                          title={cert.rejectionReason ?? undefined}
-                        >
-                          {badge.label}
-                        </Badge>
+                        <Badge variant={badge.variant}>{badge.label}</Badge>
+                        {/*
+                          Spelled out rather than left in a tooltip: it is the
+                          one thing that tells them what to fix, and a tooltip
+                          does not exist on a phone.
+                        */}
+                        {cert.status === 'REJECTED' ? (
+                          <p className="mt-1 max-w-64 text-xs text-destructive">
+                            {cert.rejectionReason
+                              ? cert.rejectionReason
+                              : 'No reason was given — ask a training officer what to change.'}
+                          </p>
+                        ) : null}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
                         {cert.expiresAt ? (
-                          formatDate(cert.expiresAt)
+                          formatDateOnly(cert.expiresAt)
                         ) : (
                           <span className="text-muted-foreground">
                             Does not expire
                           </span>
                         )}
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {cert.documents.length
-                          ? `${cert.documents.length} file${cert.documents.length === 1 ? '' : 's'}`
-                          : '—'}
+                      <TableCell className="text-sm">
+                        {cert.documents.length ? (
+                          <ul className="space-y-0.5">
+                            {cert.documents.map((doc) => (
+                              <li key={doc.id}>
+                                <a
+                                  href={`/certifications/documents/${doc.id}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="underline underline-offset-2"
+                                >
+                                  {doc.fileName}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span className="text-muted-foreground">&mdash;</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {/* Editing a verified record sends it back for
@@ -500,7 +522,7 @@ export default async function TrainingPage({
                         {ev.subject.firstName} {ev.subject.lastName}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
-                        {formatDate(ev.shiftDate ?? ev.createdAt)}
+                        {ev.shiftDate ? formatDateOnly(ev.shiftDate) : formatDate(ev.createdAt)}
                       </TableCell>
                       <TableCell>
                         <Badge variant={badge.variant}>{badge.label}</Badge>

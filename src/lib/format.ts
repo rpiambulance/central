@@ -26,6 +26,12 @@ function parts(date: Date, timeZone: string, withWeekday: boolean, withYear: boo
     .join(' ');
 }
 
+/** "16 Aug 2026" from a YYYY-MM-DD date string. */
+export function formatPlainDate(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return parts(new Date(Date.UTC(y, m - 1, d)), 'UTC', false, true);
+}
+
 /** "Sun 16 Aug" from a YYYY-MM-DD date string (interpreted as a plain date). */
 export function formatDay(dateStr: string): string {
   const [y, m, d] = dateStr.split('-').map(Number);
@@ -35,6 +41,23 @@ export function formatDay(dateStr: string): string {
 /** "16 Aug 2026" from an ISO timestamp, in America/New_York. */
 export function formatDate(iso: string): string {
   return parts(new Date(iso), TZ, false, true);
+}
+
+/**
+ * "16 Aug 2026" from a date-only value — a certification's expiry, a shift
+ * date, the day a role starts.
+ *
+ * These are calendar days, not instants. The API sends them as midnight UTC,
+ * which is the evening *before* in New York, so reading one on the local
+ * clock shows the day before the one that was entered. They are formatted in
+ * UTC instead, which is where their midnight is.
+ *
+ * There is no way to tell the two apart from the string alone — an event at
+ * 20:00 on a summer evening is also midnight UTC — so the call site has to
+ * know which kind of value it holds.
+ */
+export function formatDateOnly(iso: string): string {
+  return parts(new Date(iso), 'UTC', false, true);
 }
 
 /** "Sun 16 Aug" from an ISO timestamp, in America/New_York. */

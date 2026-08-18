@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
-import { formatDate } from '@/lib/format';
+import { formatPlainDate } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -93,7 +93,7 @@ export default async function InactivityReviewPage({
       {candidates === null ? null : candidates.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            Every active member has taken part since {formatDate(`${since}T00:00:00Z`)}.
+            Every active member has taken part since {formatPlainDate(since!)}.
             Nothing to do.
           </CardContent>
         </Card>
@@ -104,7 +104,7 @@ export default async function InactivityReviewPage({
             <CardHeader>
               <CardTitle className="text-base">
                 {candidates.length} member{candidates.length === 1 ? '' : 's'} with
-                no participation since {formatDate(`${since}T00:00:00Z`)}
+                no participation since {formatPlainDate(since!)}
               </CardTitle>
               <CardDescription>
                 Select all, or untick anyone who should stay active. Only

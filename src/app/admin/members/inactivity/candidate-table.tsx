@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { formatDate } from '@/lib/format';
+import { formatDate, formatPlainDate } from '@/lib/format';
 
 export type Candidate = {
   id: number;
@@ -118,7 +118,7 @@ export function CandidateTable({ candidates }: { candidates: Candidate[] }) {
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
                   {candidate.lastParticipation ? (
-                    formatDate(candidate.lastParticipation)
+                    formatPlainDate(candidate.lastParticipation)
                   ) : (
                     <span className="text-muted-foreground">never</span>
                   )}

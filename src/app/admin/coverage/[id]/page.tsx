@@ -3,7 +3,7 @@ import { formatPosition } from '@/lib/positions';
 import { myPermissions, prefers12Hour } from '@/lib/me';
 import { notFound } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
-import { formatCredKey, formatDate, formatDateTime } from '@/lib/format';
+import { formatCredKey, formatDate, formatDateOnly, formatDateTime } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -165,7 +165,7 @@ export default async function AdminCoverageDetailPage({
                 <dt className="font-medium">Requested date</dt>
                 <dd className="text-muted-foreground">
                   {request.requestedDate ? (
-                    formatDate(request.requestedDate)
+                    formatDateOnly(request.requestedDate)
                   ) : (
                     <Dash />
                   )}

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { prefers12Hour } from '@/lib/me';
 import { api, ApiError } from '@/lib/api';
-import { formatDate, formatDateTime } from '@/lib/format';
+import { formatDate, formatDateOnly, formatDateTime } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -200,7 +200,7 @@ export default async function PromotionReviewPage({
                 </Link>{' '}
                 <span className="text-muted-foreground">
                   by {memberName(ev.evaluator)},{' '}
-                  {formatDate(ev.shiftDate ?? ev.createdAt)}
+                  {ev.shiftDate ? formatDateOnly(ev.shiftDate) : formatDate(ev.createdAt)}
                 </span>
               </li>
             ))}

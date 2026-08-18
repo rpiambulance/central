@@ -3,8 +3,11 @@ import { auth } from '@/auth';
 const API_URL = process.env.RAMPART_API_URL ?? 'http://localhost:3001';
 
 /**
- * Streams a certification document from the API using the caller's
- * session token, so verifiers can open documents directly in the browser.
+ * Streams a certification document from the API using the caller's session
+ * token, so it opens in the browser rather than being downloaded blind.
+ *
+ * Not under /admin: a member may open the documents on their own record, and
+ * the API is what decides that — this route only carries their session.
  */
 export async function GET(
   _request: Request,
