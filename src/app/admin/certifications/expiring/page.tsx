@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
-import { formatDate, formatDateOnly } from '@/lib/format';
+import { formatDateOnly } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,

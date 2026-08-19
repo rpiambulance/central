@@ -19,6 +19,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ErrorBanner } from '@/components/error-banner';
+import { DocumentViewer } from '@/components/document-viewer';
 import { PageHeader } from '@/components/page-header';
 import {
   amendCertification,
@@ -210,24 +211,10 @@ export default async function TrainingPage({
                         )}
                       </TableCell>
                       <TableCell className="text-sm">
-                        {cert.documents.length ? (
-                          <ul className="space-y-0.5">
-                            {cert.documents.map((doc) => (
-                              <li key={doc.id}>
-                                <a
-                                  href={`/certifications/documents/${doc.id}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="underline underline-offset-2"
-                                >
-                                  {doc.fileName}
-                                </a>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <span className="text-muted-foreground">&mdash;</span>
-                        )}
+                        <DocumentViewer
+                          documents={cert.documents}
+                          title={cert.type.name}
+                        />
                       </TableCell>
                       <TableCell>
                         {/* Editing a verified record sends it back for

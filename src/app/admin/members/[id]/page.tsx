@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { ErrorBanner } from '@/components/error-banner';
+import { DocumentViewer } from '@/components/document-viewer';
 import { PageHeader } from '@/components/page-header';
 import {appointDutySupervisor,
   grantCredential,
@@ -55,7 +56,9 @@ type MemberDetail = {
     status: string;
     identifier: string | null;
     expiresAt: string | null;
+    rejectionReason: string | null;
     type: { id: number; name: string };
+    documents: Array<{ id: string; fileName: string }>;
   }>;
 };
 
@@ -732,19 +735,32 @@ export default async function AdminMemberDetailPage({
           {member.certifications.length ? (
             <ul className="space-y-1">
               {member.certifications.map((certification) => (
-                <li
-                  key={certification.id}
-                  className="flex items-center gap-2 text-sm"
-                >
-                  <span>{certification.type.name}</span>
-                  <Badge variant="secondary">{certification.status}</Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {certification.expiresAt ? (
-                      <>expires {formatDateOnly(certification.expiresAt)}</>
-                    ) : (
-                      <Dash />
-                    )}
-                  </span>
+                <li key={certification.id} className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <span>{certification.type.name}</span>
+                    <Badge variant="secondary">{certification.status}</Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {certification.expiresAt ? (
+                        <>expires {formatDateOnly(certification.expiresAt)}</>
+                      ) : (
+                        <Dash />
+                      )}
+                    </span>
+                    {/* The proof, readable here rather than only on the
+                        verification queue — by then it has been approved and
+                        left that list. */}
+                    <DocumentViewer
+                      documents={certification.documents}
+                      label="View file"
+                      title={`${certification.type.name} — ${member.firstName} ${member.lastName}`}
+                    />
+                  </div>
+                  {certification.status === 'REJECTED' &&
+                  certification.rejectionReason ? (
+                    <p className="text-xs text-destructive">
+                      {certification.rejectionReason}
+                    </p>
+                  ) : null}
                 </li>
               ))}
             </ul>

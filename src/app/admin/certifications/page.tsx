@@ -1,5 +1,5 @@
 import { api, ApiError } from '@/lib/api';
-import { formatDate, formatDateOnly } from '@/lib/format';
+import { formatDateOnly } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -16,6 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ErrorBanner } from '@/components/error-banner';
+import { DocumentViewer } from '@/components/document-viewer';
 import { PageHeader } from '@/components/page-header';
 import { approveCertification, rejectCertification } from './actions';
 
@@ -114,24 +115,12 @@ export default async function AdminCertificationsPage({
                       {cert.expiresAt ? formatDateOnly(cert.expiresAt) : <Dash />}
                     </TableCell>
                     <TableCell>
-                      {cert.documents.length ? (
-                        <ul className="space-y-1">
-                          {cert.documents.map((doc) => (
-                            <li key={doc.id}>
-                              <a
-                                href={`/certifications/documents/${doc.id}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-sm underline underline-offset-2 hover:text-foreground"
-                              >
-                                {doc.fileName}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <Dash />
-                      )}
+                      {/* Read beside the record it belongs to, rather than in
+                          a tab that loses the approve and reject controls. */}
+                      <DocumentViewer
+                        documents={cert.documents}
+                        title={`${cert.type.name} — ${cert.member.firstName} ${cert.member.lastName}`}
+                      />
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-2">
