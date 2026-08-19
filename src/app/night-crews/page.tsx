@@ -56,6 +56,9 @@ type Day = {
   weekday: string;
   /** The night has already happened: a record, not an opportunity. */
   historical: boolean;
+  /** No crew is running that night; the duty supervisor seat stands. */
+  outOfService?: boolean;
+  outOfServiceReason?: string | null;
   slots: Record<Position, Slot>;
 };
 
@@ -104,11 +107,14 @@ function SlotCell({
   crewId,
   slot,
   historical,
+  outOfService,
   myId,
 }: {
   crewId: number;
   slot: Slot;
   historical: boolean;
+  /** No crew that night: no seat to fill and nothing to sign up for. */
+  outOfService: boolean;
   myId: number | null;
 }) {
   if (slot.member) {
@@ -136,6 +142,12 @@ function SlotCell({
 
   if (slot.placeholder) {
     return <span className="text-muted-foreground italic">{slot.placeholder}</span>;
+  }
+
+  // Nothing is unfilled on a night nobody is running: there is no seat to
+  // fill, so it reads as absent rather than missing.
+  if (outOfService) {
+    return <span className="text-muted-foreground">&mdash;</span>;
   }
 
   // A past night that nobody filled stays visibly unfilled — there is nothing
@@ -210,11 +222,13 @@ function WeekTable({
                 <TableRow
                   key={day.crewId}
                   className={
-                    onDuty
-                      ? 'bg-primary/5 outline outline-primary/30 -outline-offset-1'
-                      : mine
-                        ? 'bg-muted/50'
-                        : undefined
+                    day.outOfService
+                      ? 'bg-destructive/5'
+                      : onDuty
+                        ? 'bg-primary/5 outline outline-primary/30 -outline-offset-1'
+                        : mine
+                          ? 'bg-muted/50'
+                          : undefined
                   }
                 >
                   <TableCell className="font-medium whitespace-nowrap">
@@ -226,6 +240,21 @@ function WeekTable({
                         on duty
                       </Badge>
                     ) : null}
+                    {/* Stated on the row rather than left to be inferred from
+                        empty cells, which is what "no crew" and "nobody has
+                        signed up yet" would otherwise look like alike. */}
+                    {day.outOfService ? (
+                      <>
+                        <Badge variant="destructive" className="ml-2">
+                          Out of service
+                        </Badge>
+                        {day.outOfServiceReason ? (
+                          <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+                            {day.outOfServiceReason}
+                          </span>
+                        ) : null}
+                      </>
+                    ) : null}
                   </TableCell>
                   {POSITIONS.map((position) => (
                     <TableCell key={position} className="align-top">
@@ -233,6 +262,11 @@ function WeekTable({
                         crewId={day.crewId}
                         slot={day.slots[position]}
                         historical={day.historical}
+                        // The duty supervisor still stands on an out-of-service
+                        // night — somebody carries the phone regardless.
+                        outOfService={
+                          !!day.outOfService && position !== 'DUTY_SUP'
+                        }
                         myId={myId}
                       />
                     </TableCell>
