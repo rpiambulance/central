@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { LogOut, User } from 'lucide-react';
-import { signOutAction } from '@/app/auth-actions';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -65,12 +64,12 @@ export function UserMenu({ name, email }: { name: string; email?: string }) {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         {/*
-          A form submit rather than an onClick calling the action directly.
-          Signing out redirects, and a server action's redirect only gets
-          applied when the call is made through a form or a transition —
-          called bare from an event handler it throws instead.
+          A native form posting to a route handler. A server action's redirect
+          only takes effect when the action is reached through a form or a
+          transition; a plain POST has none of that machinery and behaves the
+          same wherever the menu happens to be rendered.
         */}
-        <form action={signOutAction}>
+        <form action="/signout" method="post">
           <DropdownMenuItem
             nativeButton
             render={<button type="submit" className="w-full" />}

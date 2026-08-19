@@ -40,6 +40,65 @@ const NONE = '__none__';
 const controlCls =
   'h-8 rounded-md border border-input bg-background px-2 text-sm';
 
+type SortKey = 'lastName' | 'firstName' | 'nineHundredNumber';
+
+/**
+ * Compares one field, putting members who have no value last whichever way
+ * the column is sorted.
+ *
+ * Reversing the sort should not drag everyone without a 900 number to the
+ * top: the blanks are not the smallest value, they are the absence of one.
+ */
+function compare(a: MemberRow, b: MemberRow, key: SortKey): number {
+  const left = (a[key] ?? '').toString();
+  const right = (b[key] ?? '').toString();
+  if (!left && !right) return 0;
+  if (!left) return 1;
+  if (!right) return -1;
+  return left.localeCompare(right, undefined, { numeric: true });
+}
+
+/** A header that sorts by its column, and says which way it is sorting. */
+function SortableHead({
+  label,
+  column,
+  sort,
+  direction,
+  onSort,
+  className,
+}: {
+  label: string;
+  column: SortKey;
+  sort: SortKey;
+  direction: 'asc' | 'desc';
+  onSort: (column: SortKey) => void;
+  className?: string;
+}) {
+  const active = sort === column;
+  return (
+    <TableHead
+      className={className}
+      aria-sort={
+        active ? (direction === 'asc' ? 'ascending' : 'descending') : 'none'
+      }
+    >
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className="inline-flex items-center gap-1 hover:text-foreground"
+      >
+        {label}
+        <span
+          aria-hidden
+          className={active ? 'text-foreground' : 'text-muted-foreground/40'}
+        >
+          {active && direction === 'desc' ? '↓' : '↑'}
+        </span>
+      </button>
+    </TableHead>
+  );
+}
+
 /** Matches a member against free text across the fields an admin would type. */
 function matches(member: MemberRow, needle: string): boolean {
   if (!needle) return true;
@@ -77,6 +136,20 @@ export function MemberTable({
   const [credential, setCredential] = useState(ANY);
   const [orAbove, setOrAbove] = useState(true);
   const [status, setStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [withNumber, setWithNumber] = useState(false);
+  const [sort, setSort] = useState<SortKey>('lastName');
+  const [direction, setDirection] = useState<'asc' | 'desc'>('asc');
+
+  // Clicking the column already sorted turns it around; a different column
+  // starts ascending, which is what "sort by this" means on first click.
+  const sortBy = (column: SortKey) => {
+    if (column === sort) {
+      setDirection(direction === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSort(column);
+      setDirection('asc');
+    }
+  };
 
   const satisfiedBy = useMemo(
     () => buildSatisfiedBy(credentialTypes),
@@ -84,10 +157,11 @@ export function MemberTable({
   );
 
   const filtered = useMemo(() => {
-    return members.filter((member) => {
+    const rows = members.filter((member) => {
       if (!matches(member, query)) return false;
       if (status === 'active' && !member.active) return false;
       if (status === 'inactive' && member.active) return false;
+      if (withNumber && !member.nineHundredNumber) return false;
 
       if (credential === ANY) return true;
       if (credential === NONE) return member.credentials.length === 0;
@@ -99,10 +173,23 @@ export function MemberTable({
       for (const key of held) if (satisfying.has(key)) return true;
       return false;
     });
-  }, [members, query, credential, orAbove, status, satisfiedBy]);
+
+    const ordered = [...rows].sort((a, b) => compare(a, b, sort));
+    return direction === 'asc' ? ordered : ordered.reverse();
+  }, [
+    members,
+    query,
+    credential,
+    orAbove,
+    status,
+    withNumber,
+    sort,
+    direction,
+    satisfiedBy,
+  ]);
 
   const filtering =
-    query !== '' || credential !== ANY || status !== 'all';
+    query !== '' || credential !== ANY || status !== 'all' || withNumber;
 
   return (
     <div className="space-y-3">
@@ -153,6 +240,21 @@ export function MemberTable({
           or above
         </label>
 
+        {/* A toggle rather than another dropdown: it is either on or off, and
+            it is the filter most often reached for. */}
+        <button
+          type="button"
+          onClick={() => setWithNumber(!withNumber)}
+          aria-pressed={withNumber}
+          className={`h-8 rounded-md border px-3 text-sm ${
+            withNumber
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'hover:bg-muted'
+          }`}
+        >
+          Has a 900 number
+        </button>
+
         {showingInactive ? (
           <label className="grid gap-1 text-xs text-muted-foreground">
             Status
@@ -177,6 +279,7 @@ export function MemberTable({
               setQuery('');
               setCredential(ANY);
               setStatus('all');
+              setWithNumber(false);
             }}
             className="h-8 rounded-md border px-3 text-sm hover:bg-muted"
           >
@@ -193,7 +296,27 @@ export function MemberTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
+              <SortableHead
+                label="Name"
+                column="lastName"
+                sort={sort}
+                direction={direction}
+                onSort={sortBy}
+              />
+              <SortableHead
+                label="First name"
+                column="firstName"
+                sort={sort}
+                direction={direction}
+                onSort={sortBy}
+              />
+              <SortableHead
+                label="900"
+                column="nineHundredNumber"
+                sort={sort}
+                direction={direction}
+                onSort={sortBy}
+              />
               <TableHead>Email</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Credentials</TableHead>
@@ -203,7 +326,7 @@ export function MemberTable({
             {filtered.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={4}
+                  colSpan={6}
                   className="py-8 text-center text-sm text-muted-foreground"
                 >
                   No members match these filters.
@@ -219,11 +342,14 @@ export function MemberTable({
                     >
                       {member.lastName}, {member.firstName}
                     </Link>
-                    {member.nineHundredNumber ? (
-                      <small className="ml-[5px] font-normal text-muted-foreground">
-                        {member.nineHundredNumber}
-                      </small>
-                    ) : null}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {member.firstName}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap tabular-nums">
+                    {member.nineHundredNumber ?? (
+                      <span className="text-muted-foreground">&mdash;</span>
+                    )}
                   </TableCell>
                   <TableCell>{member.email}</TableCell>
                   <TableCell>
