@@ -12,15 +12,18 @@ import {
 } from '@/components/ui/card';
 import { PageHeader } from '@/components/page-header';
 import { ProgressBar } from './progress-bar';
+import { startChecklist } from './actions';
+import { Button } from '@/components/ui/button';
 import { signersLabel, type ChecklistSummary, type Progress } from './types';
 
 // Sign-offs land as trainers make them; never serve this from a cache.
 export const dynamic = 'force-dynamic';
 
 export default async function ChecklistsPage() {
-  const [checklists, mine, permissions] = await Promise.all([
+  const [checklists, mine, available, permissions] = await Promise.all([
     api<ChecklistSummary[]>('/v1/checklists'),
     api<Progress[]>('/v1/checklists/mine'),
+    api<ChecklistSummary[]>('/v1/checklists/available'),
     myPermissions(),
   ]);
   const canSeeRoster = permissions.has('members:read');
@@ -68,10 +71,49 @@ export default async function ChecklistsPage() {
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            No checklists are outstanding for you.
+            You haven&apos;t started any. Pick one below, or a trainer can
+            start one for you.
           </p>
         )}
       </section>
+
+      {/* Starting one is a decision now, so there has to be somewhere to make
+          it. Only what is still ahead of them is listed. */}
+      {available.length ? (
+        <section className="space-y-2">
+          <h2 className="text-lg font-medium tracking-tight">Start one</h2>
+          <div className="grid gap-2">
+            {available.map((checklist) => (
+              <Card key={checklist.id}>
+                <CardHeader>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <CardTitle className="text-base">
+                      {checklist.name}
+                    </CardTitle>
+                    <form
+                      action={startChecklist.bind(null, checklist.id, null)}
+                      className="ml-auto"
+                    >
+                      <Button type="submit" size="sm" variant="outline">
+                        Start this
+                      </Button>
+                    </form>
+                  </div>
+                  {checklist.leadsTo.length ? (
+                    <CardDescription>
+                      Counts toward{' '}
+                      {checklist.leadsTo
+                        .map((credential) => credential.name)
+                        .join(', ')}
+                      .
+                    </CardDescription>
+                  ) : null}
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="space-y-2">
         <h2 className="text-lg font-medium tracking-tight">All checklists</h2>

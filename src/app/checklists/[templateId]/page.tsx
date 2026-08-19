@@ -19,7 +19,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { PageHeader } from '@/components/page-header';
+import { Button } from '@/components/ui/button';
 import { ProgressBar } from '../progress-bar';
+import { startChecklist } from '../actions';
 import { signersLabel, type ChecklistSummary } from '../types';
 
 type Row = {
@@ -28,7 +30,11 @@ type Row = {
   total: number;
   complete: boolean;
   lastSignedAt: string | null;
+  startedAt: string | null;
+  startedBy: string | null;
 };
+
+type Member = { id: number; firstName: string; lastName: string };
 
 export const dynamic = 'force-dynamic';
 
@@ -56,10 +62,12 @@ export default async function ChecklistSubjectsPage({
 
   let rows: Row[];
   let checklists: ChecklistSummary[];
+  let notStarted: Member[] = [];
   try {
-    [rows, checklists] = await Promise.all([
+    [rows, checklists, notStarted] = await Promise.all([
       api<Row[]>(`/v1/checklists/${id}/members`),
       api<ChecklistSummary[]>('/v1/checklists'),
+      api<Member[]>(`/v1/checklists/${id}/not-started`).catch(() => []),
     ]);
   } catch (error) {
     if (error instanceof ApiError && error.status === 403) return <NoAccess />;
@@ -145,17 +153,53 @@ export default async function ChecklistSubjectsPage({
       {rows.length ? (
         <>
           {section('In progress', started)}
-          {section('Not started', untouched)}
+          {section('Started, nothing signed yet', untouched)}
           {section('Complete', complete)}
         </>
       ) : (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            Nobody is working through this checklist — everyone active already
-            holds the credential it leads to.
+            Nobody has been started on this checklist yet.
           </CardContent>
         </Card>
       )}
+
+      {/* A checklist reaches somebody by being started, so this is where a
+          trainer puts them on it. */}
+      {notStarted.length ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Start somebody on this</CardTitle>
+            <CardDescription>
+              They are told, and it appears in their checklists.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              action={startChecklist.bind(null, id, null)}
+              className="flex flex-wrap items-end gap-2"
+            >
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Member
+                <select
+                  name="memberId"
+                  required
+                  className="h-9 w-64 rounded-md border border-input bg-background px-2 text-sm"
+                >
+                  {notStarted.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.lastName}, {member.firstName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Button type="submit" size="sm">
+                Start
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }

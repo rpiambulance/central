@@ -42,3 +42,45 @@ export async function revokeSignoff(
   }
   revalidatePath(back);
 }
+
+/**
+ * Starts a checklist. Without a member id it starts your own; naming somebody
+ * else is a trainer putting them on it.
+ */
+export async function startChecklist(
+  templateId: number,
+  memberId: number | null,
+  formData?: FormData,
+) {
+  const chosen = memberId ?? (Number(formData?.get('memberId')) || null);
+  const back = memberId || chosen ? `/checklists/${templateId}` : '/checklists';
+  try {
+    await api(`/v1/checklists/${templateId}/start`, {
+      method: 'POST',
+      body: JSON.stringify(chosen ? { memberId: chosen } : {}),
+    });
+  } catch (error) {
+    redirect(`${back}?error=${encodeURIComponent(apiErrorMessage(error))}`);
+  }
+  revalidatePath('/checklists');
+  revalidatePath(`/checklists/${templateId}`);
+}
+
+/** Takes somebody off one nothing has been signed on. */
+export async function unstartChecklist(
+  templateId: number,
+  memberId: number,
+) {
+  try {
+    await api(`/v1/checklists/${templateId}/unstart`, {
+      method: 'POST',
+      body: JSON.stringify({ memberId }),
+    });
+  } catch (error) {
+    redirect(
+      `/checklists/${templateId}?error=${encodeURIComponent(apiErrorMessage(error))}`,
+    );
+  }
+  revalidatePath('/checklists');
+  revalidatePath(`/checklists/${templateId}`);
+}
