@@ -2,15 +2,14 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { api, ApiError } from '@/lib/api';
+import { api, apiUpload, ApiError } from '@/lib/api';
 import { apiErrorMessage } from '@/lib/errors';
 
-function fail(memberId: number, error: unknown): never {
-  redirect(
-    `/admin/members/${memberId}?error=${encodeURIComponent(
-      apiErrorMessage(error),
-    )}`,
-  );
+function fail(memberId: number, error: unknown, prefix?: string): never {
+  const message = prefix
+    ? `${prefix}: ${apiErrorMessage(error)}`
+    : apiErrorMessage(error);
+  redirect(`/admin/members/${memberId}?error=${encodeURIComponent(message)}`);
 }
 
 export async function updateMember(memberId: number, formData: FormData) {
@@ -217,8 +216,13 @@ export async function recordCertification(memberId: number, formData: FormData) 
   const identifier = String(formData.get('identifier') ?? '').trim();
   const issuedAt = String(formData.get('issuedAt') ?? '').trim();
   const expiresAt = String(formData.get('expiresAt') ?? '').trim();
+  const files = formData
+    .getAll('documents')
+    .filter((file): file is File => file instanceof File && file.size > 0);
+
+  let created: { id: number };
   try {
-    await api(`/v1/certifications/member/${memberId}`, {
+    created = await api<{ id: number }>(`/v1/certifications/member/${memberId}`, {
       method: 'POST',
       body: JSON.stringify({
         typeId,
@@ -226,6 +230,38 @@ export async function recordCertification(memberId: number, formData: FormData) 
         ...(issuedAt ? { issuedAt: new Date(issuedAt).toISOString() } : {}),
         ...(expiresAt ? { expiresAt: new Date(expiresAt).toISOString() } : {}),
       }),
+    });
+  } catch (error) {
+    fail(memberId, error);
+  }
+
+  // Attached one at a time, after the record exists to hang them on. A file
+  // that fails is reported as such: the certification is already recorded,
+  // and saying nothing happened would send someone looking for it in vain.
+  for (const file of files) {
+    const upload = new FormData();
+    upload.append('file', file);
+    try {
+      await apiUpload(`/v1/certifications/${created.id}/documents`, upload);
+    } catch (error) {
+      fail(
+        memberId,
+        error,
+        `Certification recorded, but ${file.name} did not attach`,
+      );
+    }
+  }
+  revalidatePath(`/admin/members/${memberId}`);
+}
+
+/** Removes a file from a certification. */
+export async function removeCertificationDocument(
+  memberId: number,
+  documentId: string,
+) {
+  try {
+    await api(`/v1/certifications/documents/${documentId}`, {
+      method: 'DELETE',
     });
   } catch (error) {
     fail(memberId, error);

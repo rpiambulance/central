@@ -17,6 +17,7 @@ import { PageHeader } from '@/components/page-header';
 import {appointDutySupervisor,
   grantCredential,
   recordCertification,
+  removeCertificationDocument,
   setCredentialDate,
   revokeCredential,
   setMemberActive,
@@ -754,6 +755,24 @@ export default async function AdminMemberDetailPage({
                       label="View file"
                       title={`${certification.type.name} — ${member.firstName} ${member.lastName}`}
                     />
+                    {certification.documents.map((doc) => (
+                      <form
+                        key={doc.id}
+                        action={removeCertificationDocument.bind(
+                          null,
+                          memberId,
+                          doc.id,
+                        )}
+                      >
+                        <button
+                          type="submit"
+                          title={`Remove ${doc.fileName}`}
+                          className="text-xs text-muted-foreground underline underline-offset-2 hover:text-destructive"
+                        >
+                          remove {doc.fileName}
+                        </button>
+                      </form>
+                    ))}
                   </div>
                   {certification.status === 'REJECTED' &&
                   certification.rejectionReason ? (
@@ -796,6 +815,17 @@ export default async function AdminMemberDetailPage({
             <label className="grid gap-1 text-xs text-muted-foreground">
               Expires (optional)
               <input name="expiresAt" type="date" className={inputCls} />
+            </label>
+            {/* Several at once: a licence is often a card front and back. */}
+            <label className="grid gap-1 text-xs text-muted-foreground">
+              Files (optional)
+              <input
+                name="documents"
+                type="file"
+                multiple
+                accept="image/*,application/pdf"
+                className="text-sm file:mr-2 file:rounded-md file:border file:bg-background file:px-2 file:py-1 file:text-xs"
+              />
             </label>
             <Button type="submit" size="sm" variant="outline">
               Record

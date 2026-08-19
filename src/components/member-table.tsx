@@ -127,10 +127,16 @@ export function MemberTable({
   members,
   credentialTypes,
   showingInactive,
+  linkProfiles = true,
 }: {
   members: MemberRow[];
   credentialTypes: CredentialType[];
   showingInactive: boolean;
+  /**
+   * Whether a name opens the member's record. Off in the directory for
+   * members who could not do anything once they got there.
+   */
+  linkProfiles?: boolean;
 }) {
   const [query, setQuery] = useState('');
   const [credential, setCredential] = useState(ANY);
@@ -336,12 +342,18 @@ export function MemberTable({
               filtered.map((member) => (
                 <TableRow key={member.id}>
                   <TableCell className="font-medium whitespace-nowrap">
-                    <Link
-                      href={`/admin/members/${member.id}`}
-                      className="underline underline-offset-2 hover:text-foreground"
-                    >
-                      {member.lastName}, {member.firstName}
-                    </Link>
+                    {linkProfiles ? (
+                      <Link
+                        href={`/admin/members/${member.id}`}
+                        className="underline underline-offset-2 hover:text-foreground"
+                      >
+                        {member.lastName}, {member.firstName}
+                      </Link>
+                    ) : (
+                      <>
+                        {member.lastName}, {member.firstName}
+                      </>
+                    )}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     {member.firstName}

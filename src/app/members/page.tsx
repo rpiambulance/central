@@ -1,37 +1,32 @@
-import { summarizeCredentials } from '@/lib/credentials';
 import { api, ApiError } from '@/lib/api';
 import { myPermissions, VIEW_INACTIVE } from '@/lib/me';
 import { InactiveToggle } from '@/components/inactive-toggle';
-import { Badge } from '@/components/ui/badge';
+import {
+  MemberTable,
+  type CredentialType,
+  type MemberRow,
+} from '@/components/member-table';
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { PageHeader } from '@/components/page-header';
 
-type Member = {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  cellPhone: string | null;
-  active: boolean;
-  nineHundredNumber: string | null;
-  credentials: Array<{
-    title: string | null;
-    type: { key: string; name: string };
-  }>;
-};
+function NoAccess() {
+  return (
+    <Card className="mx-auto mt-12 max-w-md">
+      <CardHeader>
+        <CardTitle>You don&apos;t have access</CardTitle>
+        <CardDescription>
+          The member roster requires additional permissions. If you think you
+          should have access, contact an officer.
+        </CardDescription>
+      </CardHeader>
+    </Card>
+  );
+}
 
 export default async function MembersPage({
   searchParams,
@@ -42,26 +37,21 @@ export default async function MembersPage({
   const permissions = await myPermissions();
   const maySeeInactive = permissions.has(VIEW_INACTIVE);
   const showingInactive = maySeeInactive && showInactive === '1';
+  // The record is only worth opening for somebody who can act on it: the page
+  // is mostly forms, and offering it to a reader who cannot save is a dead end.
+  const mayOpenRecords = permissions.has('members:write');
 
-  let members: Member[];
+  let members: MemberRow[];
+  let credentialTypes: CredentialType[];
   try {
-    members = await api<Member[]>(
-      `/v1/members${showingInactive ? '?includeInactive=true' : ''}`,
-    );
+    [members, credentialTypes] = await Promise.all([
+      api<MemberRow[]>(
+        `/v1/members${showingInactive ? '?includeInactive=true' : ''}`,
+      ),
+      api<CredentialType[]>('/v1/credentials/types'),
+    ]);
   } catch (error) {
-    if (error instanceof ApiError && error.status === 403) {
-      return (
-        <Card className="mx-auto mt-12 max-w-md">
-          <CardHeader>
-            <CardTitle>You don&apos;t have access</CardTitle>
-            <CardDescription>
-              The member roster requires additional permissions. If you think
-              you should have access, contact an officer.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      );
-    }
+    if (error instanceof ApiError && error.status === 403) return <NoAccess />;
     throw error;
   }
 
@@ -78,69 +68,15 @@ export default async function MembersPage({
       {maySeeInactive ? (
         <InactiveToggle basePath="/members" showingInactive={showingInactive} />
       ) : null}
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Credentials</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Phone</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {members.map((member) => (
-              <TableRow key={member.id}>
-                <TableCell className="font-medium whitespace-nowrap">
-                  {member.lastName}, {member.firstName}
-                  {/* A badge rather than small text: the 900 number is an
-                      identifier people read off the screen and repeat over
-                      the radio, so it wants to be picked out, not tucked in. */}
-                  {member.nineHundredNumber ? (
-                    <Badge
-                      variant="secondary"
-                      className="ml-2 font-mono tabular-nums"
-                    >
-                      {member.nineHundredNumber}
-                    </Badge>
-                  ) : null}
-                  {member.active ? null : (
-                    <Badge variant="outline" className="ml-2 text-muted-foreground">
-                      inactive
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {summarizeCredentials(member.credentials).map((badge) => (
-                      <Badge
-                        key={badge.key}
-                        variant="secondary"
-                        title={badge.tooltip}
-                      >
-                        {badge.label}
-                      </Badge>
-                    ))}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <a
-                    href={`mailto:${member.email}`}
-                    className="hover:underline"
-                  >
-                    {member.email}
-                  </a>
-                </TableCell>
-                <TableCell className="whitespace-nowrap">
-                  {member.cellPhone ?? (
-                    <span className="text-muted-foreground">&mdash;</span>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      {/* The same table the console uses: searching, credential filtering and
+          sorting are wanted here for the same reasons, and two copies would
+          drift apart. */}
+      <MemberTable
+        members={members}
+        credentialTypes={credentialTypes}
+        showingInactive={showingInactive}
+        linkProfiles={mayOpenRecords}
+      />
     </div>
   );
 }

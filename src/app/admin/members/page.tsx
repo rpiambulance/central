@@ -17,7 +17,7 @@ import {
   MemberTable,
   type CredentialType,
   type MemberRow,
-} from './member-table';
+} from '@/components/member-table';
 
 const inputCls =
   'h-8 rounded-md border border-input bg-background px-2 text-sm';
