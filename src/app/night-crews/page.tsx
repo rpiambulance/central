@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/card';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
+import { cn } from '@/lib/utils';
 import {
   declareAbsence,
   dropFromSlot,
@@ -221,21 +222,27 @@ function WeekTable({
               return (
                 <TableRow
                   key={day.crewId}
-                  className={
+                  className={cn(
+                    // Tonight keeps its outline whether or not a crew is
+                    // running: somebody looking for today should still find
+                    // it at a glance. The fill says which kind of night it is.
+                    onDuty && 'outline outline-primary/30 -outline-offset-1',
                     day.outOfService
                       ? 'bg-destructive/5'
                       : onDuty
-                        ? 'bg-primary/5 outline outline-primary/30 -outline-offset-1'
+                        ? 'bg-primary/5'
                         : mine
                           ? 'bg-muted/50'
-                          : undefined
-                  }
+                          : undefined,
+                  )}
                 >
                   <TableCell className="font-medium whitespace-nowrap">
                     <span className={onDuty ? 'text-primary' : undefined}>
                       {formatDay(day.date)}
                     </span>
-                    {onDuty ? (
+                    {/* Nobody is on duty on a night nobody is running, so the
+                        badge would contradict the one beside it. */}
+                    {onDuty && !day.outOfService ? (
                       <Badge variant="outline" className="ml-2 text-primary">
                         on duty
                       </Badge>
