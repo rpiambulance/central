@@ -55,9 +55,9 @@ function NoAccess() {
 export default async function AdminAvailabilityPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; created?: string; invited?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, created, invited } = await searchParams;
 
   let polls: Poll[];
   let members: Member[];
@@ -80,6 +80,13 @@ export default async function AdminAvailabilityPage({
         description="Ask members which weeknights they can ride, then overlay the results while building the default schedule."
       />
       <ErrorBanner message={error} />
+      {created ? (
+        <p className="rounded-md border border-emerald-600/40 bg-emerald-50/60 px-3 py-2 text-sm text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
+          “{created}” is open, and {invited ?? 'the'} invited{' '}
+          {invited === '1' ? 'member has' : 'members have'} been asked to fill
+          it in.
+        </p>
+      ) : null}
 
       <section className="space-y-2">
         <h2 className="text-lg font-medium tracking-tight">Polls</h2>
@@ -138,7 +145,14 @@ export default async function AdminAvailabilityPage({
         <h2 className="text-lg font-medium tracking-tight">New poll</h2>
         <Card>
           <CardContent className="pt-6">
-            <form action={createPoll} className="space-y-4">
+            {/* Re-keyed once a poll is made so the whole form — including
+                the picker, which holds its selection in state — comes back
+                empty rather than still showing what was just submitted. */}
+            <form
+              action={createPoll}
+              key={created ?? 'new'}
+              className="space-y-4"
+            >
               <div className="grid gap-1">
                 <label htmlFor="poll-name" className="text-sm font-medium">
                   Name

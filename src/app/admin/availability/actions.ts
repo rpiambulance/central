@@ -29,6 +29,12 @@ export async function createPoll(formData: FormData) {
     );
   }
   revalidatePath('/admin/availability');
+  // Carried back so the page can confirm what was made and to how many, and
+  // so the form knows to clear itself — creating a poll and seeing the
+  // filled-in form still sitting there reads as though nothing happened.
+  redirect(
+    `/admin/availability?created=${encodeURIComponent(name)}&invited=${memberIds.length}`,
+  );
 }
 
 export async function setPollStatus(pollId: number, status: 'OPEN' | 'CLOSED') {
