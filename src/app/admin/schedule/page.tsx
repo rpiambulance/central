@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/table';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
+import { OutOfServiceToggle } from './out-of-service';
 import { SlotSelect } from './slot-select';
 import { bulkWeek } from './actions';
 import { UndoButton } from './undo-button';
@@ -85,6 +86,8 @@ type Day = {
   crewId: number;
   date: string;
   weekday: string;
+  outOfService?: boolean;
+  outOfServiceReason?: string | null;
   slots: Record<Position, Slot>;
 };
 
@@ -164,12 +167,32 @@ function WeekTable({
           </TableHeader>
           <TableBody>
             {days.map((day) => (
-              <TableRow key={day.crewId}>
+              <TableRow
+                key={day.crewId}
+                className={day.outOfService ? 'bg-muted/40' : undefined}
+              >
                 <TableCell className="align-top font-medium whitespace-nowrap">
                   {formatDay(day.date)}
+                  <OutOfServiceToggle
+                    date={day.date}
+                    outOfService={!!day.outOfService}
+                    reason={day.outOfServiceReason ?? null}
+                  />
                 </TableCell>
                 {POSITIONS.map((position) => {
                   const slot = day.slots[position];
+                  // Out of service keeps its duty supervisor and nothing else:
+                  // somebody still carries the phone.
+                  if (day.outOfService && position !== 'DUTY_SUP') {
+                    return (
+                      <TableCell
+                        key={position}
+                        className="align-top text-xs text-muted-foreground"
+                      >
+                        &mdash;
+                      </TableCell>
+                    );
+                  }
                   return (
                     <TableCell key={position} className="align-top">
                       <SlotSelect

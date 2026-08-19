@@ -112,3 +112,30 @@ export async function bulkWeek(
   }
   revalidatePath('/admin/schedule');
 }
+
+/**
+ * Takes a night out of service, or puts it back. The duty supervisor seat is
+ * untouched either way — the API keeps it deliberately.
+ */
+export async function setOutOfService(
+  date: string,
+  outOfService: boolean,
+  formData?: FormData,
+) {
+  const reason = String(formData?.get('reason') ?? '').trim();
+  try {
+    await api('/v1/crews/out-of-service', {
+      method: 'POST',
+      body: JSON.stringify({
+        date,
+        outOfService,
+        ...(reason ? { reason } : {}),
+      }),
+    });
+  } catch (error) {
+    redirect(
+      `/admin/schedule?error=${encodeURIComponent(apiErrorMessage(error))}`,
+    );
+  }
+  revalidatePath('/admin/schedule');
+}
