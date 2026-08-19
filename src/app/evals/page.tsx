@@ -81,6 +81,8 @@ export default async function EvalsPage({
 
   let evals: Evaluation[];
   let templates: Template[];
+  /** Only the forms this member is qualified to complete. */
+  let mineToWrite: Template[] = [];
   let evaluators: EvaluatorSet[];
   try {
     [evals, templates, evaluators] = await Promise.all([
@@ -88,6 +90,11 @@ export default async function EvalsPage({
       api<Template[]>('/v1/evals/templates?kind=EVALUATION'),
       api<EvaluatorSet[]>('/v1/evals/evaluators'),
     ]);
+    // The forms this member could actually finish. Requesting one is a
+    // separate question, so the request form keeps the full list.
+    mineToWrite = await api<Template[]>(
+      '/v1/evals/templates?kind=EVALUATION&mine=true',
+    ).catch(() => []);
   } catch (err) {
     if (err instanceof ApiError && err.status === 403) return <NoAccess />;
     throw err;
@@ -142,12 +149,13 @@ export default async function EvalsPage({
         </CardContent>
       </Card>
 
-      {members ? (
+      {members && mineToWrite.length ? (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">New evaluation</CardTitle>
             <CardDescription>
-              Start an evaluation of another member.
+              Start an evaluation of another member. Only forms you hold the
+              credentials for are listed.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -162,7 +170,7 @@ export default async function EvalsPage({
                   required
                   className="h-9 rounded-md border border-input bg-background px-2 text-sm"
                 >
-                  {templates.map((template) => (
+                  {mineToWrite.map((template) => (
                     <option key={template.id} value={template.id}>
                       {template.name} (v{template.version})
                     </option>

@@ -128,9 +128,11 @@ function templateBody(formData: FormData) {
   return {
     name: String(formData.get('name') ?? '').trim(),
     kind,
-    ...(kind === 'CHECKLIST'
-      ? { signoffCredentialTypeIds: signoffLevels(formData) }
-      : {}),
+    // Sent for both kinds. A checklist must name its signers and an
+    // evaluation may name who is qualified to complete it; sending this only
+    // for checklists left the evaluation picker rendering and doing nothing,
+    // which reads as gating that is not there.
+    signoffCredentialTypeIds: signoffLevels(formData),
     nodes: nodesFromForm(formData),
   };
 }
