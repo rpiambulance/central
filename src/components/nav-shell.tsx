@@ -3,6 +3,10 @@ import { auth, signIn } from '@/auth';
 import { api } from '@/lib/api';
 import { AppSidebar } from '@/components/app-sidebar';
 import { InboxButton } from '@/components/inbox-button';
+import {
+  ServiceStatusBadge,
+  type ServiceStatus,
+} from '@/components/service-status';
 import { UserMenu } from '@/components/user-menu';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { TopNavMenus } from '@/components/top-nav-menus';
@@ -81,6 +85,16 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
     '/v1/inbox/summary',
     { raw: true },
   ).catch(() => ({ unread: 0, tasks: 0 }));
+  // Unreadable status must not claim the agency is down, so it falls back to
+  // in service — the ordinary state, and the one that misleads nobody.
+  const serviceStatus = await api<ServiceStatus>('/v1/service-status', {
+    raw: true,
+  }).catch(() => ({
+    inService: true,
+    reason: null,
+    changedAt: null,
+    changedBy: null,
+  }));
   const name = session.user.name ?? '';
   const email = session.user.email ?? undefined;
 
@@ -97,7 +111,8 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
               RPI Ambulance
             </Link>
             <TopNavMenus groups={groups} />
-            <div className="ml-auto flex items-center gap-1">
+            <div className="ml-auto flex items-center gap-2">
+              <ServiceStatusBadge status={serviceStatus} />
               <ThemeToggle />
               <InboxButton unread={inbox.unread} tasks={inbox.tasks} />
               <UserMenu name={name} email={email} />
@@ -119,7 +134,8 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
         <div aria-hidden className="h-1 bg-primary" />
         <header className="flex h-13 items-center gap-2 border-b px-4">
           <SidebarTrigger />
-          <div className="ml-auto flex items-center gap-1">
+          <div className="ml-auto flex items-center gap-2">
+            <ServiceStatusBadge status={serviceStatus} />
             <ThemeToggle />
             <InboxButton unread={inbox.unread} tasks={inbox.tasks} />
             <UserMenu name={name} email={email} />

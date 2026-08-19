@@ -72,6 +72,11 @@ export const NAV_GROUPS: NavGroup[] = [
       },
       { href: '/admin/coverage', label: 'Coverage Requests', permissions: ['events:create'] },
       { href: '/admin/chores', label: 'Chores', permissions: ['chores:manage'] },
+      {
+        href: '/admin/service-status',
+        label: 'Service Status',
+        permissions: ['service:status'],
+      },
       { href: '/admin/certifications', label: 'Certifications', permissions: ['certs:verify'] },
       {
         href: '/admin/certifications/expiring',
