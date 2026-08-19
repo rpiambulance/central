@@ -35,6 +35,9 @@ export const PERMISSION_INFO: Record<string, string> = {
   'radios:manage': 'Manage radio inventory and issue/return radios',
   'vehicles:manage': 'Manage fleet vehicles used by the fuel log',
   'dispatches:ingest': 'Machine ingestion of Herald text-message dispatches',
+  'run-numbers:manage':
+    'Edit standby locations and wind their run-number counters',
+  'chores:manage': 'Create and edit chores, and reopen completed ones',
   'dispatches:read': 'View the dispatch log',
   'tokens:manage': 'Create and revoke API tokens',
   'audit:read': 'Read the audit log',
