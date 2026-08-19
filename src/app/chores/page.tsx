@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import { formatDateTime, formatPlainDate } from '@/lib/format';
 import { myPermissions, prefers12Hour } from '@/lib/me';
@@ -63,6 +64,17 @@ export default async function ChoresPage({
         title="Chores"
         description="What needs doing, and who has done it. The same list Slack posts each evening."
       />
+      {/* The definitions editor lost its own navigation entry: whoever can
+          manage chores is already here, and this is where they notice one is
+          missing or misassigned. */}
+      {canManage ? (
+        <Link
+          href="/admin/chores"
+          className="text-sm underline underline-offset-2 hover:text-foreground"
+        >
+          Manage chores and the schedule they run on
+        </Link>
+      ) : null}
       <ErrorBanner message={error} />
 
       {byDay.size === 0 ? (

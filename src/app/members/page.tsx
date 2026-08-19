@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
 import { myPermissions, VIEW_INACTIVE } from '@/lib/me';
 import { InactiveToggle } from '@/components/inactive-toggle';
@@ -65,9 +66,32 @@ export default async function MembersPage({
             : `${members.length} active members.`
         }
       />
-      {maySeeInactive ? (
-        <InactiveToggle basePath="/members" showingInactive={showingInactive} />
-      ) : null}
+      <div className="flex flex-wrap items-center gap-4">
+        {maySeeInactive ? (
+          <InactiveToggle
+            basePath="/members"
+            showingInactive={showingInactive}
+          />
+        ) : null}
+        {/* The old admin list page's jobs, reachable from the one directory
+            everyone shares rather than from a second copy of it. */}
+        {mayOpenRecords ? (
+          <>
+            <Link
+              href="/admin/members"
+              className="text-sm underline underline-offset-2 hover:text-foreground"
+            >
+              Add a member
+            </Link>
+            <Link
+              href="/admin/members/inactivity"
+              className="text-sm underline underline-offset-2 hover:text-foreground"
+            >
+              Inactivity review
+            </Link>
+          </>
+        ) : null}
+      </div>
       {/* The same table the console uses: searching, credential filtering and
           sorting are wanted here for the same reasons, and two copies would
           drift apart. */}

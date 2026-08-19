@@ -19,10 +19,14 @@ export interface NavGroup {
 
 export const NAV_GROUPS: NavGroup[] = [
   {
-    label: 'My Portal',
+    // Unlabelled: these sit at the top alongside Dashboard rather than under
+    // a heading. The inbox is the work queue — coverage requests, certs to
+    // verify and evals to fill all arrive there as tasks — which is why the
+    // admin pages further down can afford to sit lower.
+    label: '',
     items: [
       { href: '/inbox', label: 'Inbox' },
-      { href: '/chores', label: 'Chores' },
+      { href: '/members', label: 'Members', permissions: ['members:read'] },
     ],
   },
   {
@@ -31,16 +35,47 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/night-crews', label: 'Night Crews' },
       { href: '/events', label: 'Events' },
       { href: '/availability', label: 'My Availability' },
+      // Admin, by topic rather than in a separate pile. "Crew Assignments"
+      // rather than "Schedule", which collided with Night Crews.
+      {
+        href: '/admin/schedule',
+        label: 'Crew Assignments',
+        permissions: ['schedule:crews:assign'],
+      },
+      {
+        href: '/admin/availability',
+        label: 'Availability Polls',
+        permissions: ['schedule:crews:manage-defaults'],
+      },
+      {
+        href: '/admin/coverage',
+        label: 'Coverage Requests',
+        permissions: ['events:create'],
+      },
     ],
   },
   {
     label: 'Training',
     items: [
       { href: '/training', label: 'My Training' },
-      { href: '/training/clearances', label: 'Clear for Calls' },
       { href: '/evals', label: 'Evaluations' },
       { href: '/checklists', label: 'Checklists' },
+      { href: '/training/clearances', label: 'Clear for Calls' },
       { href: '/promotions', label: 'Promotions' },
+      { href: '/admin/trainings', label: 'Trainings', permissions: ['trainings:manage'] },
+      // One entry: the expiring report is a tab on the certifications page.
+      {
+        href: '/admin/certifications',
+        label: 'Certifications',
+        permissions: ['certs:verify', 'certs:read-all'],
+      },
+      // "Form Templates", because "Evaluations + Checklists" read as a member
+      // page and is not one.
+      {
+        href: '/admin/evals',
+        label: 'Form Templates',
+        permissions: ['evals:manage-forms'],
+      },
     ],
   },
   {
@@ -52,52 +87,22 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Dispatch Log',
         permissions: ['dispatches:read'],
       },
-    ],
-  },
-  {
-    label: 'Membership',
-    items: [
-      { href: '/members', label: 'Member Directory', permissions: ['members:read'] },
-      { href: '/ops/fuel', label: 'Fuel Log' },
-    ],
-  },
-  {
-    label: 'Administration',
-    items: [
-      { href: '/admin/schedule', label: 'Schedule', permissions: ['schedule:crews:assign'] },
-      {
-        href: '/admin/availability',
-        label: 'Availability Polls',
-        permissions: ['schedule:crews:manage-defaults'],
-      },
-      { href: '/admin/coverage', label: 'Coverage Requests', permissions: ['events:create'] },
-      { href: '/admin/chores', label: 'Chores', permissions: ['chores:manage'] },
+      // An operational state, not configuration — it lives with the rest of
+      // what running calls touches.
       {
         href: '/admin/service-status',
         label: 'Service Status',
         permissions: ['service:status'],
       },
-      { href: '/admin/certifications', label: 'Certifications', permissions: ['certs:verify'] },
-      {
-        href: '/admin/certifications/expiring',
-        label: 'Expiring Certs',
-        permissions: ['certs:read-all'],
-      },
-      { href: '/admin/members', label: 'Members', permissions: ['members:write'] },
-      { href: '/admin/trainings', label: 'Trainings', permissions: ['trainings:manage'] },
-      {
-        href: '/admin/evals',
-        label: 'Evaluations + Checklists',
-        permissions: ['evals:manage-forms'],
-      },
-      { href: '/admin/radios', label: 'Radios', permissions: ['radios:manage'] },
     ],
   },
   {
-    label: 'Account',
+    // Chores, vehicles, radios: the building and its gear.
+    label: 'Station',
     items: [
-      { href: '/profile', label: 'My Profile' },
-      { href: '/settings/calendar', label: 'Calendar Feeds' },
+      { href: '/chores', label: 'Chores' },
+      { href: '/ops/fuel', label: 'Fuel Log' },
+      { href: '/admin/radios', label: 'Radios', permissions: ['radios:manage'] },
     ],
   },
 ];

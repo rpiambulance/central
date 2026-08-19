@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,6 +15,7 @@ import { updateNavLayout,
 
 type Me = {
   firstName: string;
+  slackId: string | null;
   lastName: string;
   email: string;
   personalEmail: string | null;
@@ -239,6 +241,44 @@ export default async function ProfilePage({
                 Save time format
               </Button>
             </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Integrations</CardTitle>
+            <CardDescription>
+              The portal reaching you elsewhere: Slack, and your calendar.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <p>
+              <span className="font-medium">Slack:</span>{' '}
+              {/* Same shape rule the API enforces: a real ID, not a handle.
+                  Whether this is set decides if Slack messages reach them at
+                  all, so their own profile is where it must be visible. */}
+              {/^[UW][A-Z0-9]{6,}$/.test(me.slackId ?? '') ? (
+                <span className="text-emerald-700 dark:text-emerald-500">
+                  linked ({me.slackId})
+                </span>
+              ) : (
+                <span>
+                  not linked — run <code>/linkme</code> in Slack, or ask an
+                  officer. Until then no Slack messages reach you, whatever
+                  your notification settings say.
+                </span>
+              )}
+            </p>
+            <p>
+              <span className="font-medium">Calendar:</span>{' '}
+              <Link
+                href="/settings/calendar"
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                subscribe to your shifts and events
+              </Link>{' '}
+              from Google Calendar, Apple Calendar, or anything that reads ICS.
+            </p>
           </CardContent>
         </Card>
       </div>

@@ -81,9 +81,13 @@ export function AppSidebar({
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        {groups.map((group) => (
-          <SidebarGroup key={group.label}>
-            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+        {groups.map((group, index) => (
+          <SidebarGroup key={group.label || index}>
+            {/* An unlabelled group sits flush under Dashboard: its items are
+                top-level destinations, not a category. */}
+            {group.label ? (
+              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            ) : null}
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => (

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { LogOut, User } from 'lucide-react';
+import { Calendar, LogOut, User } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -69,6 +69,10 @@ export function UserMenu({ name, email }: { name: string; email?: string }) {
         <DropdownMenuItem render={<Link href="/profile" />}>
           <User aria-hidden className="size-4" />
           My profile
+        </DropdownMenuItem>
+        <DropdownMenuItem render={<Link href="/settings/calendar" />}>
+          <Calendar aria-hidden className="size-4" />
+          Calendar feeds
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         {/*

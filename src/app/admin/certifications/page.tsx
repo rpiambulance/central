@@ -18,6 +18,7 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { DocumentViewer } from '@/components/document-viewer';
 import { PageHeader } from '@/components/page-header';
+import { CertificationTabs } from './tabs';
 import { approveCertification, rejectCertification } from './actions';
 
 type PendingCert = {
@@ -80,6 +81,7 @@ export default async function AdminCertificationsPage({
         title="Certifications"
         description="Verify pending certification submissions and monitor upcoming expirations."
       />
+      <CertificationTabs active="queue" />
       <ErrorBanner message={error} />
 
       <section className="space-y-2">

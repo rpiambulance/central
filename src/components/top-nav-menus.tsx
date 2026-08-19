@@ -49,14 +49,18 @@ function MobileNavMenu({
         className="max-h-[70vh] min-w-56 overflow-y-auto"
       >
         <DropdownMenuItem render={<Link href="/" />}>Dashboard</DropdownMenuItem>
-        {groups.map((group) => (
+        {groups.map((group, index) => (
           // A group, not a div: a label is a group label, and Base UI throws
           // if one is used outside a group — taking the page with it.
-          <DropdownMenuGroup key={group.label}>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-xs">
-              {group.label}
-            </DropdownMenuLabel>
+          <DropdownMenuGroup key={group.label || index}>
+            {group.label ? (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs">
+                  {group.label}
+                </DropdownMenuLabel>
+              </>
+            ) : null}
             {group.items.map((item) => (
               <DropdownMenuItem key={item.href} render={<Link href={item.href} />}>
                 <span
@@ -98,6 +102,24 @@ export function TopNavMenus({ groups }: { groups: NavGroup[] }) {
           (item) =>
             pathname === item.href || pathname.startsWith(`${item.href}/`),
         );
+        if (!group.label) {
+          // Top-level destinations, not a category: buttons, not a dropdown.
+          return group.items.map((item) => (
+            <Button
+              key={item.href}
+              render={<Link href={item.href} />}
+              variant="ghost"
+              size="sm"
+              className={cn(
+                (pathname === item.href ||
+                  pathname.startsWith(`${item.href}/`)) &&
+                  'bg-accent text-accent-foreground',
+              )}
+            >
+              {item.label}
+            </Button>
+          ));
+        }
         return (
           <DropdownMenu key={group.label}>
             <DropdownMenuTrigger

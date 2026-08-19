@@ -18,6 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { PageHeader } from '@/components/page-header';
+import { CertificationTabs } from '../tabs';
 
 type Expiring = {
   id: number;
@@ -86,6 +87,7 @@ export default async function ExpiringCertificationsPage({
         title="Expiring certifications"
         description="Verified certifications that have lapsed or are about to, for active members."
       />
+      <CertificationTabs active="expiring" />
 
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <span className="text-muted-foreground">Within</span>

@@ -112,7 +112,10 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
             </Link>
             <TopNavMenus groups={groups} />
             <div className="ml-auto flex items-center gap-2">
-              <ServiceStatusBadge status={serviceStatus} />
+              <ServiceStatusBadge
+              status={serviceStatus}
+              canChange={permissions.has('service:status')}
+            />
               <ThemeToggle />
               <InboxButton unread={inbox.unread} tasks={inbox.tasks} />
               <UserMenu name={name} email={email} />
@@ -135,7 +138,10 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
         <header className="flex h-13 items-center gap-2 border-b px-4">
           <SidebarTrigger />
           <div className="ml-auto flex items-center gap-2">
-            <ServiceStatusBadge status={serviceStatus} />
+            <ServiceStatusBadge
+              status={serviceStatus}
+              canChange={permissions.has('service:status')}
+            />
             <ThemeToggle />
             <InboxButton unread={inbox.unread} tasks={inbox.tasks} />
             <UserMenu name={name} email={email} />
