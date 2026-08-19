@@ -50,6 +50,10 @@ type Evaluation = {
   scores: Score[];
   evaluator: { id: number; firstName: string; lastName: string };
   subject: { id: number; firstName: string; lastName: string };
+  /** Credentials the form calls for; empty means anyone who may write one. */
+  requires: Array<{ key: string; name: string }>;
+  /** Whether this viewer holds what the form asks for. */
+  mayComplete: boolean;
 };
 
 const STATUS_BADGE: Record<
@@ -134,8 +138,16 @@ export default async function EvalDetailPage({
     ...evaluation.template.items,
     ...groups.flatMap((group) => group.items),
   ];
+  // Being the named evaluator is not enough: the form may call for a
+  // credential, and one can lapse between being asked and answering.
   const editable =
-    evaluation.status !== 'SIGNED' && me.id === evaluation.evaluator.id;
+    evaluation.status !== 'SIGNED' &&
+    me.id === evaluation.evaluator.id &&
+    evaluation.mayComplete;
+  const blockedByCredential =
+    evaluation.status !== 'SIGNED' &&
+    me.id === evaluation.evaluator.id &&
+    !evaluation.mayComplete;
   // Discarding an unfinished evaluation and erasing a finished one are held
   // separately, so which permission counts depends on where this one stands.
   const canDelete = permissions.has(
@@ -155,6 +167,15 @@ export default async function EvalDetailPage({
       <div className="flex items-center gap-2">
         <Badge variant={badge.variant}>{badge.label}</Badge>
       </div>
+
+      {blockedByCredential ? (
+        <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          This evaluation is completed by{' '}
+          {evaluation.requires.map((credential) => credential.name).join(' or ')}
+          , or above. You can read it, but somebody holding that has to fill it
+          in.
+        </p>
+      ) : null}
 
       {editable ? (
         <form

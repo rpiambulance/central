@@ -188,14 +188,19 @@ export function CredentialPicker({
 export function ChecklistLevelField({
   credentials,
   initial = [],
+  checklist = true,
 }: {
   credentials: CredentialOption[];
   initial?: number[];
+  /** A checklist must name someone; an evaluation may be left open. */
+  checklist?: boolean;
 }) {
   const [selected, setSelected] = useState<number[]>(initial);
   return (
     <div className="grid gap-1 text-xs text-muted-foreground">
-      Signed off by — anyone holding any of these, or anything above it
+      {checklist
+        ? 'Signed off by — anyone holding any of these, or anything above it'
+        : 'Completed by — anyone holding any of these, or anything above it'}
       <input
         type="hidden"
         name="signoffCredentialTypeIds"
@@ -205,7 +210,11 @@ export function ChecklistLevelField({
         credentials={credentials}
         selected={selected}
         onChange={setSelected}
-        emptyLabel="Pick at least one, or nobody can sign this checklist."
+        emptyLabel={
+          checklist
+            ? 'Pick at least one, or nobody can sign this checklist.'
+            : 'Anyone who may write evaluations.'
+        }
       />
     </div>
   );

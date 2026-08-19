@@ -21,7 +21,11 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { createEval, requestEval } from './actions';
-import { RequestForm, type RequestTemplate, type Trainer } from './request-form';
+import {
+  RequestForm,
+  type EvaluatorSet,
+  type RequestTemplate,
+} from './request-form';
 
 type Evaluation = {
   id: number;
@@ -77,12 +81,12 @@ export default async function EvalsPage({
 
   let evals: Evaluation[];
   let templates: Template[];
-  let trainers: Trainer[];
+  let evaluators: EvaluatorSet[];
   try {
-    [evals, templates, trainers] = await Promise.all([
+    [evals, templates, evaluators] = await Promise.all([
       api<Evaluation[]>('/v1/evals/mine'),
       api<Template[]>('/v1/evals/templates?kind=EVALUATION'),
-      api<Trainer[]>('/v1/evals/evaluators'),
+      api<EvaluatorSet[]>('/v1/evals/evaluators'),
     ]);
   } catch (err) {
     if (err instanceof ApiError && err.status === 403) return <NoAccess />;
@@ -132,7 +136,7 @@ export default async function EvalsPage({
         <CardContent>
           <RequestForm
             templates={templates}
-            trainers={trainers}
+            evaluators={evaluators}
             action={requestEval}
           />
         </CardContent>

@@ -14,6 +14,13 @@ export type RequestTemplate = {
 
 export type Trainer = { id: number; firstName: string; lastName: string };
 
+/** Who may complete each form, worked out by the API. */
+export type EvaluatorSet = {
+  templateId: number;
+  required: Array<{ key: string; name: string }>;
+  members: Trainer[];
+};
+
 const FIELD = 'h-9 rounded-md border border-input bg-background px-2 text-sm';
 
 /** Every item on a template, in one list, wherever it sits. */
@@ -34,11 +41,11 @@ function allItems(template: RequestTemplate): Item[] {
  */
 export function RequestForm({
   templates,
-  trainers,
+  evaluators,
   action,
 }: {
   templates: RequestTemplate[];
-  trainers: Trainer[];
+  evaluators: EvaluatorSet[];
   action: (
     items: Array<{ id: number; scoreType: string }>,
     formData: FormData,
@@ -50,12 +57,16 @@ export function RequestForm({
     ? allItems(template).filter((item) => item.traineeInput !== 'NONE')
     : [];
 
-  if (!templates.length || !trainers.length) {
+  // Only the people this form qualifies. A form naming no credential is open
+  // to anyone who may write evaluations, which the API has already resolved.
+  const eligible = evaluators.find((set) => set.templateId === templateId);
+  const trainers = eligible?.members ?? [];
+  const required = eligible?.required ?? [];
+
+  if (!templates.length) {
     return (
       <p className="text-sm text-muted-foreground">
-        {templates.length
-          ? 'Nobody is set up to write evaluations yet.'
-          : 'No evaluation forms have been published yet.'}
+        No evaluation forms have been published yet.
       </p>
     );
   }
@@ -86,13 +97,24 @@ export function RequestForm({
         </label>
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-muted-foreground">Trainer</span>
-          <select name="evaluatorId" required className={FIELD}>
+          <select
+            name="evaluatorId"
+            required
+            disabled={!trainers.length}
+            className={FIELD}
+          >
             {trainers.map((trainer) => (
               <option key={trainer.id} value={trainer.id}>
                 {trainer.lastName}, {trainer.firstName}
               </option>
             ))}
           </select>
+          {required.length ? (
+            <span className="text-xs text-muted-foreground">
+              {required.map((credential) => credential.name).join(' or ')}, or
+              above
+            </span>
+          ) : null}
         </label>
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-muted-foreground">Eval date</span>
@@ -127,9 +149,21 @@ export function RequestForm({
         </fieldset>
       ) : null}
 
-      <Button type="submit" size="sm">
-        Ask for this evaluation
-      </Button>
+      {trainers.length ? (
+        <Button type="submit" size="sm">
+          Ask for this evaluation
+        </Button>
+      ) : (
+        // Nobody qualified is a real answer, and a disabled button with no
+        // explanation is not.
+        <p className="text-sm text-muted-foreground">
+          Nobody currently holds what this evaluation asks for
+          {required.length
+            ? ` (${required.map((credential) => credential.name).join(' or ')}, or above)`
+            : ''}
+          , so it cannot be requested yet.
+        </p>
+      )}
     </form>
   );
 }

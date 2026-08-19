@@ -72,9 +72,10 @@ export function NewTemplateForm({
             </label>
           </div>
 
-          {checklist ? (
-            <ChecklistLevelField credentials={credentials} />
-          ) : null}
+          {/* Both kinds ask who may complete the form; only a checklist
+              insists on an answer. An evaluation with none is open to anyone
+              who may write evaluations, which is the ordinary case. */}
+          <ChecklistLevelField credentials={credentials} checklist={checklist} />
 
           <TemplateEditor checklist={checklist} credentials={credentials} />
 

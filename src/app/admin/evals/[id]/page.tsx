@@ -96,14 +96,13 @@ export default async function ReviseTemplatePage({
           >
             <input type="hidden" name="name" value={template.name} />
             <input type="hidden" name="kind" value={template.kind ?? 'EVALUATION'} />
-            {checklist ? (
-              <ChecklistLevelField
-                credentials={credentials}
-                initial={(template.signoffCredentialTypes ?? []).map(
-                  (credential) => credential.id,
-                )}
-              />
-            ) : null}
+            <ChecklistLevelField
+              credentials={credentials}
+              checklist={checklist}
+              initial={(template.signoffCredentialTypes ?? []).map(
+                (credential) => credential.id,
+              )}
+            />
             <TemplateEditor
               initial={toEditorNodes(template)}
               checklist={checklist}
