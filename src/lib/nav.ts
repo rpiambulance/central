@@ -20,7 +20,10 @@ export interface NavGroup {
 export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'My Portal',
-    items: [{ href: '/inbox', label: 'Inbox' }],
+    items: [
+      { href: '/inbox', label: 'Inbox' },
+      { href: '/chores', label: 'Chores' },
+    ],
   },
   {
     label: 'Scheduling',
@@ -41,11 +44,21 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: 'Call Ops',
+    items: [
+      { href: '/call-ops/run-numbers', label: 'Run Numbers' },
+      {
+        href: '/call-ops/dispatches',
+        label: 'Dispatch Log',
+        permissions: ['dispatches:read'],
+      },
+    ],
+  },
+  {
     label: 'Membership',
     items: [
       { href: '/members', label: 'Member Directory', permissions: ['members:read'] },
       { href: '/ops/fuel', label: 'Fuel Log' },
-      { href: '/ops/dispatches', label: 'Dispatch Log', permissions: ['dispatches:read'] },
     ],
   },
   {

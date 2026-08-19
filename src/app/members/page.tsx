@@ -93,10 +93,16 @@ export default async function MembersPage({
               <TableRow key={member.id}>
                 <TableCell className="font-medium whitespace-nowrap">
                   {member.lastName}, {member.firstName}
+                  {/* A badge rather than small text: the 900 number is an
+                      identifier people read off the screen and repeat over
+                      the radio, so it wants to be picked out, not tucked in. */}
                   {member.nineHundredNumber ? (
-                    <small className="ml-[5px] text-muted-foreground">
+                    <Badge
+                      variant="secondary"
+                      className="ml-2 font-mono tabular-nums"
+                    >
                       {member.nineHundredNumber}
-                    </small>
+                    </Badge>
                   ) : null}
                   {member.active ? null : (
                     <Badge variant="outline" className="ml-2 text-muted-foreground">

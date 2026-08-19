@@ -346,8 +346,12 @@ export function MemberTable({
                   <TableCell className="whitespace-nowrap">
                     {member.firstName}
                   </TableCell>
-                  <TableCell className="whitespace-nowrap tabular-nums">
-                    {member.nineHundredNumber ?? (
+                  <TableCell className="whitespace-nowrap">
+                    {member.nineHundredNumber ? (
+                      <Badge variant="secondary" className="font-mono tabular-nums">
+                        {member.nineHundredNumber}
+                      </Badge>
+                    ) : (
                       <span className="text-muted-foreground">&mdash;</span>
                     )}
                   </TableCell>

@@ -122,7 +122,7 @@ export default async function DispatchesPage({
         </button>
         {filtering ? (
           <Link
-            href="/ops/dispatches"
+            href="/call-ops/dispatches"
             className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
           >
             Clear
