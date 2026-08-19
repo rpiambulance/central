@@ -35,6 +35,7 @@ type MemberDetail = {
   dob: string | null;
   rcsId: string | null;
   nineHundredNumber: string | null;
+  slackId: string | null;
   rin: string | null;
   active: boolean;
   roles: Array<{
@@ -484,7 +485,7 @@ export default async function AdminMemberDetailPage({
         </CardHeader>
         <CardContent>
           <form
-            key={JSON.stringify([member.firstName, member.lastName, member.email, member.dob, member.personalEmail, member.cellPhone, member.localAddress, member.homeAddress, member.rcsId, member.rin, member.nineHundredNumber])}
+            key={JSON.stringify([member.firstName, member.lastName, member.email, member.dob, member.personalEmail, member.cellPhone, member.localAddress, member.homeAddress, member.rcsId, member.rin, member.nineHundredNumber, member.slackId])}
             action={updateMember.bind(null, memberId)}
             className="space-y-4"
           >
@@ -549,6 +550,14 @@ export default async function AdminMemberDetailPage({
                 label="900 number"
                 name="nineHundredNumber"
                 defaultValue={member.nineHundredNumber ?? ''}
+              />
+              {/* Without this they get no Slack messages, are named rather
+                  than mentioned on the crew post, and their chore presses go
+                  unattributed — all of it silently. */}
+              <TextField
+                label="Slack member ID"
+                name="slackId"
+                defaultValue={member.slackId ?? ''}
               />
             </div>
             <Button type="submit" size="sm">

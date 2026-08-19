@@ -32,6 +32,7 @@ export async function updateMember(memberId: number, formData: FormData) {
         ...optional('rcsId'),
         ...optional('rin'),
         ...optional('nineHundredNumber'),
+        ...optional('slackId'),
       }),
     });
   } catch (error) {
