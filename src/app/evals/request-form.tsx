@@ -79,7 +79,10 @@ export function RequestForm({
       )}
       className="space-y-4"
     >
-      <div className="flex flex-wrap items-end gap-3">
+      {/* Aligned on the top, not the bottom: the trainer field carries a line
+          of help beneath it, and bottom-alignment lifted its control above the
+          other two by exactly the height of that line. */}
+      <div className="flex flex-wrap items-start gap-3">
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-muted-foreground">Evaluation</span>
           <select
