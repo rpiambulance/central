@@ -20,23 +20,20 @@ import {
 } from '@/components/ui/table';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
-import { createEval } from './actions';
+import { createEval, requestEval } from './actions';
+import { RequestForm, type RequestTemplate, type Trainer } from './request-form';
 
 type Evaluation = {
   id: number;
   status: 'DRAFT' | 'SUBMITTED' | 'SIGNED';
-  shiftDate: string | null;
+  evalDate: string | null;
   createdAt: string;
   template: { id: number; name: string };
   evaluator: { id: number; firstName: string; lastName: string };
   subject: { id: number; firstName: string; lastName: string };
 };
 
-type Template = {
-  id: number;
-  name: string;
-  version: number;
-};
+type Template = RequestTemplate;
 
 type Member = {
   id: number;
@@ -70,16 +67,22 @@ function NoAccess() {
 export default async function EvalsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; deleted?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    deleted?: string;
+    requested?: string;
+  }>;
 }) {
-  const { error, deleted } = await searchParams;
+  const { error, deleted, requested } = await searchParams;
 
   let evals: Evaluation[];
   let templates: Template[];
+  let trainers: Trainer[];
   try {
-    [evals, templates] = await Promise.all([
+    [evals, templates, trainers] = await Promise.all([
       api<Evaluation[]>('/v1/evals/mine'),
-      api<Template[]>('/v1/evals/templates'),
+      api<Template[]>('/v1/evals/templates?kind=EVALUATION'),
+      api<Trainer[]>('/v1/evals/evaluators'),
     ]);
   } catch (err) {
     if (err instanceof ApiError && err.status === 403) return <NoAccess />;
@@ -110,6 +113,30 @@ export default async function EvalsPage({
           Evaluation deleted.
         </p>
       ) : null}
+      {requested ? (
+        <p className="rounded-md border border-emerald-600/40 bg-emerald-50/60 px-3 py-2 text-sm text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
+          Asked. It is on the trainer&apos;s to-do list, with whatever you
+          filled in.
+        </p>
+      ) : null}
+
+      {/* Anyone may ask to be evaluated; writing one is the privilege. */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Ask for an evaluation</CardTitle>
+          <CardDescription>
+            Pick the form and the trainer, and fill in your part. It lands on
+            their to-do list.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <RequestForm
+            templates={templates}
+            trainers={trainers}
+            action={requestEval}
+          />
+        </CardContent>
+      </Card>
 
       {members ? (
         <Card>
@@ -153,10 +180,10 @@ export default async function EvalsPage({
                 </select>
               </label>
               <label className="flex flex-col gap-1 text-sm">
-                <span className="text-muted-foreground">Shift date</span>
+                <span className="text-muted-foreground">Eval date</span>
                 <input
                   type="date"
-                  name="shiftDate"
+                  name="evalDate"
                   className="h-9 rounded-md border border-input bg-background px-2 text-sm"
                 />
               </label>
@@ -202,7 +229,7 @@ export default async function EvalsPage({
                         {ev.subject.firstName} {ev.subject.lastName}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
-                        {ev.shiftDate ? formatDateOnly(ev.shiftDate) : formatDate(ev.createdAt)}
+                        {ev.evalDate ? formatDateOnly(ev.evalDate) : formatDate(ev.createdAt)}
                       </TableCell>
                       <TableCell>
                         <Badge variant={badge.variant}>{badge.label}</Badge>

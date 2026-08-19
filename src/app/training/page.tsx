@@ -58,7 +58,7 @@ type PromotionPath = {
 type Evaluation = {
   id: number;
   status: 'DRAFT' | 'SUBMITTED' | 'SIGNED';
-  shiftDate: string | null;
+  evalDate: string | null;
   createdAt: string;
   template: { id: number; name: string };
   evaluator: { id: number; firstName: string; lastName: string };
@@ -509,7 +509,7 @@ export default async function TrainingPage({
                         {ev.subject.firstName} {ev.subject.lastName}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
-                        {ev.shiftDate ? formatDateOnly(ev.shiftDate) : formatDate(ev.createdAt)}
+                        {ev.evalDate ? formatDateOnly(ev.evalDate) : formatDate(ev.createdAt)}
                       </TableCell>
                       <TableCell>
                         <Badge variant={badge.variant}>{badge.label}</Badge>

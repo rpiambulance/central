@@ -10,6 +10,7 @@ export type ApiItem = {
   maxValue?: number | null;
   unit?: string | null;
   signoffCredentialTypes?: Array<{ id: number; key: string; name: string }>;
+  traineeInput?: 'NONE' | 'OPTIONAL' | 'REQUIRED';
 };
 
 export type ApiGroup = {
@@ -44,6 +45,7 @@ function toEditorItem(item: ApiItem): EditorItem {
     signoffCredentialTypeIds: (item.signoffCredentialTypes ?? []).map(
       (credential) => credential.id,
     ),
+    traineeInput: item.traineeInput ?? 'NONE',
   };
 }
 

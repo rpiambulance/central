@@ -14,6 +14,8 @@ export type EditorItem = {
   unit: string;
   /** Checklist items: empty inherits the checklist's own signing level. */
   signoffCredentialTypeIds: number[];
+  /** Whether the trainee fills this in when asking for the evaluation. */
+  traineeInput: 'NONE' | 'OPTIONAL' | 'REQUIRED';
 };
 
 export type EditorNode =
@@ -51,6 +53,7 @@ function blankItem(checklist: boolean): EditorItem {
     maxValue: '',
     unit: '',
     signoffCredentialTypeIds: [],
+    traineeInput: 'NONE',
   };
 }
 
@@ -90,6 +93,27 @@ function ItemFields({
           className={`${FIELD} w-full`}
         />
       </label>
+      {/* Who fills it in. Only meaningful on an evaluation a trainee can
+          ask for, and meaningless against a heading. */}
+      {!checklist && item.scoreType !== 'HEADING' ? (
+        <label className="grid gap-1 text-xs text-muted-foreground">
+          Trainee fills in
+          <select
+            value={item.traineeInput}
+            onChange={(event) =>
+              onChange({
+                traineeInput: event.target
+                  .value as EditorItem['traineeInput'],
+              })
+            }
+            className={FIELD}
+          >
+            <option value="NONE">No — trainer only</option>
+            <option value="OPTIONAL">May</option>
+            <option value="REQUIRED">Must</option>
+          </select>
+        </label>
+      ) : null}
       <label className="grid gap-1 text-xs text-muted-foreground">
         {checklist ? 'Kind' : 'Answer'}
         <select

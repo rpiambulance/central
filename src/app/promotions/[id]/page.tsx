@@ -48,7 +48,7 @@ type Review = {
   evaluations: Array<{
     id: number;
     createdAt: string;
-    shiftDate: string | null;
+    evalDate: string | null;
     template: { id: number; name: string };
     evaluator: MemberRef;
   }>;
@@ -200,7 +200,7 @@ export default async function PromotionReviewPage({
                 </Link>{' '}
                 <span className="text-muted-foreground">
                   by {memberName(ev.evaluator)},{' '}
-                  {ev.shiftDate ? formatDateOnly(ev.shiftDate) : formatDate(ev.createdAt)}
+                  {ev.evalDate ? formatDateOnly(ev.evalDate) : formatDate(ev.createdAt)}
                 </span>
               </li>
             ))}

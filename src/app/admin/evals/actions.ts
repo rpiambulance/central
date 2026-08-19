@@ -13,6 +13,7 @@ type RawItem = {
   maxValue?: string;
   unit?: string;
   signoffCredentialTypeIds?: number[];
+  traineeInput?: 'NONE' | 'OPTIONAL' | 'REQUIRED';
 };
 
 type RawNode =
@@ -68,6 +69,9 @@ function toItem(raw: RawItem) {
         }
       : {}),
     ...(signoff.length ? { signoffCredentialTypeIds: signoff } : {}),
+    ...(raw.traineeInput && raw.traineeInput !== 'NONE'
+      ? { traineeInput: raw.traineeInput }
+      : {}),
   };
 }
 

@@ -52,3 +52,16 @@ export async function saveLocation(formData: FormData) {
   }
   revalidatePath('/call-ops/run-numbers');
 }
+
+/** Reopens a changeover somebody settled too early. */
+export async function reopenChangeover() {
+  try {
+    await api('/v1/run-numbers/reopen-changeover', { method: 'POST' });
+  } catch (error) {
+    redirect(
+      `/call-ops/run-numbers?error=${encodeURIComponent(apiErrorMessage(error))}`,
+    );
+  }
+  revalidatePath('/call-ops/run-numbers');
+  redirect('/call-ops/run-numbers?reopened=1');
+}

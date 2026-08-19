@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/table';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
-import { issueRunNumber, saveLocation } from './actions';
+import { issueRunNumber, reopenChangeover, saveLocation } from './actions';
 
 type Location = {
   id: number;
@@ -41,7 +41,13 @@ type RunNumber = {
 };
 
 type Payload = {
-  term: { year: string; division: string | null; options: string[] | null };
+  term: {
+    year: string;
+    division: string | null;
+    options: string[] | null;
+    /** Names the changeover this month was settled in, if it was. */
+    settledBy: string | null;
+  };
   locations: Location[];
   recent: RunNumber[];
 };
@@ -53,9 +59,13 @@ export const dynamic = 'force-dynamic';
 export default async function RunNumbersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; issued?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    issued?: string;
+    reopened?: string;
+  }>;
 }) {
-  const { error, issued } = await searchParams;
+  const { error, issued, reopened } = await searchParams;
   const [data, permissions, hour12] = await Promise.all([
     api<Payload>('/v1/run-numbers'),
     myPermissions(),
@@ -74,6 +84,11 @@ export default async function RunNumbersPage({
         description="Take the next number for a standby, and see what has been issued."
       />
       <ErrorBanner message={error} />
+      {reopened ? (
+        <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+          Reopened. This month asks again.
+        </p>
+      ) : null}
 
       {issued ? (
         <Card className="border-primary/40">
@@ -93,9 +108,11 @@ export default async function RunNumbersPage({
         <CardHeader>
           <CardTitle className="text-base">Take a number</CardTitle>
           <CardDescription>
-            {data.term.division
-              ? `Currently issuing ${data.term.division}${data.term.year} numbers.`
-              : `This month could be either term, so say which — ${(data.term.options ?? []).join(' or ')}.`}{' '}
+            {data.term.settledBy
+              ? `This month straddles two terms, and ${data.term.division}${data.term.year} has been chosen for it.`
+              : data.term.division
+                ? `Currently issuing ${data.term.division}${data.term.year} numbers.`
+                : `This month could be either term, so say which — ${(data.term.options ?? []).join(' or ')}. Picking the term that is ending leaves the question open; picking the one beginning settles it for everyone after.`}{' '}
             Each location counts on its own, and every number is recorded
             against whoever took it.
           </CardDescription>
@@ -138,6 +155,21 @@ export default async function RunNumbersPage({
             <p className="mt-3 text-sm text-muted-foreground">
               No locations are set up yet.
             </p>
+          ) : null}
+          {/* Settling a changeover is one-way for everyone else, so undoing an
+              early pick is deliberately somebody's decision rather than the
+              next person quietly choosing again. */}
+          {canManage && data.term.settledBy ? (
+            <details className="mt-3">
+              <summary className="cursor-pointer text-xs text-muted-foreground">
+                Chosen too early?
+              </summary>
+              <form action={reopenChangeover} className="mt-2">
+                <Button type="submit" size="sm" variant="outline">
+                  Ask again this month
+                </Button>
+              </form>
+            </details>
           ) : null}
         </CardContent>
       </Card>
