@@ -13,6 +13,7 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { completeChore, reopenChore } from './actions';
+import { AssignNight, type MemberOption } from './assign-night';
 
 type Occurrence = {
   id: number;
@@ -24,9 +25,11 @@ type Occurrence = {
     id: number;
     name: string;
     description: string | null;
-    assignee: { id: number; firstName: string; lastName: string } | null;
+    assignee: MemberOption | null;
   };
-  completedBy: { id: number; firstName: string; lastName: string } | null;
+  /** Set when this night was handed to somebody in particular. */
+  assignee: MemberOption | null;
+  completedBy: MemberOption | null;
 };
 
 export const dynamic = 'force-dynamic';
@@ -43,6 +46,10 @@ export default async function ChoresPage({
     prefers12Hour(),
   ]);
   const canManage = permissions.has('chores:manage');
+  // Only needed to offer the hand-over control, so not fetched otherwise.
+  const members = canManage
+    ? await api<MemberOption[]>('/v1/members').catch(() => [])
+    : [];
 
   const byDay = new Map<string, Occurrence[]>();
   for (const occurrence of occurrences) {
@@ -114,7 +121,18 @@ export default async function ChoresPage({
                           {occurrence.chore.description}
                         </p>
                       ) : null}
-                      {occurrence.chore.assignee ? (
+                      {/* The override wins, and says so, since "assigned to
+                          Sam" reading differently from the standing
+                          arrangement is the whole point of setting one. */}
+                      {occurrence.assignee ? (
+                        <p className="text-xs text-muted-foreground">
+                          {occurrence.assignee.firstName}{' '}
+                          {occurrence.assignee.lastName} has this one
+                          {occurrence.chore.assignee
+                            ? `, instead of ${occurrence.chore.assignee.firstName} ${occurrence.chore.assignee.lastName}`
+                            : ''}
+                        </p>
+                      ) : occurrence.chore.assignee ? (
                         <p className="text-xs text-muted-foreground">
                           Assigned to {occurrence.chore.assignee.firstName}{' '}
                           {occurrence.chore.assignee.lastName}
@@ -131,6 +149,14 @@ export default async function ChoresPage({
                         </p>
                       ) : null}
                     </div>
+                    {canManage && !occurrence.completedAt ? (
+                      <AssignNight
+                        occurrenceId={occurrence.id}
+                        members={members}
+                        currentId={occurrence.assignee?.id ?? null}
+                        standing={occurrence.chore.assignee}
+                      />
+                    ) : null}
                     {occurrence.completedAt ? (
                       canManage ? (
                         <form action={reopenChore.bind(null, occurrence.id)}>

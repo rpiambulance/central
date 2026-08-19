@@ -26,3 +26,22 @@ export async function reopenChore(occurrenceId: number) {
   }
   revalidatePath('/chores');
 }
+
+/**
+ * Hands one night to somebody, or puts it back to whoever the chore belongs
+ * to. Distinct from editing the chore: this is a swap, not a change of whose
+ * job it is.
+ */
+export async function assignNight(occurrenceId: number, formData: FormData) {
+  const raw = String(formData.get('memberId') ?? '').trim();
+  const memberId = raw ? Number(raw) : null;
+  try {
+    await api(`/v1/chores/${occurrenceId}/assign`, {
+      method: 'POST',
+      body: JSON.stringify({ memberId }),
+    });
+  } catch (error) {
+    redirect(`/chores?error=${encodeURIComponent(apiErrorMessage(error))}`);
+  }
+  revalidatePath('/chores');
+}
