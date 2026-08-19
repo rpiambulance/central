@@ -6,6 +6,7 @@ import { Menu } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -49,7 +50,9 @@ function MobileNavMenu({
       >
         <DropdownMenuItem render={<Link href="/" />}>Dashboard</DropdownMenuItem>
         {groups.map((group) => (
-          <div key={group.label}>
+          // A group, not a div: a label is a group label, and Base UI throws
+          // if one is used outside a group — taking the page with it.
+          <DropdownMenuGroup key={group.label}>
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="text-xs">
               {group.label}
@@ -67,7 +70,7 @@ function MobileNavMenu({
                 </span>
               </DropdownMenuItem>
             ))}
-          </div>
+          </DropdownMenuGroup>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>

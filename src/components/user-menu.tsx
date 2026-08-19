@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -49,14 +50,21 @@ export function UserMenu({ name, email }: { name: string; email?: string }) {
         </span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-48">
-        <DropdownMenuLabel className="font-normal">
-          <span className="block text-sm font-medium">{name}</span>
-          {email ? (
-            <span className="block truncate text-xs text-muted-foreground">
-              {email}
-            </span>
-          ) : null}
-        </DropdownMenuLabel>
+        {/*
+          Wrapped in a group because a label is a *group* label: Base UI
+          throws "MenuGroupContext is missing" if one is used loose in the
+          menu, which takes the whole page down with it.
+        */}
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="font-normal">
+            <span className="block text-sm font-medium">{name}</span>
+            {email ? (
+              <span className="block truncate text-xs text-muted-foreground">
+                {email}
+              </span>
+            ) : null}
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem render={<Link href="/profile" />}>
           <User aria-hidden className="size-4" />
