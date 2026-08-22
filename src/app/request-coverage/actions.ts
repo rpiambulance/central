@@ -1,5 +1,6 @@
 'use server';
 
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 const API_URL = process.env.RAMPART_API_URL ?? 'http://localhost:3001';
@@ -40,6 +41,9 @@ export async function submitCoverageRequest(formData: FormData) {
   }
 
   const payload = {
+    // Cloudflare's own field name, passed straight through: the API is the
+    // endpoint actually exposed to the internet, so it is the API that checks.
+    'cf-turnstile-response': optional('cf-turnstile-response'),
     requesterName: String(formData.get('requesterName') ?? '').trim(),
     requesterOrg: optional('requesterOrg'),
     requesterEmail: String(formData.get('requesterEmail') ?? '').trim(),
@@ -51,9 +55,17 @@ export async function submitCoverageRequest(formData: FormData) {
 
   let destination: string;
   try {
+    // The requester's address, not this server's — Turnstile scores the
+    // browser that solved the challenge, and every submission otherwise
+    // arrives from the portal itself.
+    const incoming = await headers();
+    const forwarded = incoming.get('x-forwarded-for');
     const res = await fetch(`${API_URL}/v1/coverage-requests`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(forwarded ? { 'x-forwarded-for': forwarded } : {}),
+      },
       body: JSON.stringify(payload),
       cache: 'no-store',
     });

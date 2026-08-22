@@ -27,6 +27,8 @@ services:
       # no browser trip to Keycloak, no /etc/hosts entry). Local dev only.
       AUTH_DEV_LOGIN: ${AUTH_DEV_LOGIN:-true}
       RAMPART_API_URL: ${RAMPART_API_URL:-http://api:3001}
+      # Public half of the coverage form's bot check; widget hidden when unset.
+      TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
     depends_on:
       - api
       - keycloak

@@ -9,6 +9,7 @@ import { ErrorBanner } from '@/components/error-banner';
 import { submitCoverageRequest } from './actions';
 import { EventRows } from './event-rows';
 import { SubmitWithCheck } from './submit-button';
+import { Turnstile } from './turnstile';
 
 export const metadata = {
   title: 'Request EMS coverage — RPI Ambulance',
@@ -38,6 +39,10 @@ export default async function CoverageIntakePage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
+  // Read at request time rather than baked in with NEXT_PUBLIC_: the image is
+  // built once and run in more than one place, and a key compiled into the
+  // bundle cannot differ between them.
+  const siteKey = process.env.TURNSTILE_SITE_KEY;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -97,6 +102,7 @@ export default async function CoverageIntakePage({
               </Field>
             </div>
             <EventRows />
+            {siteKey ? <Turnstile siteKey={siteKey} /> : null}
             <SubmitWithCheck />
           </form>
         </CardContent>
