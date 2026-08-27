@@ -82,12 +82,19 @@ export default async function Dashboard({
   }
 
   let me: Me = null;
-  let inactive = false;
+  // The API refuses to talk to two kinds of signed-in person, and they need
+  // different things done for them: a member who has been made inactive, and
+  // a login with no member record behind it. Both arrive as 403, so the code
+  // in the body is what tells them apart — reading only the status told
+  // everyone their membership was inactive, including people whose
+  // membership was fine and whose account simply was not linked.
+  let refusal: 'INACTIVE_MEMBER' | 'NO_MEMBER_RECORD' | null = null;
   try {
     me = await api<Me>('/v1/members/me', { raw: true });
   } catch (error) {
     if (error instanceof ApiError && error.status === 403) {
-      inactive = true;
+      const code = (error.body as { code?: string } | null)?.code;
+      refusal = code === 'NO_MEMBER_RECORD' ? 'NO_MEMBER_RECORD' : 'INACTIVE_MEMBER';
     } else {
       throw error;
     }
@@ -99,7 +106,33 @@ export default async function Dashboard({
       ? "That page doesn't exist."
       : null;
 
-  if (inactive) {
+  if (refusal === 'NO_MEMBER_RECORD') {
+    return (
+      <Card className="max-w-md mx-auto mt-12">
+        <CardHeader>
+          <CardTitle>Account not linked</CardTitle>
+          <CardDescription>
+            Your login worked, but it isn&apos;t linked to a member record yet,
+            so there is nothing here to show you. This is not the same as being
+            inactive — your membership may be perfectly fine.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          <p>
+            Ask an officer to link this account. It helps them to know you are
+            signed in as{' '}
+            <span className="font-medium text-foreground">
+              {session.user.email ?? session.user.name}
+            </span>
+            , since linking is by email address and a mismatch there is the
+            usual cause.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (refusal === 'INACTIVE_MEMBER') {
     return (
       <Card className="max-w-md mx-auto mt-12">
         <CardHeader>
