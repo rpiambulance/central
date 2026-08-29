@@ -53,3 +53,32 @@ export async function setPollStatus(pollId: number, status: 'OPEN' | 'CLOSED') {
   revalidatePath(`/admin/availability/${pollId}`);
   revalidatePath('/admin/availability');
 }
+
+/**
+ * Invite more people to a poll already running.
+ *
+ * Names come to mind after a poll goes out, and the alternative — a second
+ * poll for the stragglers — splits one question's answers across two grids.
+ * People already invited are left alone rather than asked again.
+ */
+export async function addPollMembers(pollId: number, formData: FormData) {
+  const memberIds = formData
+    .getAll('memberIds')
+    .map((value) => Number(value))
+    .filter((id) => Number.isFinite(id) && id > 0);
+  if (!memberIds.length) {
+    redirect(`/admin/availability/${pollId}?error=${encodeURIComponent('Pick at least one member to add.')}`);
+  }
+  try {
+    await api(`/v1/availability/polls/${pollId}/invites`, {
+      method: 'POST',
+      body: JSON.stringify({ memberIds }),
+    });
+  } catch (error) {
+    redirect(
+      `/admin/availability/${pollId}?error=${encodeURIComponent(apiErrorMessage(error))}`,
+    );
+  }
+  revalidatePath(`/admin/availability/${pollId}`);
+  redirect(`/admin/availability/${pollId}?added=${memberIds.length}`);
+}

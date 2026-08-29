@@ -109,12 +109,38 @@ export default async function AdminCertificationsPage({
                       {cert.member.lastName}, {cert.member.firstName}
                     </TableCell>
                     <TableCell>{cert.type.name}</TableCell>
-                    <TableCell>{cert.identifier ?? <Dash />}</TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {cert.issuedAt ? formatDateOnly(cert.issuedAt) : <Dash />}
+                    {/* Editable in place: these are the fields the verifier
+                        is checking against the card in front of them, and a
+                        wrong digit should be fixable here rather than sent
+                        back for the member to resubmit. Named inputs inside
+                        the approve form below. */}
+                    <TableCell>
+                      <input
+                        type="text"
+                        name="identifier"
+                        form={`approve-${cert.id}`}
+                        defaultValue={cert.identifier ?? ''}
+                        placeholder="—"
+                        className="h-7 w-28 rounded-md border border-input bg-background px-2 text-xs"
+                      />
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
-                      {cert.expiresAt ? formatDateOnly(cert.expiresAt) : <Dash />}
+                      <input
+                        type="date"
+                        name="issuedAt"
+                        form={`approve-${cert.id}`}
+                        defaultValue={cert.issuedAt?.slice(0, 10) ?? ''}
+                        className="h-7 rounded-md border border-input bg-background px-2 text-xs"
+                      />
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <input
+                        type="date"
+                        name="expiresAt"
+                        form={`approve-${cert.id}`}
+                        defaultValue={cert.expiresAt?.slice(0, 10) ?? ''}
+                        className="h-7 rounded-md border border-input bg-background px-2 text-xs"
+                      />
                     </TableCell>
                     <TableCell>
                       {/* Read beside the record it belongs to, rather than in
@@ -126,7 +152,13 @@ export default async function AdminCertificationsPage({
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-2">
-                        <form action={approveCertification.bind(null, cert.id)}>
+                        {/* The id ties the inputs in the columns above to
+                            this form, so a correction travels with the
+                            approval as one act. */}
+                        <form
+                          id={`approve-${cert.id}`}
+                          action={approveCertification.bind(null, cert.id)}
+                        >
                           <Button type="submit" size="sm" className="h-7">
                             Approve
                           </Button>

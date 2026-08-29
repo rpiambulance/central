@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
+  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -20,6 +21,7 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { setPollStatus } from '../actions';
+import { AddPollMembers, type Candidate } from '../add-members';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -69,9 +71,9 @@ export default async function AdminAvailabilityPollPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; added?: string }>;
 }) {
-  const [{ id }, { error }] = await Promise.all([params, searchParams]);
+  const [{ id }, { error, added }] = await Promise.all([params, searchParams]);
   const pollId = Number(id);
   if (!Number.isInteger(pollId)) notFound();
 
@@ -83,6 +85,15 @@ export default async function AdminAvailabilityPollPage({
     if (err instanceof ApiError && err.status === 404) notFound();
     throw err;
   }
+
+  // Only worth offering while the poll is open — a closed poll's grid is a
+  // record, and adding somebody to it would ask a question nobody will read.
+  const candidates =
+    poll.status === 'OPEN'
+      ? await api<Candidate[]>(
+          `/v1/availability/polls/${pollId}/candidates`,
+        ).catch(() => [])
+      : [];
 
   const respondedCount = poll.members.filter((m) => m.responded).length;
   const nextStatus = poll.status === 'OPEN' ? 'CLOSED' : 'OPEN';
@@ -113,6 +124,26 @@ export default async function AdminAvailabilityPollPage({
         </form>
       </div>
       <ErrorBanner message={error} />
+      {added ? (
+        <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-900 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
+          Added {added} {Number(added) === 1 ? 'person' : 'people'} and asked
+          for their availability.
+        </p>
+      ) : null}
+
+      {poll.status === 'OPEN' ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Add people to this poll</CardTitle>
+            <CardDescription>
+              Anyone active who has not already been asked.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AddPollMembers pollId={poll.id} candidates={candidates} />
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="rounded-md border">
         <Table>

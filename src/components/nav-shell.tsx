@@ -85,6 +85,17 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
     '/v1/inbox/summary',
     { raw: true },
   ).catch(() => ({ unread: 0, tasks: 0 }));
+  // Certifications waiting on somebody, shown against the Certifications
+  // link — but only for those who could act on them, and only asked for at
+  // all when they hold the permission, so an ordinary member's every page
+  // load does not carry a 403.
+  const certsPending = permissions.has('certs:verify')
+    ? await api<{ count: number }>('/v1/certifications/pending/count', {
+        raw: true,
+      })
+        .then((result) => result.count)
+        .catch(() => 0)
+    : 0;
   // Unreadable status must not claim the agency is down, so it falls back to
   // in service — the ordinary state, and the one that misleads nobody.
   const serviceStatus = await api<ServiceStatus>('/v1/service-status', {
@@ -110,7 +121,13 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
             >
               RPI Ambulance
             </Link>
-            <TopNavMenus groups={groups} />
+            <TopNavMenus
+              groups={groups}
+              badges={{
+                '/inbox': inbox.unread,
+                '/admin/certifications': certsPending,
+              }}
+            />
             <div className="ml-auto flex items-center gap-2">
               <ServiceStatusBadge
               status={serviceStatus}
@@ -131,7 +148,10 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <AppSidebar
         groups={groups}
-        badges={{ '/inbox': inbox.unread }}
+        badges={{
+          '/inbox': inbox.unread,
+          '/admin/certifications': certsPending,
+        }}
       />
       <SidebarInset>
         <div aria-hidden className="h-1 bg-primary" />

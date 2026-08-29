@@ -11,5 +11,14 @@ import { signOut } from '@/auth';
  */
 export async function POST(): Promise<Response> {
   await signOut({ redirect: false });
-  return Response.redirect(new URL('/', process.env.NEXTAUTH_URL ?? 'http://localhost:3000'), 303);
+  // Back to this site's own front page, by a relative Location header. The
+  // previous absolute URL was built from NEXTAUTH_URL, which nothing sets —
+  // Auth.js v5 reads AUTH_URL — so every sign-out in production fell through
+  // to the hard-coded localhost default and sent members to a dead address.
+  //
+  // Relative rather than rebuilt from AUTH_URL: a redirect to where you
+  // already are needs no configuration to be right, and cannot rot again the
+  // next time a variable is renamed. RFC 7231 §7.1.2 allows it, and every
+  // browser resolves it against the request URL.
+  return new Response(null, { status: 303, headers: { Location: '/' } });
 }

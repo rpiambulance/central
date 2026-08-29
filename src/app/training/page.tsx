@@ -25,9 +25,12 @@ import {
   amendCertification,
   registerForClass,
   requestPromotion,
-  submitCertification,
   withdrawCertification,
 } from './actions';
+import {
+  CertSubmitForm,
+  type SubmittableCertType,
+} from './cert-submit-form';
 
 type Certification = {
   id: number;
@@ -144,10 +147,9 @@ export default async function TrainingPage({
       )
     : null;
 
-  const certTypes =
-    await api<Array<{ id: number; name: string; defaultValidityMonths: number | null }>>(
-      '/v1/certifications/types',
-    );
+  // The field rules travel with the type: the form asks only what the chosen
+  // certification actually wants.
+  const certTypes = await api<SubmittableCertType[]>('/v1/certifications/types');
 
   return (
     <div className="space-y-8">
@@ -299,53 +301,7 @@ export default async function TrainingPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form
-              action={submitCertification}
-              className="flex flex-wrap items-end gap-2"
-            >
-              <label className="grid gap-1 text-xs text-muted-foreground">
-                Certification
-                <select
-                  name="typeId"
-                  required
-                  defaultValue=""
-                  className={CERT_FIELD}
-                >
-                  <option value="" disabled>
-                    Select…
-                  </option>
-                  {certTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="grid gap-1 text-xs text-muted-foreground">
-                Number (optional)
-                <input name="identifier" className={CERT_FIELD} />
-              </label>
-              <label className="grid gap-1 text-xs text-muted-foreground">
-                Issued
-                <input name="issuedAt" type="date" className={CERT_FIELD} />
-              </label>
-              <label className="grid gap-1 text-xs text-muted-foreground">
-                Expires (optional)
-                <input name="expiresAt" type="date" className={CERT_FIELD} />
-              </label>
-              <label className="grid gap-1 text-xs text-muted-foreground">
-                Card photo or scan (optional)
-                <input
-                  name="document"
-                  type="file"
-                  accept="image/*,application/pdf"
-                  className="text-sm"
-                />
-              </label>
-              <Button type="submit" size="sm" variant="outline" className="h-8">
-                Submit
-              </Button>
-            </form>
+            <CertSubmitForm types={certTypes} />
           </CardContent>
         </Card>
       </section>

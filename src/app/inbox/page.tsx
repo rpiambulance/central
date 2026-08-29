@@ -14,6 +14,7 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { completeTask, markAllRead, markRead, startTask } from './actions';
+import { SortControl } from './sort-control';
 
 type InboxMessage = {
   id: number;
@@ -24,6 +25,8 @@ type InboxMessage = {
   actionLabel: string | null;
   actionUrl: string | null;
   completedAt: string | null;
+  /** Set when somebody else closed a task everyone was asked to do. */
+  completedBy: { firstName: string; lastName: string } | null;
   readAt: string | null;
   createdAt: string;
 };
@@ -45,9 +48,12 @@ export default async function InboxPage({
   const { filter, error } = await searchParams;
   const active = FILTERS.some((f) => f.key === filter) ? (filter ?? '') : '';
   const hour12 = await prefers12Hour();
-  const messages = await api<InboxMessage[]>(
-    `/v1/inbox${active ? `?filter=${active}` : ''}`,
-  );
+  const [messages, sorting] = await Promise.all([
+    api<InboxMessage[]>(`/v1/inbox${active ? `?filter=${active}` : ''}`),
+    api<{ options: Array<{ key: string; label: string }>; current: string }>(
+      '/v1/inbox/sort',
+    ),
+  ]);
   const unread = messages.filter((m) => !m.readAt).length;
 
   return (
@@ -72,8 +78,9 @@ export default async function InboxPage({
             {entry.label}
           </Link>
         ))}
+        <SortControl options={sorting.options} current={sorting.current} />
         {unread ? (
-          <form action={markAllRead} className="ml-auto">
+          <form action={markAllRead}>
             <Button type="submit" size="sm" variant="outline">
               Mark all read
             </Button>
@@ -113,7 +120,11 @@ export default async function InboxPage({
                     </CardTitle>
                     {outstanding ? <Badge>To do</Badge> : null}
                     {message.isTask && message.completedAt ? (
-                      <Badge variant="secondary">Done</Badge>
+                      <Badge variant="secondary">
+                        {message.completedBy
+                          ? `Done by ${message.completedBy.firstName} ${message.completedBy.lastName}`
+                          : 'Done'}
+                      </Badge>
                     ) : null}
                     {!message.readAt ? (
                       <Badge variant="outline">New</Badge>

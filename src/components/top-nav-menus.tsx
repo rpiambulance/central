@@ -26,9 +26,11 @@ import { cn } from '@/lib/utils';
 function MobileNavMenu({
   groups,
   pathname,
+  badges,
 }: {
   groups: NavGroup[];
   pathname: string;
+  badges?: Record<string, number>;
 }) {
   return (
     <DropdownMenu>
@@ -72,6 +74,7 @@ function MobileNavMenu({
                 >
                   {item.label}
                 </span>
+                <NavCount count={badges?.[item.href]} />
               </DropdownMenuItem>
             ))}
           </DropdownMenuGroup>
@@ -81,13 +84,36 @@ function MobileNavMenu({
   );
 }
 
+
+/**
+ * A count against a navigation entry, when there is one to show.
+ *
+ * Rendered here as well as in the sidebar because the two layouts are a
+ * member preference, and outstanding work should not be visible only to
+ * people who happen to prefer the sidebar.
+ */
+function NavCount({ count }: { count?: number }) {
+  if (!count) return null;
+  return (
+    <span className="ml-auto rounded-full bg-primary px-1.5 text-xs font-medium text-primary-foreground">
+      {count}
+    </span>
+  );
+}
+
 /** Grouped top-navbar variant: one dropdown per section. */
-export function TopNavMenus({ groups }: { groups: NavGroup[] }) {
+export function TopNavMenus({
+  groups,
+  badges,
+}: {
+  groups: NavGroup[];
+  badges?: Record<string, number>;
+}) {
   const pathname = usePathname();
 
   return (
     <>
-      <MobileNavMenu groups={groups} pathname={pathname} />
+      <MobileNavMenu groups={groups} pathname={pathname} badges={badges} />
       <nav className="hidden items-center gap-1 text-sm md:flex">
       <Button
         render={<Link href="/" />}
@@ -117,6 +143,7 @@ export function TopNavMenus({ groups }: { groups: NavGroup[] }) {
               )}
             >
               {item.label}
+              <NavCount count={badges?.[item.href]} />
             </Button>
           ));
         }
@@ -143,6 +170,7 @@ export function TopNavMenus({ groups }: { groups: NavGroup[] }) {
                   render={<Link href={item.href} />}
                 >
                   {item.label}
+                  <NavCount count={badges?.[item.href]} />
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
