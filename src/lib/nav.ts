@@ -104,6 +104,14 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Station',
     items: [
       { href: '/chores', label: 'Chores' },
+      // No permission: anyone may complete a check, and the page is where
+      // they start. Building the sheets is the part that needs one.
+      { href: '/checksheets', label: 'Checksheets' },
+      {
+        href: '/admin/checksheets',
+        label: 'Manage Checksheets',
+        permissions: ['checksheets:manage'],
+      },
       { href: '/ops/fuel', label: 'Fuel Log' },
       { href: '/admin/radios', label: 'Radios', permissions: ['radios:manage'] },
     ],
