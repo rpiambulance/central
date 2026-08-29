@@ -17,6 +17,7 @@ import {
   addSection,
   removeItem,
   removeSection,
+  setSectionSeal,
   updateItem,
   updateTemplate,
 } from '../actions';
@@ -30,7 +31,13 @@ type Item = {
   parLevel: number | null;
   expiryTracking: 'NONE' | 'SINGLE' | 'PER_UNIT';
 };
-type Section = { id: number; order: number; heading: string; description: string | null };
+type Section = {
+  id: number;
+  order: number;
+  heading: string;
+  description: string | null;
+  hasSeal: boolean;
+};
 type Template = {
   id: number;
   name: string;
@@ -338,6 +345,27 @@ export default async function EditChecksheetPage({
                   {template.items.filter((i) => i.sectionId === section.id).length}{' '}
                   items
                 </Badge>
+                {section.hasSeal ? <Badge variant="secondary">sealed</Badge> : null}
+                {/* A sealed section is checked by reading the number rather
+                    than opening it — and has to be opened anyway when
+                    something inside expires. */}
+                <form
+                  action={setSectionSeal.bind(
+                    null,
+                    templateId,
+                    section.id,
+                    !section.hasSeal,
+                  )}
+                >
+                  <Button
+                    type="submit"
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 px-2 text-xs"
+                  >
+                    {section.hasSeal ? 'remove seal' : 'add a seal'}
+                  </Button>
+                </form>
                 <form
                   action={removeSection.bind(null, templateId, section.id)}
                   className="ml-auto"
@@ -375,6 +403,10 @@ export default async function EditChecksheetPage({
             <label className="grid gap-1 text-xs text-muted-foreground">
               Description
               <input name="description" className={`${FIELD} w-72`} />
+            </label>
+            <label className="flex items-center gap-1 text-xs text-muted-foreground">
+              <input type="checkbox" name="hasSeal" />
+              Kept sealed
             </label>
             <Button type="submit" size="sm" variant="outline">
               Add section

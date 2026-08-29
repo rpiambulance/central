@@ -8,7 +8,13 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { PageHeader } from '@/components/page-header';
-import { CompleteForm, type Asset, type Item, type Section } from './complete-form';
+import {
+  CompleteForm,
+  type Asset,
+  type Item,
+  type SealHistory,
+  type Section,
+} from './complete-form';
 
 type Template = {
   id: number;
@@ -22,6 +28,7 @@ type Template = {
 type Blank = {
   template: Template;
   previousRunAt: string | null;
+  sections: SealHistory[];
   items: Array<{ itemId: number; expirySlots: number; lastExpiries: string[] }>;
 };
 
@@ -83,6 +90,7 @@ export default async function CompleteChecksheetPage({
             assets={assets}
             assetRequired={!!kindId}
             carried={carried}
+            seals={blank.sections}
           />
         </CardContent>
       </Card>

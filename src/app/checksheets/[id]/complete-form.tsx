@@ -21,6 +21,20 @@ export type Section = {
   order: number;
   heading: string;
   description: string | null;
+  hasSeal: boolean;
+};
+
+/** What the seal said last time, so this is a confirmation not a transcription. */
+export type SealHistory = {
+  sectionId: number;
+  lastSealNumber: string | null;
+  lastSealPresent: boolean | null;
+};
+
+type SealAnswer = {
+  sealPresent: boolean;
+  sealNumber: string;
+  sealBroken: boolean;
 };
 
 export type Asset = { id: number; name: string };
@@ -56,6 +70,7 @@ export function CompleteForm({
   assets,
   assetRequired,
   carried,
+  seals,
 }: {
   templateId: number;
   sections: Section[];
@@ -64,9 +79,37 @@ export function CompleteForm({
   assetRequired: boolean;
   /** Last time's dates, by item id, so nobody retypes them. */
   carried: Record<number, string[]>;
+  /** Last time's seal, by section id. */
+  seals: SealHistory[];
 }) {
   const [assetId, setAssetId] = useState('');
   const [comment, setComment] = useState('');
+  const sealHistory = new Map(seals.map((seal) => [seal.sectionId, seal]));
+  const [sealAnswers, setSealAnswers] = useState<Record<number, SealAnswer>>(
+    () =>
+      Object.fromEntries(
+        sections
+          .filter((section) => section.hasSeal)
+          .map((section) => [
+            section.id,
+            {
+              // Assumed present, because that is the ordinary state and the
+              // number below is what confirms it. Unticking is the exception
+              // and reads as one.
+              sealPresent: true,
+              sealNumber: '',
+              sealBroken: false,
+            } as SealAnswer,
+          ]),
+      ),
+  );
+
+  const setSeal = (sectionId: number, patch: Partial<SealAnswer>) =>
+    setSealAnswers((prev) => ({
+      ...prev,
+      [sectionId]: { ...prev[sectionId], ...patch },
+    }));
+
   const [answers, setAnswers] = useState<Record<number, Answer>>(() =>
     Object.fromEntries(
       items.map((item) => [
@@ -75,6 +118,18 @@ export function CompleteForm({
       ]),
     ),
   );
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  /** Dates entered in this section that have already passed. */
+  const expiredIn = (sectionId: number) =>
+    items
+      .filter((item) => item.sectionId === sectionId)
+      .filter((item) =>
+        (answers[item.id]?.expiries ?? []).some(
+          (date) => date && date < today,
+        ),
+      );
 
   const update = (itemId: number, patch: Partial<Answer>) =>
     setAnswers((prev) => ({
@@ -96,10 +151,23 @@ export function CompleteForm({
       : (answer?.countPresent ?? '') !== '';
   }).length;
 
+  // Sections whose seal is still claimed intact over something expired. The
+  // server refuses these too; catching it here saves a round trip to an
+  // error page for something visible on screen.
+  const sealsToBreak = sections.filter((section) => {
+    if (!section.hasSeal) return false;
+    const seal = sealAnswers[section.id];
+    if (!seal?.sealPresent || seal.sealBroken) return false;
+    return expiredIn(section.id).length > 0;
+  });
+
   const payload = JSON.stringify({
     templateId,
     ...(assetId ? { assetId: Number(assetId) } : {}),
     comment,
+    sections: sections
+      .filter((section) => section.hasSeal)
+      .map((section) => ({ sectionId: section.id, ...sealAnswers[section.id] })),
     entries: items
       .map((item) => {
         const answer = answers[item.id] ?? { expiries: [] };
@@ -256,6 +324,14 @@ export function CompleteForm({
       {sections.map((section) => {
         const inSection = items.filter((item) => item.sectionId === section.id);
         if (!inSection.length) return null;
+        const seal = sealAnswers[section.id];
+        const expired = section.hasSeal ? expiredIn(section.id) : [];
+        // The rule the server also enforces: a seal is a claim that what is
+        // inside is good, and something expired in there makes it false.
+        const mustBreak =
+          section.hasSeal && seal?.sealPresent && !seal.sealBroken && expired.length > 0;
+        const last = sealHistory.get(section.id);
+
         return (
           <div key={section.id} className="space-y-2">
             <h2 className="text-sm font-semibold tracking-tight">
@@ -266,6 +342,92 @@ export function CompleteForm({
                 {section.description}
               </p>
             ) : null}
+
+            {section.hasSeal && seal ? (
+              <div
+                className={cn(
+                  'space-y-2 rounded-md border p-3',
+                  mustBreak && 'border-destructive/60 bg-destructive/5',
+                )}
+              >
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-sm font-medium">Seal</span>
+                  <button
+                    type="button"
+                    aria-pressed={seal.sealPresent}
+                    onClick={() => setSeal(section.id, { sealPresent: true })}
+                    className={cn(
+                      'h-10 min-w-24 rounded-md border px-4 text-sm font-medium',
+                      seal.sealPresent
+                        ? 'border-green-600 bg-green-600 text-white'
+                        : 'hover:bg-accent',
+                    )}
+                  >
+                    Sealed
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={!seal.sealPresent}
+                    onClick={() =>
+                      setSeal(section.id, { sealPresent: false, sealBroken: false })
+                    }
+                    className={cn(
+                      'h-10 min-w-24 rounded-md border px-4 text-sm font-medium',
+                      !seal.sealPresent
+                        ? 'border-amber-600 bg-amber-600 text-white'
+                        : 'hover:bg-accent',
+                    )}
+                  >
+                    No seal
+                  </button>
+                  {seal.sealPresent ? (
+                    <label className="flex items-center gap-2 text-sm">
+                      Number
+                      <input
+                        value={seal.sealNumber}
+                        onChange={(event) =>
+                          setSeal(section.id, { sealNumber: event.target.value })
+                        }
+                        placeholder={last?.lastSealNumber ?? 'optional'}
+                        className={`${FIELD} h-10 w-36`}
+                      />
+                    </label>
+                  ) : null}
+                </div>
+
+                {last?.lastSealNumber && seal.sealPresent ? (
+                  <p className="text-xs text-muted-foreground">
+                    Last check read {last.lastSealNumber}.
+                    {seal.sealNumber && seal.sealNumber !== last.lastSealNumber
+                      ? ' This one is different — worth a comment below.'
+                      : ''}
+                  </p>
+                ) : null}
+
+                {seal.sealPresent ? (
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={seal.sealBroken}
+                      onChange={(event) =>
+                        setSeal(section.id, { sealBroken: event.target.checked })
+                      }
+                    />
+                    I broke this seal to get at something inside
+                  </label>
+                ) : null}
+
+                {mustBreak ? (
+                  <p className="text-sm text-destructive">
+                    {expired.map((entry) => entry.label).join(', ')} has expired
+                    in here. A seal says the contents are good, so it has to
+                    come off: deal with the item, tick that you broke the seal,
+                    and put the new number in above.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
             {inSection.map(renderItem)}
           </div>
         );
@@ -284,10 +446,16 @@ export function CompleteForm({
       </label>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="submit" disabled={assetRequired && !assetId}>
+        <Button
+          type="submit"
+          disabled={(assetRequired && !assetId) || sealsToBreak.length > 0}
+        >
           Submit check
         </Button>
         <span className="text-sm text-muted-foreground">
+          {sealsToBreak.length
+            ? `${sealsToBreak.map((section) => section.heading).join(' and ')}: break the seal first. `
+            : ''}
           {answered} of {items.length} answered
           {answered < items.length
             ? ' — unanswered lines are recorded as not looked at.'

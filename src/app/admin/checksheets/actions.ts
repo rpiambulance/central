@@ -59,7 +59,25 @@ export async function addSection(templateId: number, formData: FormData) {
       body: JSON.stringify({
         heading: text(formData, 'heading'),
         description: text(formData, 'description') || undefined,
+        hasSeal: formData.get('hasSeal') === 'on',
       }),
+    });
+  } catch (error) {
+    fail(`/admin/checksheets/${templateId}`, error);
+  }
+  revalidatePath(`/admin/checksheets/${templateId}`);
+}
+
+/** Turns a section's seal on or off. */
+export async function setSectionSeal(
+  templateId: number,
+  sectionId: number,
+  hasSeal: boolean,
+) {
+  try {
+    await api(`/v1/checksheets/sections/${sectionId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ hasSeal }),
     });
   } catch (error) {
     fail(`/admin/checksheets/${templateId}`, error);
