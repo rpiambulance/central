@@ -30,39 +30,55 @@ export async function applySuspensions() {
   redirect(`${PAGE}?applied=${result.suspended}&back=${result.reinstated}`);
 }
 
+/** What a send actually achieved, per person and per channel. */
+export interface WarnResult {
+  notified: number;
+  results: Array<{
+    memberId: number;
+    memberName: string;
+    email: string;
+    slack: string;
+  }>;
+  summary: {
+    emailSent: number;
+    emailFailed: number;
+    emailNoAddress: number;
+    slackSent: number;
+    slackFailed: number;
+    slackNotLinked: number;
+  };
+}
+
+export type WarnState = { ok?: WarnResult; error?: string } | null;
+
 /**
  * Warns people that their credentials are at risk.
  *
- * `memberId` omitted means everybody on the list. The channels come from the
- * form, so the officer decides how loudly to say it.
+ * Returns its result rather than redirecting, so the page can say what became
+ * of each channel. "Warned five people" is worth very little if three of them
+ * have no Slack account and the mail server is misconfigured — and the inbox
+ * copy is written either way, so a count alone always looks like success.
  */
 export async function warnPending(
   memberId: number | null,
+  _previous: WarnState,
   formData: FormData,
-) {
+): Promise<WarnState> {
   const email = formData.get('email') === 'on';
   const slack = formData.get('slack') === 'on';
-  if (!email && !slack) {
-    redirect(
-      `${PAGE}?error=${encodeURIComponent('Choose email, Slack, or both.')}`,
-    );
-  }
-  let result: { notified: number };
+  if (!email && !slack) return { error: 'Choose email, Slack, or both.' };
   try {
-    result = await api<{ notified: number }>(
-      '/v1/certifications/suspensions/warn',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          ...(memberId ? { memberIds: [memberId] } : {}),
-          email,
-          slack,
-        }),
-      },
-    );
+    const ok = await api<WarnResult>('/v1/certifications/suspensions/warn', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...(memberId ? { memberIds: [memberId] } : {}),
+        email,
+        slack,
+      }),
+    });
+    revalidatePath(PAGE);
+    return { ok };
   } catch (error) {
-    redirect(`${PAGE}?error=${encodeURIComponent(apiErrorMessage(error))}`);
+    return { error: apiErrorMessage(error) };
   }
-  revalidatePath(PAGE);
-  redirect(`${PAGE}?warned=${result.notified}`);
 }

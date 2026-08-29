@@ -11,7 +11,8 @@ import {
 } from '@/components/ui/card';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
-import { applySuspensions, warnPending } from './actions';
+import { applySuspensions } from './actions';
+import { WarnButton } from './warn-button';
 
 type AtRisk = {
   memberId: number;
@@ -43,28 +44,6 @@ function NoAccess() {
   );
 }
 
-/**
- * The channel choice, next to whichever button will use it.
- *
- * Repeated per person rather than set once at the top, because "tell everyone
- * by email" and "chase this one on Slack" are different decisions and a
- * shared control would make the second silently inherit the first.
- */
-function Channels({ name }: { name: string }) {
-  return (
-    <span className="flex items-center gap-3 text-xs text-muted-foreground">
-      <label className="flex items-center gap-1">
-        <input type="checkbox" name="email" defaultChecked id={`${name}-email`} />
-        Email
-      </label>
-      <label className="flex items-center gap-1">
-        <input type="checkbox" name="slack" defaultChecked id={`${name}-slack`} />
-        Slack
-      </label>
-    </span>
-  );
-}
-
 export default async function SuspensionsPage({
   searchParams,
 }: {
@@ -72,10 +51,9 @@ export default async function SuspensionsPage({
     error?: string;
     applied?: string;
     back?: string;
-    warned?: string;
   }>;
 }) {
-  const { error, applied, back, warned } = await searchParams;
+  const { error, applied, back } = await searchParams;
   let atRisk: AtRisk[];
   let changes: Change[];
   try {
@@ -103,12 +81,6 @@ export default async function SuspensionsPage({
       {applied ? (
         <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
           Applied: {applied} suspended, {back} reinstated.
-        </p>
-      ) : null}
-      {warned ? (
-        <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-900 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
-          Warned {warned} {warned === '1' ? 'person' : 'people'}, with a link to
-          upload their certification.
         </p>
       ) : null}
 
@@ -153,28 +125,15 @@ export default async function SuspensionsPage({
                     </Badge>
                   ))}
                 </div>
-                <form
-                  action={warnPending.bind(null, person.memberId)}
-                  className="flex flex-wrap items-center gap-3"
-                >
-                  <Channels name={`m${person.memberId}`} />
-                  <Button type="submit" size="sm" variant="outline" className="h-7">
-                    Warn {person.memberName.split(' ')[0]}
-                  </Button>
-                </form>
+                <WarnButton
+                  memberId={person.memberId}
+                  label={`Warn ${person.memberName.split(' ')[0]}`}
+                />
               </div>
             ))}
 
             <div className="flex flex-wrap items-center gap-4 border-t pt-4">
-              <form
-                action={warnPending.bind(null, null)}
-                className="flex flex-wrap items-center gap-3"
-              >
-                <Channels name="all" />
-                <Button type="submit" size="sm">
-                  Warn all {atRisk.length}
-                </Button>
-              </form>
+              <WarnButton memberId={null} label={`Warn all ${atRisk.length}`} />
               <form action={applySuspensions}>
                 <Button
                   type="submit"
