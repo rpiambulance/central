@@ -29,3 +29,27 @@ export async function createMember(formData: FormData) {
   }
   revalidatePath('/admin/members');
 }
+
+/**
+ * Ask everybody active to check their own details.
+ *
+ * Inactive members are skipped by the API rather than filtered here: somebody
+ * who has left should not be given a task, still less emailed about one.
+ */
+export async function requestProfileReviewFromAll(formData: FormData) {
+  const note = String(formData.get('note') ?? '').trim();
+  let asked = 0;
+  try {
+    const result = await api<{ asked: number }>(
+      '/v1/members/profile-review/request-all',
+      { method: 'POST', body: JSON.stringify(note ? { note } : {}) },
+    );
+    asked = result.asked;
+  } catch (error) {
+    redirect(
+      `/admin/members?error=${encodeURIComponent(apiErrorMessage(error))}`,
+    );
+  }
+  revalidatePath('/admin/members');
+  redirect(`/admin/members?asked=${asked}`);
+}

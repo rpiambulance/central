@@ -21,7 +21,9 @@ import {appointDutySupervisor,
   setCredentialDate,
   revokeCredential,
   setMemberActive,
-  updateMember, waiveRequirement, addAdditionalRequirement, setAdjustmentSatisfied, removeAdjustment } from './actions';
+  updateMember, waiveRequirement, addAdditionalRequirement, setAdjustmentSatisfied, removeAdjustment,
+  requestProfileReview,
+} from './actions';
 
 type MemberDetail = {
   id: number;
@@ -465,7 +467,7 @@ export default async function AdminMemberDetailPage({
             )}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-wrap items-center gap-2">
           <form action={setMemberActive.bind(null, memberId, !member.active)}>
             <Button
               type="submit"
@@ -476,6 +478,15 @@ export default async function AdminMemberDetailPage({
               {member.active ? 'Deactivate member' : 'Reactivate member'}
             </Button>
           </form>
+          {/* Only worth offering for somebody still here: an inactive member
+              has no reason to be given a task. */}
+          {member.active ? (
+            <form action={requestProfileReview.bind(null, memberId)}>
+              <Button type="submit" size="sm" variant="outline">
+                Ask them to check their details
+              </Button>
+            </form>
+          ) : null}
         </CardContent>
       </Card>
 

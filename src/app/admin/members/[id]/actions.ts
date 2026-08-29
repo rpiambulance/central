@@ -269,3 +269,23 @@ export async function removeCertificationDocument(
   }
   revalidatePath(`/admin/members/${memberId}`);
 }
+
+/**
+ * Ask this member to check their own details.
+ *
+ * The same request the roster page can send to everybody, aimed at one
+ * person — for the record that plainly needs a look rather than a sweep.
+ */
+export async function requestProfileReview(memberId: number) {
+  try {
+    await api(`/v1/members/${memberId}/profile-review/request`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  } catch (error) {
+    redirect(
+      `/admin/members/${memberId}?error=${encodeURIComponent(apiErrorMessage(error))}`,
+    );
+  }
+  revalidatePath(`/admin/members/${memberId}`);
+}

@@ -10,8 +10,12 @@ import {
 } from '@/components/ui/card';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
-import { updateNavLayout,
-  updateTimeFormat, updateProfile } from './actions';
+import {
+  confirmProfile,
+  updateNavLayout,
+  updateProfile,
+  updateTimeFormat,
+} from './actions';
 
 type Me = {
   firstName: string;
@@ -30,13 +34,22 @@ type Me = {
 const FIELD =
   'w-full rounded-md border bg-transparent px-3 py-1.5 text-sm';
 
+type ProfileReview = {
+  outstanding: boolean;
+  note: string | null;
+  requestedBy: { firstName: string; lastName: string } | null;
+};
+
 export default async function ProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; confirmed?: string }>;
 }) {
-  const { error } = await searchParams;
-  const me = await api<Me>('/v1/members/me');
+  const { error, confirmed } = await searchParams;
+  const [me, review] = await Promise.all([
+    api<Me>('/v1/members/me'),
+    api<ProfileReview>('/v1/members/me/profile-review'),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -45,6 +58,36 @@ export default async function ProfilePage({
         description="Your contact information and portal preferences."
       />
       <ErrorBanner message={error} />
+
+      {review.outstanding ? (
+        <Card className="border-primary/50">
+          <CardHeader>
+            <CardTitle className="text-base">
+              Please check your details
+            </CardTitle>
+            <CardDescription>
+              {review.requestedBy
+                ? `${review.requestedBy.firstName} ${review.requestedBy.lastName} asked everyone to confirm their contact details are current.`
+                : 'You have been asked to confirm your contact details are current.'}
+              {review.note ? ` ${review.note}` : ''}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap items-center gap-3">
+            <form action={confirmProfile}>
+              <Button type="submit" size="sm">
+                These are correct
+              </Button>
+            </form>
+            <span className="text-sm text-muted-foreground">
+              Or change anything below and save — that answers it too.
+            </span>
+          </CardContent>
+        </Card>
+      ) : confirmed ? (
+        <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-900 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
+          Thank you — your details are marked as checked.
+        </p>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

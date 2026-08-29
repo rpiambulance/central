@@ -27,6 +27,9 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/inbox', label: 'Inbox' },
       { href: '/members', label: 'Members', permissions: ['members:read'] },
+      // No permission: the point of the page is that everyone can find the
+      // links. Editing it is what needs one.
+      { href: '/resources', label: 'Resources' },
     ],
   },
   {

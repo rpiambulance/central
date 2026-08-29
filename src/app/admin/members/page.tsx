@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/card';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
+import { requestProfileReviewFromAll } from './actions';
 import { createMember } from './actions';
 import {
   MemberTable,
@@ -43,11 +44,13 @@ export default async function AdminMembersPage({
     error?: string;
     showInactive?: string;
     deactivated?: string;
+    asked?: string;
   }>;
 }) {
-  const { error, showInactive, deactivated } = await searchParams;
+  const { error, showInactive, deactivated, asked } = await searchParams;
   const permissions = await myPermissions();
   const maySeeInactive = permissions.has(VIEW_INACTIVE);
+  const mayWrite = permissions.has('members:write');
   const showingInactive = maySeeInactive && showInactive === '1';
 
   let members: MemberRow[];
@@ -71,6 +74,12 @@ export default async function AdminMembersPage({
         description="Roster administration: profiles, activation, and credentials."
       />
       <ErrorBanner message={error} />
+      {asked ? (
+        <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+          Asked {asked} active member{asked === '1' ? '' : 's'} to check their
+          details. Inactive members were left alone.
+        </p>
+      ) : null}
       {deactivated ? (
         <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
           Deactivated {deactivated} member{deactivated === '1' ? '' : 's'}.
@@ -82,6 +91,24 @@ export default async function AdminMembersPage({
             basePath="/admin/members"
             showingInactive={showingInactive}
           />
+        ) : null}
+        {mayWrite ? (
+          <form
+            action={requestProfileReviewFromAll}
+            className="flex flex-wrap items-end gap-2"
+          >
+            <label className="grid gap-1 text-xs text-muted-foreground">
+              Ask everyone to check their details — note (optional)
+              <input
+                name="note"
+                placeholder="We're refreshing the call list before the semester."
+                className="h-8 w-80 rounded-md border border-input bg-background px-2 text-sm"
+              />
+            </label>
+            <Button type="submit" size="sm" variant="outline" className="h-8">
+              Ask everyone
+            </Button>
+          </form>
         ) : null}
         {maySeeInactive ? (
           <Link

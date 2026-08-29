@@ -65,3 +65,21 @@ export async function updateTimeFormat(formData: FormData) {
   // Times are rendered on every page, so refresh the whole tree.
   revalidatePath('/', 'layout');
 }
+
+/**
+ * "These details are right."
+ *
+ * Saving the form does the same thing on the API side, so this is only for
+ * the member who has read their details, found nothing to change, and needs
+ * a way to say so — without which the only way to answer the request would be
+ * to edit something that did not need editing.
+ */
+export async function confirmProfile() {
+  try {
+    await api('/v1/members/me/profile-review/confirm', { method: 'POST' });
+  } catch (error) {
+    redirect(`/profile?error=${encodeURIComponent(apiErrorMessage(error))}`);
+  }
+  revalidatePath('/profile');
+  redirect('/profile?confirmed=1');
+}
