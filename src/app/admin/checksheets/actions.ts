@@ -157,3 +157,25 @@ export async function createAsset(formData: FormData) {
   }
   revalidatePath('/admin/checksheets');
 }
+
+/**
+ * Saves the whole layout — section order, item order, and which section each
+ * item is in — in one call, because a drag moves several rows at once.
+ */
+export async function saveLayout(
+  templateId: number,
+  layout: {
+    sectionIds: number[];
+    items: Array<{ id: number; sectionId: number | null; order: number }>;
+  },
+) {
+  try {
+    await api(`/v1/checksheets/${templateId}/order`, {
+      method: 'PUT',
+      body: JSON.stringify(layout),
+    });
+  } catch (error) {
+    fail(`/admin/checksheets/${templateId}`, error);
+  }
+  revalidatePath(`/admin/checksheets/${templateId}`);
+}

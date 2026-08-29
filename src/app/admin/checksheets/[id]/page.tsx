@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/card';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
+import { LayoutEditor } from './layout-editor';
 import {
   addItem,
   addSection,
@@ -293,6 +294,24 @@ export default async function EditChecksheetPage({
               Save settings
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Order</CardTitle>
+          <CardDescription>
+            Put the sheet in the order the truck is actually walked. Drag a
+            row, or use the arrows — and the dropdown moves an item between
+            sections.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <LayoutEditor
+            templateId={templateId}
+            sections={template.sections}
+            items={template.items}
+          />
         </CardContent>
       </Card>
 
