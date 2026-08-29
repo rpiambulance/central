@@ -104,6 +104,16 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
   )
     .then((rows) => rows.filter((row) => row.overdue).length)
     .catch(() => 0);
+  // A sweep the nightly check refused to apply. Read from what that check
+  // recorded, not by planning a fresh one — this renders on every page.
+  const heldSuspensions = permissions.has('credentials:grant')
+    ? await api<{ held: boolean; count: number }>(
+        '/v1/certifications/suspensions/held',
+        { raw: true },
+      )
+        .then((result) => (result.held ? result.count : 0))
+        .catch(() => 0)
+    : 0;
   // Unreadable status must not claim the agency is down, so it falls back to
   // in service — the ordinary state, and the one that misleads nobody.
   const serviceStatus = await api<ServiceStatus>('/v1/service-status', {
@@ -135,6 +145,7 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
                 '/inbox': inbox.unread,
                 '/admin/certifications': certsPending,
                 '/checksheets': checksOverdue,
+                '/admin/credentials/suspensions': heldSuspensions,
               }}
             />
             <div className="ml-auto flex items-center gap-2">
@@ -161,6 +172,7 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
           '/inbox': inbox.unread,
           '/admin/certifications': certsPending,
           '/checksheets': checksOverdue,
+          '/admin/credentials/suspensions': heldSuspensions,
         }}
       />
       <SidebarInset>

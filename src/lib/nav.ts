@@ -72,6 +72,15 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Certifications',
         permissions: ['certs:verify', 'certs:read-all'],
       },
+      // Only shows a badge when a sweep has actually been held back, but the
+      // entry is always here: somebody who has just been told a suspension
+      // was blocked should not have to keep the notification to find it
+      // again.
+      {
+        href: '/admin/credentials/suspensions',
+        label: 'Pending Suspensions',
+        permissions: ['credentials:grant'],
+      },
       // "Form Templates", because "Evaluations + Checklists" read as a member
       // page and is not one.
       {
