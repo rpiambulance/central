@@ -10,24 +10,33 @@ export async function createMember(formData: FormData) {
     const value = String(formData.get(key) ?? '').trim();
     return value ? { [key]: value } : {};
   };
+  let created: { id: number; keycloakLinked?: boolean };
   try {
-    await api('/v1/members', {
-      method: 'POST',
-      body: JSON.stringify({
-        firstName: String(formData.get('firstName') ?? '').trim(),
-        lastName: String(formData.get('lastName') ?? '').trim(),
-        email: String(formData.get('email') ?? '').trim(),
-        ...optional('dob'),
-        ...optional('rcsId'),
-        ...optional('rin'),
-      }),
-    });
+    created = await api<{ id: number; keycloakLinked?: boolean }>(
+      '/v1/members',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          firstName: String(formData.get('firstName') ?? '').trim(),
+          lastName: String(formData.get('lastName') ?? '').trim(),
+          email: String(formData.get('email') ?? '').trim(),
+          ...optional('dob'),
+          ...optional('rcsId'),
+          ...optional('rin'),
+        }),
+      },
+    );
   } catch (error) {
     redirect(
       `/admin/members?error=${encodeURIComponent(apiErrorMessage(error))}`,
     );
   }
   revalidatePath('/admin/members');
+  // Adding somebody who cannot sign in looks exactly like adding somebody who
+  // can, and the difference only shows up when they try. Say which happened.
+  redirect(
+    `/admin/members?added=${created.keycloakLinked === false ? 'nologin' : 'ok'}`,
+  );
 }
 
 /**

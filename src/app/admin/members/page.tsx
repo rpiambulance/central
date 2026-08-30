@@ -45,9 +45,10 @@ export default async function AdminMembersPage({
     showInactive?: string;
     deactivated?: string;
     asked?: string;
+    added?: string;
   }>;
 }) {
-  const { error, showInactive, deactivated, asked } = await searchParams;
+  const { error, showInactive, deactivated, asked, added } = await searchParams;
   const permissions = await myPermissions();
   const maySeeInactive = permissions.has(VIEW_INACTIVE);
   const mayWrite = permissions.has('members:write');
@@ -74,6 +75,18 @@ export default async function AdminMembersPage({
         description="Roster administration: profiles, activation, and credentials."
       />
       <ErrorBanner message={error} />
+      {added === 'nologin' ? (
+        <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          Member added, but no sign-in account was created for them — the
+          portal is not configured to make them. They will not be able to log
+          in until somebody creates one, and their record will link itself on
+          their first login.
+        </p>
+      ) : added === 'ok' ? (
+        <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-900 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
+          Member added, and emailed a link to set their password.
+        </p>
+      ) : null}
       {asked ? (
         <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
           Asked {asked} active member{asked === '1' ? '' : 's'} to check their
