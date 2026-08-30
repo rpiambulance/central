@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import type { NavGroup } from '@/lib/nav';
+import { activeHref, type NavGroup } from '@/lib/nav';
 import { cn } from '@/lib/utils';
 
 /**
@@ -32,6 +32,7 @@ function MobileNavMenu({
   pathname: string;
   badges?: Record<string, number>;
 }) {
+  const active = activeHref(groups, pathname);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -65,13 +66,7 @@ function MobileNavMenu({
             ) : null}
             {group.items.map((item) => (
               <DropdownMenuItem key={item.href} render={<Link href={item.href} />}>
-                <span
-                  className={cn(
-                    (pathname === item.href ||
-                      pathname.startsWith(`${item.href}/`)) &&
-                      'font-medium',
-                  )}
-                >
+                <span className={cn(item.href === active && 'font-medium')}>
                   {item.label}
                 </span>
                 <NavCount count={badges?.[item.href]} />
@@ -110,6 +105,9 @@ export function TopNavMenus({
   badges?: Record<string, number>;
 }) {
   const pathname = usePathname();
+  // One computation for every entry, so an ancestor cannot light up
+  // alongside the page you are actually on. See activeHref.
+  const active = activeHref(groups, pathname);
 
   return (
     <>
@@ -124,10 +122,7 @@ export function TopNavMenus({
         Dashboard
       </Button>
       {groups.map((group) => {
-        const active = group.items.some(
-          (item) =>
-            pathname === item.href || pathname.startsWith(`${item.href}/`),
-        );
+        const inThisGroup = group.items.some((item) => item.href === active);
         if (!group.label) {
           // Top-level destinations, not a category: buttons, not a dropdown.
           return group.items.map((item) => (
@@ -137,9 +132,7 @@ export function TopNavMenus({
               variant="ghost"
               size="sm"
               className={cn(
-                (pathname === item.href ||
-                  pathname.startsWith(`${item.href}/`)) &&
-                  'bg-accent text-accent-foreground',
+                item.href === active && 'bg-accent text-accent-foreground',
               )}
             >
               {item.label}
@@ -154,7 +147,7 @@ export function TopNavMenus({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={cn(active && 'bg-accent text-accent-foreground')}
+                  className={cn(inThisGroup && 'bg-accent text-accent-foreground')}
                 />
               }
             >

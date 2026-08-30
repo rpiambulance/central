@@ -15,7 +15,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import type { NavGroup } from '@/lib/nav';
+import { activeHref, type NavGroup } from '@/lib/nav';
 
 export function AppSidebar({
   groups,
@@ -26,6 +26,7 @@ export function AppSidebar({
   badges?: Record<string, number>;
 }) {
   const pathname = usePathname();
+  const active = activeHref(groups, pathname);
   const { state, isMobile, setOpen, setOpenMobile } = useSidebar();
 
   // Someone who keeps the sidebar closed opened it to get somewhere, so put
@@ -94,10 +95,7 @@ export function AppSidebar({
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       render={<Link href={item.href} />}
-                      isActive={
-                        pathname === item.href ||
-                        (item.href !== '/' && pathname.startsWith(`${item.href}/`))
-                      }
+                      isActive={item.href === active}
                       onClick={() => handleNavigate(item.href)}
                     >
                       {item.label}

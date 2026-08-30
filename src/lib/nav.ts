@@ -27,13 +27,6 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/inbox', label: 'Inbox' },
       { href: '/members', label: 'Members', permissions: ['members:read'] },
-      // Beside the roster, because that is what it is: people who need
-      // putting on it, or attaching to a record already there.
-      {
-        href: '/admin/members/unlinked',
-        label: 'Unlinked Logins',
-        permissions: ['members:write'],
-      },
       // No permission: the point of the page is that everyone can find the
       // links. Editing it is what needs one.
       { href: '/resources', label: 'Resources' },
@@ -88,13 +81,6 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Pending Suspensions',
         permissions: ['credentials:grant'],
       },
-      // "Form Templates", because "Evaluations + Checklists" read as a member
-      // page and is not one.
-      {
-        href: '/admin/evals',
-        label: 'Form Templates',
-        permissions: ['evals:manage-forms'],
-      },
     ],
   },
   {
@@ -123,16 +109,80 @@ export const NAV_GROUPS: NavGroup[] = [
       // No permission: anyone may complete a check, and the page is where
       // they start. Building the sheets is the part that needs one.
       { href: '/checksheets', label: 'Checksheets' },
+      { href: '/ops/fuel', label: 'Fuel Log' },
+      { href: '/admin/radios', label: 'Radios', permissions: ['radios:manage'] },
+    ],
+  },
+  {
+    // Setting the place up rather than running it.
+    //
+    // Deliberately not every page with an officer permission on it: crew
+    // assignments, coverage requests, certification verification and the
+    // service status are work done daily and belong beside the thing they
+    // are about. What lands here is the configuration — the forms, the
+    // sheets, the roster itself — which is edited rarely and looked for
+    // deliberately, and which would otherwise be scattered.
+    label: 'Admin',
+    items: [
+      {
+        href: '/admin/members',
+        label: 'Member Roster',
+        permissions: ['members:write'],
+      },
+      {
+        href: '/admin/members/unlinked',
+        label: 'Unlinked Logins',
+        permissions: ['members:write'],
+      },
+      // "Form Templates", because "Evaluations + Checklists" read as a member
+      // page and is not one.
+      {
+        href: '/admin/evals',
+        label: 'Form Templates',
+        permissions: ['evals:manage-forms'],
+      },
       {
         href: '/admin/checksheets',
         label: 'Manage Checksheets',
         permissions: ['checksheets:manage'],
       },
-      { href: '/ops/fuel', label: 'Fuel Log' },
-      { href: '/admin/radios', label: 'Radios', permissions: ['radios:manage'] },
+      // Reachable only from a link on the chores page until now, which is
+      // no way to find a page.
+      {
+        href: '/admin/chores',
+        label: 'Manage Chores',
+        permissions: ['chores:manage'],
+      },
     ],
   },
 ];
+
+/**
+ * Which navigation entry a path belongs to: the longest one that matches.
+ *
+ * Asking each entry separately lights up every ancestor — "Clear for Calls"
+ * at /training/clearances also lit "My Training" at /training, because the
+ * path does start with it. Only the most specific match is the page you are
+ * on, and computing it here means a new nested entry cannot reintroduce the
+ * bug by being added somewhere that does not know to check.
+ */
+export function activeHref(
+  groups: NavGroup[],
+  pathname: string,
+): string | null {
+  let best: string | null = null;
+  for (const group of groups) {
+    for (const item of group.items) {
+      const matches =
+        pathname === item.href ||
+        (item.href !== '/' && pathname.startsWith(`${item.href}/`));
+      if (matches && (best === null || item.href.length > best.length)) {
+        best = item.href;
+      }
+    }
+  }
+  return best;
+}
 
 /** Groups visible to a member holding `permissions`; empty groups drop out. */
 export function filterNavGroups(permissions: Set<string>): NavGroup[] {
