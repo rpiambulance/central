@@ -185,6 +185,52 @@ export function CredentialPicker({
  * all when everything is unchecked, which would read as "unchanged" rather
  * than "cleared" on the server.
  */
+/**
+ * Whether the form takes files, and whether it warns about what is in them.
+ *
+ * The warning is off by default and only offered once attachments are: a
+ * warning on every form is a warning nobody reads by the time it matters.
+ */
+export function AttachmentField({
+  initial = 'NONE',
+  initialPhiWarning = false,
+}: {
+  initial?: 'NONE' | 'OPTIONAL' | 'REQUIRED';
+  initialPhiWarning?: boolean;
+}) {
+  const [mode, setMode] = useState(initial);
+  return (
+    <div className="grid gap-2 text-xs text-muted-foreground">
+      <label className="grid gap-1">
+        Attachments
+        <select
+          name="attachments"
+          value={mode}
+          onChange={(event) =>
+            setMode(event.target.value as 'NONE' | 'OPTIONAL' | 'REQUIRED')
+          }
+          className="h-8 w-56 rounded-md border border-input bg-background px-2 text-sm text-foreground"
+        >
+          <option value="NONE">No files</option>
+          <option value="OPTIONAL">Files may be attached</option>
+          <option value="REQUIRED">At least one file required</option>
+        </select>
+      </label>
+      {mode !== 'NONE' ? (
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="phiWarning"
+            defaultChecked={initialPhiWarning}
+          />
+          Warn before uploading that files must contain no protected health
+          information
+        </label>
+      ) : null}
+    </div>
+  );
+}
+
 export function ChecklistLevelField({
   credentials,
   initial = [],

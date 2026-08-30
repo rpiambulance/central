@@ -15,6 +15,7 @@ import { FormGroup } from '@/components/form-group';
 import { formNodes } from '@/lib/form-nodes';
 import { PageHeader } from '@/components/page-header';
 import { deleteEval, saveScores, signEval } from './actions';
+import { Attachments, type Attachment } from './attachments';
 import {
   EditableItem,
   ReadOnlyItem,
@@ -46,7 +47,10 @@ type Evaluation = {
     version: number;
     items: Item[];
     groups?: Group[];
+    attachments?: 'NONE' | 'OPTIONAL' | 'REQUIRED';
+    phiWarning?: boolean;
   };
+  attachments?: Attachment[];
   scores: Score[];
   evaluator: { id: number; firstName: string; lastName: string };
   subject: { id: number; firstName: string; lastName: string };
@@ -322,6 +326,16 @@ export default async function EvalDetailPage({
           </div>
         </div>
       )}
+
+      {/* Above the signatures: what is attached is part of what is being
+          signed for, and the evaluator should see it before signing. */}
+      <Attachments
+        evaluationId={evaluation.id}
+        attachments={evaluation.attachments ?? []}
+        requirement={evaluation.template.attachments ?? 'NONE'}
+        phiWarning={evaluation.template.phiWarning ?? false}
+        editable={evaluation.status === 'DRAFT' && editable}
+      />
 
       {evaluation.status !== 'DRAFT' ? (
         <Card>

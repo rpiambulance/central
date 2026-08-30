@@ -133,6 +133,10 @@ function templateBody(formData: FormData) {
     // for checklists left the evaluation picker rendering and doing nothing,
     // which reads as gating that is not there.
     signoffCredentialTypeIds: signoffLevels(formData),
+    // Whether the form takes files, and whether it says the obvious thing
+    // about what must not be in them.
+    attachments: String(formData.get('attachments') ?? 'NONE'),
+    phiWarning: formData.get('phiWarning') === 'on',
     nodes: nodesFromForm(formData),
   };
 }

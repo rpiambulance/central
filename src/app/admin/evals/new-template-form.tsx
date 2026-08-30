@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
+  AttachmentField,
   ChecklistLevelField,
   TemplateEditor,
   type CredentialOption,
@@ -76,6 +77,7 @@ export function NewTemplateForm({
               insists on an answer. An evaluation with none is open to anyone
               who may write evaluations, which is the ordinary case. */}
           <ChecklistLevelField credentials={credentials} checklist={checklist} />
+          <AttachmentField />
 
           <TemplateEditor checklist={checklist} credentials={credentials} />
 

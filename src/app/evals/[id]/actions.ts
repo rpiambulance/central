@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { api } from '@/lib/api';
+import { api, apiUpload } from '@/lib/api';
 import { apiErrorMessage } from '@/lib/errors';
 
 type ItemRef = {
@@ -107,6 +107,35 @@ export async function signEval(evalId: number) {
     redirect(
       `/evals/${evalId}?error=${encodeURIComponent(apiErrorMessage(error))}`,
     );
+  }
+  revalidatePath(`/evals/${evalId}`);
+}
+
+/**
+ * Attaches a titled file.
+ *
+ * Returns its error rather than redirecting, so a rejected upload does not
+ * cost the evaluator the scores they have already typed into the form
+ * around it.
+ */
+export async function addAttachment(
+  evalId: number,
+  body: FormData,
+): Promise<{ error?: string } | undefined> {
+  try {
+    await apiUpload(`/v1/evals/${evalId}/attachments`, body);
+  } catch (error) {
+    return { error: apiErrorMessage(error) };
+  }
+  revalidatePath(`/evals/${evalId}`);
+  return undefined;
+}
+
+export async function removeAttachment(evalId: number, attachmentId: string) {
+  try {
+    await api(`/v1/evals/attachments/${attachmentId}`, { method: 'DELETE' });
+  } catch (error) {
+    redirect(`/evals/${evalId}?error=${encodeURIComponent(apiErrorMessage(error))}`);
   }
   revalidatePath(`/evals/${evalId}`);
 }

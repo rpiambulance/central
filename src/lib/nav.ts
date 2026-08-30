@@ -27,6 +27,13 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/inbox', label: 'Inbox' },
       { href: '/members', label: 'Members', permissions: ['members:read'] },
+      // Beside the roster, because that is what it is: people who need
+      // putting on it, or attaching to a record already there.
+      {
+        href: '/admin/members/unlinked',
+        label: 'Unlinked Logins',
+        permissions: ['members:write'],
+      },
       // No permission: the point of the page is that everyone can find the
       // links. Editing it is what needs one.
       { href: '/resources', label: 'Resources' },

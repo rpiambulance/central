@@ -13,7 +13,11 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { reviseTemplate } from '../actions';
-import { ChecklistLevelField, TemplateEditor } from '../template-editor';
+import {
+  AttachmentField,
+  ChecklistLevelField,
+  TemplateEditor,
+} from '../template-editor';
 import { toEditorNodes, type ApiTemplate } from '../template-shape';
 
 type Credential = { id: number; key: string; name: string };
@@ -102,6 +106,10 @@ export default async function ReviseTemplatePage({
               initial={(template.signoffCredentialTypes ?? []).map(
                 (credential) => credential.id,
               )}
+            />
+            <AttachmentField
+              initial={template.attachments ?? 'NONE'}
+              initialPhiWarning={template.phiWarning ?? false}
             />
             <TemplateEditor
               initial={toEditorNodes(template)}

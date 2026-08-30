@@ -22,6 +22,8 @@ export type ApiGroup = {
 };
 
 export type ApiTemplate = {
+  attachments?: 'NONE' | 'OPTIONAL' | 'REQUIRED';
+  phiWarning?: boolean;
   id: number;
   name: string;
   kind?: 'EVALUATION' | 'CHECKLIST';
