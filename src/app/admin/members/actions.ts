@@ -2,10 +2,36 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 import { apiErrorMessage } from '@/lib/errors';
 
-export async function createMember(formData: FormData) {
+/** A member the new one might be a second copy of. */
+export interface Existing {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  active?: boolean;
+}
+
+export type CreateState = {
+  error?: string;
+  /** Set when the name matched and the officer can confirm past it. */
+  duplicateName?: { message: string; existing: Existing[] };
+  added?: 'ok' | 'nologin';
+} | null;
+
+/**
+ * Adds a member, asking once about a name that is already on the roster.
+ *
+ * Returns its result rather than redirecting, so the form keeps what was
+ * typed: being told "there is already a Casey Reilly" and losing the other
+ * five fields is a good way to make somebody stop reading the warning.
+ */
+export async function createMember(
+  _previous: CreateState,
+  formData: FormData,
+): Promise<CreateState> {
   const optional = (key: string) => {
     const value = String(formData.get(key) ?? '').trim();
     return value ? { [key]: value } : {};
@@ -20,6 +46,10 @@ export async function createMember(formData: FormData) {
           firstName: String(formData.get('firstName') ?? '').trim(),
           lastName: String(formData.get('lastName') ?? '').trim(),
           email: String(formData.get('email') ?? '').trim(),
+          // Only ever set by pressing the confirm button below.
+          ...(formData.get('confirmDuplicateName') === 'yes'
+            ? { confirmDuplicateName: true }
+            : {}),
           ...optional('dob'),
           ...optional('rcsId'),
           ...optional('rin'),
@@ -27,24 +57,28 @@ export async function createMember(formData: FormData) {
       },
     );
   } catch (error) {
-    redirect(
-      `/admin/members?error=${encodeURIComponent(apiErrorMessage(error))}`,
-    );
+    const body =
+      error instanceof ApiError
+        ? (error.body as {
+            code?: string;
+            message?: string;
+            existing?: Existing[];
+          } | null)
+        : null;
+    if (body?.code === 'DUPLICATE_NAME') {
+      return {
+        duplicateName: {
+          message: body.message ?? 'Somebody by that name is already here.',
+          existing: body.existing ?? [],
+        },
+      };
+    }
+    return { error: apiErrorMessage(error) };
   }
   revalidatePath('/admin/members');
-  // Adding somebody who cannot sign in looks exactly like adding somebody who
-  // can, and the difference only shows up when they try. Say which happened.
-  redirect(
-    `/admin/members?added=${created.keycloakLinked === false ? 'nologin' : 'ok'}`,
-  );
+  return { added: created.keycloakLinked === false ? 'nologin' : 'ok' };
 }
 
-/**
- * Ask everybody active to check their own details.
- *
- * Inactive members are skipped by the API rather than filtered here: somebody
- * who has left should not be given a task, still less emailed about one.
- */
 export async function requestProfileReviewFromAll(formData: FormData) {
   const note = String(formData.get('note') ?? '').trim();
   let asked = 0;

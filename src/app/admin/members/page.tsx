@@ -13,15 +13,12 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { requestProfileReviewFromAll } from './actions';
-import { createMember } from './actions';
+import { AddMemberForm } from './add-member-form';
 import {
   MemberTable,
   type CredentialType,
   type MemberRow,
 } from '@/components/member-table';
-
-const inputCls =
-  'h-8 rounded-md border border-input bg-background px-2 text-sm';
 
 function NoAccess() {
   return (
@@ -45,10 +42,9 @@ export default async function AdminMembersPage({
     showInactive?: string;
     deactivated?: string;
     asked?: string;
-    added?: string;
   }>;
 }) {
-  const { error, showInactive, deactivated, asked, added } = await searchParams;
+  const { error, showInactive, deactivated, asked } = await searchParams;
   const permissions = await myPermissions();
   const maySeeInactive = permissions.has(VIEW_INACTIVE);
   const mayWrite = permissions.has('members:write');
@@ -75,18 +71,6 @@ export default async function AdminMembersPage({
         description="Roster administration: profiles, activation, and credentials."
       />
       <ErrorBanner message={error} />
-      {added === 'nologin' ? (
-        <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
-          Member added, but no sign-in account was created for them — the
-          portal is not configured to make them. They will not be able to log
-          in until somebody creates one, and their record will link itself on
-          their first login.
-        </p>
-      ) : added === 'ok' ? (
-        <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-900 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
-          Member added, and emailed a link to set their password.
-        </p>
-      ) : null}
       {asked ? (
         <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
           Asked {asked} active member{asked === '1' ? '' : 's'} to check their
@@ -138,50 +122,7 @@ export default async function AdminMembersPage({
           <CardTitle>Create member</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={createMember} className="flex flex-wrap items-end gap-2">
-            <label className="grid gap-1 text-xs text-muted-foreground">
-              First name
-              <input
-                type="text"
-                name="firstName"
-                required
-                className={`${inputCls} w-36`}
-              />
-            </label>
-            <label className="grid gap-1 text-xs text-muted-foreground">
-              Last name
-              <input
-                type="text"
-                name="lastName"
-                required
-                className={`${inputCls} w-36`}
-              />
-            </label>
-            <label className="grid gap-1 text-xs text-muted-foreground">
-              Email
-              <input
-                type="email"
-                name="email"
-                required
-                className={`${inputCls} w-56`}
-              />
-            </label>
-            <label className="grid gap-1 text-xs text-muted-foreground">
-              Date of birth (optional)
-              <input type="date" name="dob" className={inputCls} />
-            </label>
-            <label className="grid gap-1 text-xs text-muted-foreground">
-              RCS ID (optional)
-              <input type="text" name="rcsId" className={`${inputCls} w-28`} />
-            </label>
-            <label className="grid gap-1 text-xs text-muted-foreground">
-              RIN (optional)
-              <input type="text" name="rin" className={`${inputCls} w-28`} />
-            </label>
-            <Button type="submit" size="sm">
-              Create member
-            </Button>
-          </form>
+          <AddMemberForm />
         </CardContent>
       </Card>
 
