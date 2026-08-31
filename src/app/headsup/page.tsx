@@ -3,7 +3,7 @@ import styles from './headsup.module.css';
 
 const API_URL = process.env.RAMPART_API_URL ?? 'http://localhost:3001';
 
-export const metadata = { title: 'Heads up — RPI Ambulance' };
+export const metadata = { title: 'Headsup — RPI Ambulance' };
 export const dynamic = 'force-dynamic';
 
 /**

@@ -60,7 +60,7 @@ export default async function NotesPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Whiteboard"
+        title="Headsup"
         description="Notes and dispatch mishaps, as they appear on the screens in the bay."
       />
       <ErrorBanner message={error} />

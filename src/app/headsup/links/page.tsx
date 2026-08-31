@@ -79,8 +79,8 @@ export default async function LinksPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Heads up displays"
-        description="The links that open the whiteboard on a screen, and the counters it shows."
+        title="Headsup displays"
+        description="The links that open Headsup on a screen, and the counters it shows."
       />
       <ErrorBanner message={error} />
       {done ? (
