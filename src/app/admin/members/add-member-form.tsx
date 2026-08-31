@@ -39,8 +39,8 @@ export function AddMemberForm() {
           <input type="email" name="email" required className={`${FIELD} w-56`} />
         </label>
         <label className="grid gap-1 text-xs text-muted-foreground">
-          Date of birth (optional)
-          <input type="date" name="dob" className={FIELD} />
+          Date of birth
+          <input type="date" name="dob" required className={FIELD} />
         </label>
         <label className="grid gap-1 text-xs text-muted-foreground">
           RCS ID (optional)

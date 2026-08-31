@@ -28,6 +28,7 @@ export async function updateProfile(formData: FormData) {
     throw error;
   }
   revalidatePath('/profile');
+  redirect('/profile?saved=details');
 }
 
 export async function updateNavLayout(formData: FormData) {
@@ -46,6 +47,7 @@ export async function updateNavLayout(formData: FormData) {
   }
   // the shell reads the preference in the root layout
   revalidatePath('/', 'layout');
+  redirect('/profile?saved=layout');
 }
 
 export async function updateTimeFormat(formData: FormData) {
@@ -64,6 +66,7 @@ export async function updateTimeFormat(formData: FormData) {
   }
   // Times are rendered on every page, so refresh the whole tree.
   revalidatePath('/', 'layout');
+  redirect('/profile?saved=timeFormat');
 }
 
 /**

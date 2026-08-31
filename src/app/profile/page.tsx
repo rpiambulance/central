@@ -43,9 +43,13 @@ type ProfileReview = {
 export default async function ProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; confirmed?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    confirmed?: string;
+    saved?: string;
+  }>;
 }) {
-  const { error, confirmed } = await searchParams;
+  const { error, confirmed, saved } = await searchParams;
   const [me, review] = await Promise.all([
     api<Me>('/v1/members/me'),
     api<ProfileReview>('/v1/members/me/profile-review'),
@@ -58,6 +62,18 @@ export default async function ProfilePage({
         description="Your contact information and portal preferences."
       />
       <ErrorBanner message={error} />
+
+      {/* Saving quietly and staying put reads as "did that work?", which is
+          how people end up pressing Save three times. */}
+      {saved ? (
+        <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-900 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
+          {saved === 'layout'
+            ? 'Navigation layout saved.'
+            : saved === 'timeFormat'
+              ? 'Time format saved.'
+              : 'Your details have been saved.'}
+        </p>
+      ) : null}
 
       {review.outstanding ? (
         <Card className="border-primary/50">

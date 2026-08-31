@@ -46,11 +46,12 @@ export async function createMember(
           firstName: String(formData.get('firstName') ?? '').trim(),
           lastName: String(formData.get('lastName') ?? '').trim(),
           email: String(formData.get('email') ?? '').trim(),
+          // Always sent now, rather than folded in with the optional fields.
+          dob: String(formData.get('dob') ?? '').trim(),
           // Only ever set by pressing the confirm button below.
           ...(formData.get('confirmDuplicateName') === 'yes'
             ? { confirmDuplicateName: true }
             : {}),
-          ...optional('dob'),
           ...optional('rcsId'),
           ...optional('rin'),
         }),
