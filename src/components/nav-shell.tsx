@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import { auth, signIn } from '@/auth';
 import { api } from '@/lib/api';
@@ -38,7 +39,16 @@ const MAIN = 'flex-1 container mx-auto max-w-6xl px-4 py-6';
  * Unauthenticated visitors (incl. the public /coverage pages) get a
  * minimal header.
  */
+/** Pages that fill the screen on their own. */
+const CHROMELESS = new Set(['/headsup']);
+
 export async function NavShell({ children }: { children: React.ReactNode }) {
+  // A wall display gets the page and nothing else — no sidebar, no header,
+  // no sign-in button for a television to ignore. The path arrives as a
+  // header because a server component cannot see its own URL.
+  const pathname = (await headers()).get('x-pathname');
+  if (pathname && CHROMELESS.has(pathname)) return <>{children}</>;
+
   const session = await auth();
 
   if (!session?.user) {

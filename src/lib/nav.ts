@@ -110,6 +110,10 @@ export const NAV_GROUPS: NavGroup[] = [
       // they start. Building the sheets is the part that needs one.
       { href: '/checksheets', label: 'Checksheets' },
       { href: '/ops/fuel', label: 'Fuel Log' },
+      // No permission: writing on the whiteboard is what a whiteboard is
+      // for, and anybody on duty may. Handing out the display links is the
+      // part that needs one, and that lives under Admin.
+      { href: '/headsup/notes', label: 'Whiteboard' },
       { href: '/admin/radios', label: 'Radios', permissions: ['radios:manage'] },
     ],
   },
@@ -162,6 +166,11 @@ export const NAV_GROUPS: NavGroup[] = [
         href: '/admin/chores',
         label: 'Manage Chores',
         permissions: ['chores:manage'],
+      },
+      {
+        href: '/headsup/links',
+        label: 'Heads Up Displays',
+        permissions: ['headsup:manage'],
       },
     ],
   },

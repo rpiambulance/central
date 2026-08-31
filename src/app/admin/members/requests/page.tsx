@@ -64,9 +64,11 @@ function NoAccess() {
 export default async function RequestsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; decided?: string }>;
+  searchParams: Promise<{ error?: string; decided?: string
+    confirmName?: string;
+  }>;
 }) {
-  const { error, decided } = await searchParams;
+  const { error, decided, confirmName } = await searchParams;
   let changes: ProfileChange[];
   let accounts: AccountRequest[];
   try {
@@ -91,9 +93,13 @@ export default async function RequestsPage({
         <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-900 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
           {decided === 'applied'
             ? 'Change applied, and the member has been told.'
-            : decided === 'noted'
-              ? 'Marked as accepted. Add them from the roster if you have not already.'
-              : 'Declined, and the member has been told.'}
+            : decided === 'made'
+              ? 'Accepted — the member has been created from their request and emailed a link to set their password.'
+              : decided === 'made-nologin'
+                ? 'Accepted and the member created, but no sign-in account was made — the portal is not configured to create them. They cannot log in until somebody does.'
+                : decided === 'noted'
+                  ? 'Marked as accepted and linked to the member you chose.'
+                  : 'Declined, and the member has been told.'}
         </p>
       ) : null}
 
@@ -229,12 +235,32 @@ export default async function RequestsPage({
                     className="h-8 w-64 rounded-md border border-input bg-background px-2 text-sm"
                   />
                 </label>
+                {/* Asked for only when the request carried none: a member
+                    record cannot be created without one, and chasing it by
+                    email is exactly what the form was meant to prevent. */}
+                {/* Carries the answer to the duplicate-name warning, and
+                    only for the request it was actually asked about. */}
+                {confirmName === String(request.id) ? (
+                  <input type="hidden" name="confirmDuplicateName" value="yes" />
+                ) : null}
+                {request.dob ? null : (
+                  <label className="grid gap-1 text-xs text-muted-foreground">
+                    Date of birth (needed)
+                    <input
+                      type="date"
+                      name="dob"
+                      className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                    />
+                  </label>
+                )}
                 <Button
                   type="submit"
                   size="sm"
                   formAction={decideAccountRequest.bind(null, request.id, true)}
                 >
-                  Accepted
+                  {confirmName === String(request.id)
+                    ? 'Create anyway'
+                    : 'Accept and create member'}
                 </Button>
                 <Button
                   type="submit"

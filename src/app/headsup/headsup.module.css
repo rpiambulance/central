@@ -1,0 +1,293 @@
+/*
+ * The station whiteboard.
+ *
+ * Deliberately not the portal's design system: this is read across a bay
+ * from ten feet away by somebody holding a radio, so it is the original
+ * headsup layout and its type sizes, which were chosen against a real
+ * television. Light by day and dark by night, switched on the page rather
+ * than by the viewer's browser — a screen bolted to a wall has no one to
+ * set a preference.
+ */
+
+.headsup {
+  --hu-bg: #fff;
+  --hu-fg: #212529;
+  --hu-muted: #444;
+  --hu-faint: #666;
+  --hu-vacant: #888;
+  --hu-rule: rgba(0, 0, 0, 0.1);
+  --hu-bar: #333;
+  --hu-bar-fg: #fff;
+  --hu-bar-time: #ddd;
+
+  min-height: 100vh;
+  background: var(--hu-bg);
+  color: var(--hu-fg);
+  font-family: var(--font-plex-sans), system-ui, sans-serif;
+}
+
+.headsup[data-night='true'] {
+  --hu-bg: #111;
+  --hu-fg: #aaa;
+  --hu-muted: #bbb;
+  --hu-faint: #999;
+  --hu-vacant: #777;
+  --hu-rule: rgba(255, 255, 255, 0.1);
+  --hu-bar: #080808;
+  --hu-bar-fg: #888;
+  --hu-bar-time: #aaa;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--hu-bar);
+  color: var(--hu-bar-fg);
+  font-size: 36px;
+  padding: 10px 20px;
+}
+
+.header img {
+  height: 60px;
+}
+
+.datetime {
+  margin-left: auto;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.time {
+  margin-left: 30px;
+  color: var(--hu-bar-time);
+}
+
+.body {
+  padding: 0 20px 20px;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+.lower {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+}
+
+.rule {
+  border: 0;
+  border-top: 1px solid var(--hu-rule);
+  margin: 20px 0;
+}
+
+.section {
+  margin-top: 15px;
+}
+
+.sectionHeading {
+  text-transform: uppercase;
+  font-size: 30px;
+  color: var(--hu-muted);
+  margin-bottom: 10px;
+  line-height: 1;
+}
+
+.crewMember {
+  margin: 15px auto;
+  padding: 5px 15px 15px;
+  border-bottom: 1px solid var(--hu-rule);
+}
+
+.crewMember:last-child {
+  border-bottom: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.crewTitle {
+  display: block;
+  font-size: 30px;
+  color: var(--hu-muted);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.crewName {
+  font-size: 60px;
+  line-height: 1;
+  font-weight: 600;
+}
+
+.crewNumber {
+  margin-left: 30px;
+  font-size: 36px;
+  color: var(--hu-faint);
+}
+
+.vacant {
+  text-transform: uppercase;
+  color: var(--hu-vacant);
+  font-size: 48px;
+}
+
+.vacant::before {
+  content: '<';
+}
+
+.vacant::after {
+  content: '>';
+}
+
+.counts {
+  border-left: 1px solid var(--hu-rule);
+  padding-left: 20px;
+  line-height: 1;
+}
+
+.callCount {
+  text-align: center;
+  font-size: 180px;
+}
+
+.mishapCount {
+  text-align: center;
+  font-size: 140px;
+}
+
+.chores,
+.notes p {
+  font-size: 36px;
+}
+
+.chores ul {
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.notes p {
+  padding: 5px 0 15px;
+  margin: 0;
+  border-bottom: 1px solid var(--hu-rule);
+}
+
+.notes p:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.outOfService {
+  background: #b10000;
+  color: #fff;
+  font-size: 36px;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  text-align: center;
+}
+
+/* The screen a dispatch takes over. ---------------------------------- */
+
+@keyframes dispatchBackground {
+  from {
+    background-color: #4a0000;
+  }
+  to {
+    background-color: #5a0000;
+  }
+}
+
+.dispatch {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+  font-family: var(--font-plex-sans), system-ui, sans-serif;
+  animation: dispatchBackground 0.5s infinite cubic-bezier(0, 1, 1, 1) alternate;
+}
+
+/* Nobody is watching the screen when this appears — they are being woken by
+   it — so the motion is what draws the eye. Honoured all the same: a flashing
+   background is exactly what this setting exists to turn off. */
+@media (prefers-reduced-motion: reduce) {
+  .dispatch {
+    animation: none;
+    background-color: #5a0000;
+  }
+}
+
+.dispatchTime {
+  font-size: 60px;
+  color: #e5e5e5;
+}
+
+.determinant {
+  border-radius: 100px;
+  text-transform: uppercase;
+  font-size: 100px;
+  padding: 0 60px;
+}
+
+.complaint {
+  font-size: 100px;
+  text-transform: capitalize;
+  padding: 0 40px;
+}
+
+.location {
+  font-size: 64px;
+  padding: 0 40px;
+}
+
+.alpha {
+  background: #9bda9b;
+  color: #000;
+}
+
+.bravo {
+  background: #ece68d;
+  color: #000;
+}
+
+.charlie {
+  background: #f09442;
+  color: #020004;
+}
+
+.delta {
+  background: #b10000;
+  color: #fff;
+}
+
+.echo {
+  background: #000;
+  color: #ff1f1f;
+}
+
+.problem {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  color: #888;
+  text-align: center;
+  padding: 2rem;
+}
+
+.stale {
+  margin-left: 20px;
+  font-size: 24px;
+  color: #d97706;
+  text-transform: uppercase;
+}

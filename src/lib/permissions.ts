@@ -38,6 +38,8 @@ export const PERMISSION_INFO: Record<string, string> = {
   'run-numbers:manage':
     'Edit standby locations and wind their run-number counters',
   'chores:manage': 'Create and edit chores, and reopen completed ones',
+  'headsup:manage':
+    'Hand out and revoke the links that open a Heads Up display, and start its counters again',
   'service:status': 'Put the agency in or out of service',
   'dispatches:read': 'View the dispatch log',
   'tokens:manage': 'Create and revoke API tokens',
@@ -58,6 +60,7 @@ const GROUP_LABELS: Array<[prefix: string, label: string]> = [
   ['settings:', 'App settings'],
   ['fuel:', 'Operations'],
   ['radios:', 'Operations'],
+  ['headsup:', 'Operations'],
   ['vehicles:', 'Operations'],
   ['dispatches:', 'Operations'],
   ['tokens:', 'Administration'],

@@ -64,6 +64,20 @@ const providers = [
     : []),
 ];
 
+/**
+ * Pages that must render without a session.
+ *
+ * Exact matches, deliberately: `/headsup` is a public display, but
+ * `/headsup/notes` is a member writing on it and `/headsup/links` is an
+ * officer handing out the display links. A prefix test here would quietly
+ * open both.
+ */
+const PUBLIC_PATHS = new Set(['/headsup', '/headsup/stream', '/headsup/data']);
+
+function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PATHS.has(pathname);
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
   callbacks: {
@@ -134,7 +148,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.authError = token.authError as string | undefined;
       return session;
     },
-    authorized({ auth }) {
+    authorized({ auth, request }) {
+      // The whiteboard displays carry a token in the URL instead of a
+      // session: a television in the bay cannot sign in, and nobody wants it
+      // to. The API is what checks that token — this only decides that a
+      // missing cookie is not by itself a reason to turn the screen away.
+      if (isPublicPath(request.nextUrl.pathname)) return true;
       // A session is only useful if it carries a working access token: every
       // page calls the API with it. A stale cookie minted before token
       // handling existed, or one whose refresh failed, looks signed-in but

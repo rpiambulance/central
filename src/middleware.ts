@@ -20,6 +20,12 @@ export const config = {
   // per-request status links, neither of which their requesters have an
   // account for — and /request-account, which is how somebody without an
   // account asks for one and so cannot require having one.
+  //
+  // The whiteboard displays are deliberately NOT excluded here. They are
+  // public, but they are let through by the authorized() callback in auth.ts
+  // instead, so this middleware still runs and still stamps the path — which
+  // is how the layout knows to give a television the page with no sidebar
+  // wrapped around it.
   matcher: [
     '/((?!api/auth|request-coverage|request-account|_next/static|_next/image|favicon.ico).*)',
   ],
