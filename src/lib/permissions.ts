@@ -39,7 +39,7 @@ export const PERMISSION_INFO: Record<string, string> = {
     'Edit standby locations and wind their run-number counters',
   'chores:manage': 'Create and edit chores, and reopen completed ones',
   'headsup:manage':
-    'Hand out and revoke the links that open a Heads Up display, and start its counters again',
+    'Hand out and revoke the links that open a Headsup display, and start its counters again',
   'service:status': 'Put the agency in or out of service',
   'dispatches:read': 'View the dispatch log',
   'tokens:manage': 'Create and revoke API tokens',

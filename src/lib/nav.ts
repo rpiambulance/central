@@ -169,7 +169,7 @@ export const NAV_GROUPS: NavGroup[] = [
       },
       {
         href: '/headsup/links',
-        label: 'Heads Up Displays',
+        label: 'Headsup',
         permissions: ['headsup:manage'],
       },
     ],
