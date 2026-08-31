@@ -124,6 +124,14 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
         .then((result) => (result.held ? result.count : 0))
         .catch(() => 0)
     : 0;
+  // People waiting to be let in, or for a locked field to be changed. Both
+  // kinds land on one page, so they are one number — and asked for only by
+  // those who could act on them, like the counts above.
+  const requestsPending = permissions.has('members:write')
+    ? await api<{ count: number }>('/v1/requests/pending/count', { raw: true })
+        .then((result) => result.count)
+        .catch(() => 0)
+    : 0;
   // Unreadable status must not claim the agency is down, so it falls back to
   // in service — the ordinary state, and the one that misleads nobody.
   const serviceStatus = await api<ServiceStatus>('/v1/service-status', {
@@ -156,6 +164,7 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
                 '/admin/certifications': certsPending,
                 '/checksheets': checksOverdue,
                 '/admin/credentials/suspensions': heldSuspensions,
+                '/admin/members/requests': requestsPending,
               }}
             />
             <div className="ml-auto flex items-center gap-2">
@@ -183,6 +192,7 @@ export async function NavShell({ children }: { children: React.ReactNode }) {
           '/admin/certifications': certsPending,
           '/checksheets': checksOverdue,
           '/admin/credentials/suspensions': heldSuspensions,
+          '/admin/members/requests': requestsPending,
         }}
       />
       <SidebarInset>
