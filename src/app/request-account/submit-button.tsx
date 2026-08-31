@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button';
  * says so.
  *
  * The optional fields really are optional — somebody without a mobile should
- * still be able to ask — but a request with no phone number and no note takes
- * an email exchange to get anywhere, so it is worth one nudge. The same
- * shape as the coverage request form, for the same reason.
+ * still be able to ask — but a request with nothing beyond a name and an
+ * email takes an exchange to get anywhere, so it is worth one nudge. The
+ * same shape as the coverage request form, for the same reason.
  */
 export function SubmitWithCheck() {
   const [missing, setMissing] = useState<string[] | null>(null);
@@ -25,8 +25,15 @@ export function SubmitWithCheck() {
     const value = (name: string) =>
       (form.elements.namedItem(name) as HTMLInputElement | null)?.value?.trim() ??
       '';
+    // Not every blank field is worth a warning — naming six would train
+    // people to click past it. These are the ones whose absence actually
+    // costs somebody an email: a way to phone them, the date of birth the
+    // member record cannot be created without, an address, and a sentence
+    // about who they are.
     const gaps: string[] = [];
-    if (!value('phone')) gaps.push('phone number');
+    if (!value('cellPhone') && !value('homePhone')) gaps.push('a phone number');
+    if (!value('dob')) gaps.push('your date of birth');
+    if (!value('localAddress') && !value('homeAddress')) gaps.push('an address');
     if (!value('note')) gaps.push('anything about yourself');
 
     if (gaps.length) {
@@ -44,8 +51,12 @@ export function SubmitWithCheck() {
         >
           <p className="font-medium">Heads up!</p>
           <p>
-            You haven&apos;t given us your {missing.join(' or ')}. We can still
-            take the request, but it saves an email or two if you add it now.
+            You haven&apos;t given us{' '}
+            {missing.length > 1
+              ? `${missing.slice(0, -1).join(', ')} or ${missing[missing.length - 1]}`
+              : missing[0]}
+            . We can still take the request, but it saves an email or two if
+            you add it now.
           </p>
           <p className="mt-1">Press send again to submit it as it is.</p>
         </div>

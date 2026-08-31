@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/table';
 import { PageHeader } from '@/components/page-header';
 import { CertificationTabs } from '../tabs';
+import { surnameFirst } from '@/lib/name';
 
 type Expiring = {
   id: number;
@@ -137,7 +138,7 @@ export default async function ExpiringCertificationsPage({
                         href={`/admin/members/${row.member.id}`}
                         className="underline underline-offset-2"
                       >
-                        {row.member.lastName}, {row.member.firstName}
+                        {surnameFirst(row.member)}
                       </Link>
                     </TableCell>
                     <TableCell>

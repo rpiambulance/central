@@ -24,6 +24,7 @@ import { bulkWeek } from './actions';
 import { UndoButton } from './undo-button';
 import { UndoProvider } from './undo-context';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { surnameFirst } from '@/lib/name';
 
 const POSITIONS = ['CC', 'DRIVER', 'ATTENDANT', 'OBSERVER', 'DUTY_SUP'] as const;
 type Position = (typeof POSITIONS)[number];
@@ -49,6 +50,7 @@ const WEEKDAYS = [
 type Member = {
   id: number;
   firstName: string;
+  preferredFirstName?: string | null;
   lastName: string;
   /** Crew positions this member holds the credentials for. */
   positions: string[];
@@ -71,7 +73,7 @@ function retainedFor(
   // is absent from the roster entirely.
   const name =
     current.name ??
-    (known ? `${known.lastName}, ${known.firstName}` : 'Currently assigned');
+    (known ? surnameFirst(known) : 'Currently assigned');
   return { id: current.id, name };
 }
 

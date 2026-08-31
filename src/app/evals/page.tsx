@@ -26,6 +26,7 @@ import {
   type EvaluatorSet,
   type RequestTemplate,
 } from './request-form';
+import { displayName, surnameFirst } from '@/lib/name';
 
 type Evaluation = {
   id: number;
@@ -42,6 +43,7 @@ type Template = RequestTemplate;
 type Member = {
   id: number;
   firstName: string;
+  preferredFirstName?: string | null;
   lastName: string;
 };
 
@@ -186,7 +188,7 @@ export default async function EvalsPage({
                 >
                   {members.map((member) => (
                     <option key={member.id} value={member.id}>
-                      {member.lastName}, {member.firstName}
+                      {surnameFirst(member)}
                     </option>
                   ))}
                 </select>
@@ -235,10 +237,10 @@ export default async function EvalsPage({
                         </Link>
                       </TableCell>
                       <TableCell>
-                        {ev.evaluator.firstName} {ev.evaluator.lastName}
+                        {displayName(ev.evaluator)}
                       </TableCell>
                       <TableCell>
-                        {ev.subject.firstName} {ev.subject.lastName}
+                        {displayName(ev.subject)}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
                         {ev.evalDate ? formatDateOnly(ev.evalDate) : formatDate(ev.createdAt)}

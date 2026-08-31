@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { PageHeader } from '@/components/page-header';
+import { displayName } from '@/lib/name';
 
 type Run = {
   id: number;
@@ -105,7 +106,7 @@ export default async function RunPage({
         title={`${run.template.name}${run.asset ? ` — ${run.asset.name}` : ''}`}
         description={`${formatDateTime(run.completedAt, hour12)}${
           run.completedBy
-            ? ` · ${run.completedBy.firstName} ${run.completedBy.lastName}`
+            ? ` · ${displayName(run.completedBy)}`
             : ''
         }`}
       />

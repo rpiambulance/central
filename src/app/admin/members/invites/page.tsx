@@ -13,6 +13,7 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { closeInvite, createInvite } from './actions';
+import { displayName } from '@/lib/name';
 
 type Invite = {
   code: string;
@@ -159,7 +160,7 @@ export default async function InvitesPage({
                     ? ` · until ${formatDateOnly(invite.expiresAt)}`
                     : ''}
                   {invite.createdBy
-                    ? ` · made by ${invite.createdBy.firstName} ${invite.createdBy.lastName}`
+                    ? ` · made by ${displayName(invite.createdBy)}`
                     : ''}
                 </CardDescription>
               </CardHeader>

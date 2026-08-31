@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { setDefaultSlotValue, setSlotValue, type SlotValue } from './actions';
 import { useUndo } from './undo-context';
 import { cn } from '@/lib/utils';
+import { surnameFirst } from '@/lib/name';
 
 export interface SlotSelectProps {
   kind: 'slot' | 'default';
@@ -115,7 +116,7 @@ export function SlotSelect({
         ) : null}
         {members.map((m) => (
           <option key={m.id} value={m.id}>
-            {m.lastName}, {m.firstName}
+            {surnameFirst(m)}
           </option>
         ))}
       </select>

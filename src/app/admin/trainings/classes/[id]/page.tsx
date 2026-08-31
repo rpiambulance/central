@@ -20,6 +20,7 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { setAttendance } from './actions';
+import { surnameFirst } from '@/lib/name';
 
 const STATUSES = ['REGISTERED', 'ATTENDED', 'COMPLETED', 'NO_SHOW'] as const;
 
@@ -106,7 +107,7 @@ export default async function ClassRosterPage({
               {cls.attendance.map((row) => (
                 <TableRow key={row.member.id}>
                   <TableCell className="font-medium whitespace-nowrap">
-                    {row.member.lastName}, {row.member.firstName}
+                    {surnameFirst(row.member)}
                   </TableCell>
                   <TableCell>
                     <form

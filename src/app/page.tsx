@@ -11,10 +11,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { firstNameOf } from '@/lib/name';
 
 type Me = {
   id: number;
   firstName: string;
+  preferredFirstName?: string | null;
   lastName: string;
   credentials: Array<{ type: { key: string; name: string }; title: string | null }>;
 } | null;
@@ -162,7 +164,7 @@ export default async function Dashboard({
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">
-        Welcome{me ? `, ${me.firstName}` : ''}
+        Welcome{me ? `, ${firstNameOf(me)}` : ''}
       </h1>
       {bounced ? (
         <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">

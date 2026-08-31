@@ -13,6 +13,7 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { linkLogin } from './actions';
+import { surnameFirst } from '@/lib/name';
 
 type Unlinked = {
   id: number;
@@ -104,7 +105,7 @@ export default async function UnlinkedLoginsPage({
                       </option>
                       {members.map((member) => (
                         <option key={member.id} value={member.id}>
-                          {member.lastName}, {member.firstName} — {member.email}
+                          {surnameFirst(member)} — {member.email}
                         </option>
                       ))}
                     </select>

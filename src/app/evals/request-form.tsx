@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScoreInput, type Item } from './score-input';
+import { surnameFirst } from '@/lib/name';
 
 export type RequestTemplate = {
   id: number;
@@ -108,7 +109,7 @@ export function RequestForm({
           >
             {trainers.map((trainer) => (
               <option key={trainer.id} value={trainer.id}>
-                {trainer.lastName}, {trainer.firstName}
+                {surnameFirst(trainer)}
               </option>
             ))}
           </select>

@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { surnameFirst } from '@/lib/name';
 
 export type MemberOption = {
   id: number;
   firstName: string;
+  preferredFirstName?: string | null;
   lastName: string;
 };
 
@@ -139,7 +141,7 @@ export function ChoreForm({
           <option value="">Anyone</option>
           {members.map((member) => (
             <option key={member.id} value={member.id}>
-              {member.lastName}, {member.firstName}
+              {surnameFirst(member)}
             </option>
           ))}
         </select>

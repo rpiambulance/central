@@ -1,6 +1,7 @@
 'use client';
 
 import { assignNight } from './actions';
+import { displayName, surnameFirst } from '@/lib/name';
 
 export type MemberOption = { id: number; firstName: string; lastName: string };
 
@@ -38,12 +39,12 @@ export function AssignNight({
       >
         <option value="">
           {standing
-            ? `${standing.firstName} ${standing.lastName} (usual)`
+            ? `${displayName(standing)} (usual)`
             : 'Anyone'}
         </option>
         {members.map((member) => (
           <option key={member.id} value={member.id}>
-            {member.lastName}, {member.firstName}
+            {surnameFirst(member)}
           </option>
         ))}
       </select>

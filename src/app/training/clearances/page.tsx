@@ -21,10 +21,12 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { clearForCalls } from './actions';
+import { surnameFirst } from '@/lib/name';
 
 type Member = {
   id: number;
   firstName: string;
+  preferredFirstName?: string | null;
   lastName: string;
   credentials: Array<{
     title: string | null;
@@ -103,7 +105,7 @@ export default async function ClearancesPage({
                       {track.members.map((member) => (
                         <TableRow key={member.id}>
                           <TableCell className="font-medium whitespace-nowrap">
-                            {member.lastName}, {member.firstName}
+                            {surnameFirst(member)}
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-wrap gap-1">

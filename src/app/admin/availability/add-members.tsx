@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { addPollMembers } from './actions';
+import { displayName, surnameFirst } from '@/lib/name';
 
 export type Candidate = { id: number; firstName: string; lastName: string };
 
@@ -27,7 +28,7 @@ export function AddPollMembers({
     const needle = query.trim().toLowerCase();
     if (!needle) return candidates;
     return candidates.filter((person) =>
-      `${person.firstName} ${person.lastName}`.toLowerCase().includes(needle),
+      displayName(person).toLowerCase().includes(needle),
     );
   }, [candidates, query]);
 
@@ -68,7 +69,7 @@ export function AddPollMembers({
               checked={selected.has(person.id)}
               onChange={() => toggle(person.id)}
             />
-            {person.lastName}, {person.firstName}
+            {surnameFirst(person)}
           </label>
         ))}
         {!shown.length ? (

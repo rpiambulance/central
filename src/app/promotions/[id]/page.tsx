@@ -22,6 +22,7 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { appointProxy, captainDecision, castVote } from './actions';
+import { displayName, surnameFirst } from '@/lib/name';
 
 type MemberRef = { id: number; firstName: string; lastName: string };
 
@@ -99,7 +100,7 @@ function NoAccess() {
 }
 
 function memberName(m: MemberRef) {
-  return `${m.firstName} ${m.lastName}`;
+  return displayName(m);
 }
 
 export default async function PromotionReviewPage({
@@ -333,7 +334,7 @@ export default async function PromotionReviewPage({
                   >
                     {members.map((member) => (
                       <option key={member.id} value={member.id}>
-                        {member.lastName}, {member.firstName}
+                        {surnameFirst(member)}
                       </option>
                     ))}
                   </select>

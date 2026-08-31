@@ -12,6 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { PageHeader } from '@/components/page-header';
+import { displayName } from '@/lib/name';
 
 type Run = {
   id: number;
@@ -63,7 +64,7 @@ export default async function RunsPage() {
                   <TableCell>{run.asset?.name ?? '—'}</TableCell>
                   <TableCell>
                     {run.completedBy
-                      ? `${run.completedBy.firstName} ${run.completedBy.lastName}`
+                      ? displayName(run.completedBy)
                       : '—'}
                   </TableCell>
                   <TableCell className="max-w-64 truncate text-muted-foreground">

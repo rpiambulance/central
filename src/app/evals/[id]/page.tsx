@@ -22,6 +22,7 @@ import {
   type Item,
   type Score,
 } from '../score-input';
+import { displayName } from '@/lib/name';
 
 type Group = {
   id: number;
@@ -164,7 +165,7 @@ export default async function EvalDetailPage({
     <div className="space-y-6">
       <PageHeader
         title={evaluation.template.name}
-        description={`${evaluation.evaluator.firstName} ${evaluation.evaluator.lastName} evaluating ${evaluation.subject.firstName} ${evaluation.subject.lastName} — ${evaluation.evalDate ? formatDateOnly(evaluation.evalDate) : formatDate(evaluation.createdAt)}`}
+        description={`${displayName(evaluation.evaluator)} evaluating ${displayName(evaluation.subject)} — ${evaluation.evalDate ? formatDateOnly(evaluation.evalDate) : formatDate(evaluation.createdAt)}`}
       />
       <ErrorBanner message={error} />
 
@@ -350,13 +351,13 @@ export default async function EvalDetailPage({
             <SignatureLine
               hour12={hour12}
               label="Evaluator"
-              name={`${evaluation.evaluator.firstName} ${evaluation.evaluator.lastName}`}
+              name={displayName(evaluation.evaluator)}
               signedAt={evaluation.signedByEvaluator}
             />
             <SignatureLine
               hour12={hour12}
               label="Subject"
-              name={`${evaluation.subject.firstName} ${evaluation.subject.lastName}`}
+              name={displayName(evaluation.subject)}
               signedAt={evaluation.signedBySubject}
             />
             {evaluation.status !== 'SIGNED' ? (
@@ -377,7 +378,7 @@ export default async function EvalDetailPage({
             <CardDescription>
               {evaluation.status === 'DRAFT'
                 ? 'This one was never submitted, so nobody has seen it. Deleting it removes the draft and everything written so far.'
-                : `This evaluation is part of ${evaluation.subject.firstName} ${evaluation.subject.lastName}'s record and may already count toward a promotion. Deleting it also withdraws any request to sign it.`}{' '}
+                : `This evaluation is part of ${displayName(evaluation.subject)}'s record and may already count toward a promotion. Deleting it also withdraws any request to sign it.`}{' '}
               This cannot be undone.
             </CardDescription>
           </CardHeader>

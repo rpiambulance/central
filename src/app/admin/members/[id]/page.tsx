@@ -24,10 +24,12 @@ import {appointDutySupervisor,
   updateMember, waiveRequirement, addAdditionalRequirement, setAdjustmentSatisfied, removeAdjustment,
   requestProfileReview,
 } from './actions';
+import { displayName } from '@/lib/name';
 
 type MemberDetail = {
   id: number;
   firstName: string;
+  preferredFirstName?: string | null;
   lastName: string;
   email: string;
   personalEmail: string | null;
@@ -185,8 +187,7 @@ async function EvaluationsAboutCard({ memberId }: { memberId: number }) {
                 </Link>
                 <Badge variant="secondary">{evaluation.status}</Badge>
                 <span className="text-xs text-muted-foreground">
-                  by {evaluation.evaluator.firstName}{' '}
-                  {evaluation.evaluator.lastName} ·{' '}
+                  by {displayName(evaluation.evaluator)} ·{' '}
                   {formatDate(evaluation.createdAt)}
                 </span>
               </li>
@@ -388,7 +389,7 @@ async function AdjustmentsCard({
             {adjustments.length ? (
               <p className="text-xs text-muted-foreground">
                 {adjustments.length} adjustment(s) on file — set by{' '}
-                {[...new Set(adjustments.map((a) => `${a.createdBy.firstName} ${a.createdBy.lastName}`))].join(', ')}.
+                {[...new Set(adjustments.map((a) => displayName(a.createdBy)))].join(', ')}.
               </p>
             ) : null}
           </>
@@ -450,7 +451,7 @@ export default async function AdminMemberDetailPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`${member.firstName} ${member.lastName}`}
+        title={displayName(member)}
         description="Member profile, activation, and credentials."
       />
       <div>
@@ -785,7 +786,7 @@ export default async function AdminMemberDetailPage({
                     <DocumentViewer
                       documents={certification.documents}
                       label="View file"
-                      title={`${certification.type.name} — ${member.firstName} ${member.lastName}`}
+                      title={`${certification.type.name} — ${displayName(member)}`}
                     />
                     {certification.documents.map((doc) => (
                       <form

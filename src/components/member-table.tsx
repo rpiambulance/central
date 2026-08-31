@@ -17,10 +17,12 @@ import {
   summarizeCredentials,
   type LadderType,
 } from '@/lib/credentials';
+import { displayName, firstNameOf, surnameFirst } from '@/lib/name';
 
 export type MemberRow = {
   id: number;
   firstName: string;
+  preferredFirstName?: string | null;
   lastName: string;
   email: string;
   cellPhone: string | null;
@@ -50,8 +52,13 @@ type SortKey = 'lastName' | 'firstName' | 'nineHundredNumber';
  * top: the blanks are not the smallest value, they are the absence of one.
  */
 function compare(a: MemberRow, b: MemberRow, key: SortKey): number {
-  const left = (a[key] ?? '').toString();
-  const right = (b[key] ?? '').toString();
+  // Sort the first-name column by the name the column actually shows, or
+  // Alex sorts under D for Daniel and looks misfiled to everyone but the
+  // person who knows what is in the field.
+  const of = (m: MemberRow) =>
+    (key === 'firstName' ? firstNameOf(m) : (m[key] ?? '')).toString();
+  const left = of(a);
+  const right = of(b);
   if (!left && !right) return 0;
   if (!left) return 1;
   if (!right) return -1;
@@ -104,9 +111,10 @@ function matches(member: MemberRow, needle: string): boolean {
   if (!needle) return true;
   const haystack = [
     member.firstName,
+    member.preferredFirstName ?? '',
     member.lastName,
-    `${member.lastName}, ${member.firstName}`,
-    `${member.firstName} ${member.lastName}`,
+    surnameFirst(member),
+    displayName(member),
     member.email,
     member.cellPhone ?? '',
     member.nineHundredNumber ?? '',
@@ -347,16 +355,25 @@ export function MemberTable({
                         href={`/admin/members/${member.id}`}
                         className="underline underline-offset-2 hover:text-foreground"
                       >
-                        {member.lastName}, {member.firstName}
+                        {surnameFirst(member)}
                       </Link>
                     ) : (
                       <>
-                        {member.lastName}, {member.firstName}
+                        {surnameFirst(member)}
                       </>
                     )}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
-                    {member.firstName}
+                    {firstNameOf(member)}
+                    {/* The roster is where an officer reconciles a face
+                        against paperwork, so where the two differ both are
+                        worth having — everywhere else, what they go by. */}
+                    {member.preferredFirstName?.trim() &&
+                    member.preferredFirstName.trim() !== member.firstName ? (
+                      <span className="block text-xs text-muted-foreground">
+                        {member.firstName}
+                      </span>
+                    ) : null}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     {member.nineHundredNumber ? (

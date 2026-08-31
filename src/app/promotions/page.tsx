@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/table';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
+import { firstNameOf } from '@/lib/name';
 
 type PromotionPath = {
   credentialTypeId: number;
@@ -140,7 +141,7 @@ export default async function PromotionsPage({
                             className="underline underline-offset-2 hover:text-foreground"
                           >
                             {request.member.lastName},{' '}
-                            {request.member.firstName}
+                            {firstNameOf(request.member)}
                           </Link>
                         </TableCell>
                         <TableCell>{request.credentialType.name}</TableCell>

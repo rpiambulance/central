@@ -19,6 +19,7 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { addRadio, issueRadio, returnRadio } from './actions';
+import { surnameFirst } from '@/lib/name';
 
 type Radio = {
   id: number;
@@ -141,7 +142,7 @@ export default async function AdminRadiosPage({
                     <TableCell>{radio.serial ?? <Dash />}</TableCell>
                     <TableCell className="whitespace-nowrap">
                       {holder ? (
-                        `${holder.lastName}, ${holder.firstName}`
+                        surnameFirst(holder)
                       ) : (
                         <Dash />
                       )}
@@ -174,7 +175,7 @@ export default async function AdminRadiosPage({
                             </option>
                             {members.map((member) => (
                               <option key={member.id} value={member.id}>
-                                {member.lastName}, {member.firstName}
+                                {surnameFirst(member)}
                               </option>
                             ))}
                           </select>

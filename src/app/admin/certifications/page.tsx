@@ -20,6 +20,7 @@ import { DocumentViewer } from '@/components/document-viewer';
 import { PageHeader } from '@/components/page-header';
 import { CertificationTabs } from './tabs';
 import { approveCertification, rejectCertification } from './actions';
+import { displayName, surnameFirst } from '@/lib/name';
 
 type PendingCert = {
   id: number;
@@ -106,7 +107,7 @@ export default async function AdminCertificationsPage({
                 {pending.map((cert) => (
                   <TableRow key={cert.id}>
                     <TableCell className="font-medium whitespace-nowrap">
-                      {cert.member.lastName}, {cert.member.firstName}
+                      {surnameFirst(cert.member)}
                     </TableCell>
                     <TableCell>{cert.type.name}</TableCell>
                     {/* Editable in place: these are the fields the verifier
@@ -147,7 +148,7 @@ export default async function AdminCertificationsPage({
                           a tab that loses the approve and reject controls. */}
                       <DocumentViewer
                         documents={cert.documents}
-                        title={`${cert.type.name} — ${cert.member.firstName} ${cert.member.lastName}`}
+                        title={`${cert.type.name} — ${displayName(cert.member)}`}
                       />
                     </TableCell>
                     <TableCell>
@@ -214,7 +215,7 @@ export default async function AdminCertificationsPage({
                 {expiring.map((cert) => (
                   <TableRow key={cert.id}>
                     <TableCell className="font-medium whitespace-nowrap">
-                      {cert.member.lastName}, {cert.member.firstName}
+                      {surnameFirst(cert.member)}
                     </TableCell>
                     <TableCell>{cert.type.name}</TableCell>
                     <TableCell className="whitespace-nowrap">

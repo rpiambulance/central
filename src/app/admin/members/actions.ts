@@ -9,6 +9,7 @@ import { apiErrorMessage } from '@/lib/errors';
 export interface Existing {
   id: number;
   firstName: string;
+  preferredFirstName?: string | null;
   lastName: string;
   email?: string;
   active?: boolean;

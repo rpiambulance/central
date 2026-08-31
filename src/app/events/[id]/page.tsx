@@ -27,6 +27,7 @@ import {
   removeMember,
   setEventLocked,
 } from './actions';
+import { displayName, surnameFirst } from '@/lib/name';
 
 type EventDetail = {
   id: number;
@@ -60,6 +61,7 @@ type AvailabilityResponse = {
   member: {
     id: number;
     firstName: string;
+    preferredFirstName?: string | null;
     lastName: string;
     credentials: Array<{ type: { key: string } }>;
   };
@@ -286,7 +288,7 @@ export default async function EventDetailPage({
                   <li key={response.id} className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2 text-sm">
                       <span className="font-medium">
-                        {response.member.firstName} {response.member.lastName}
+                        {displayName(response.member)}
                       </span>
                       {summarizeCredentials(response.member.credentials).map((badge) => (
                         <Badge key={badge.key} variant="outline" title={badge.tooltip}>
@@ -382,7 +384,7 @@ export default async function EventDetailPage({
                   </option>
                   {roster.map((member) => (
                     <option key={member.id} value={member.id}>
-                      {member.lastName}, {member.firstName}
+                      {surnameFirst(member)}
                     </option>
                   ))}
                 </select>
@@ -436,7 +438,7 @@ export default async function EventDetailPage({
                   <ul className="text-sm text-muted-foreground">
                     {filled.map((s) => (
                       <li key={s.member.id} className="flex items-center gap-2">
-                        {s.member.firstName} {s.member.lastName}
+                        {displayName(s.member)}
                         {mayAssign ? (
                           <form
                             action={removeMember.bind(null, eventId, s.member.id)}
@@ -475,7 +477,7 @@ export default async function EventDetailPage({
                 <ul className="text-sm text-muted-foreground">
                   {attendees.map((s) => (
                     <li key={s.member.id}>
-                      {s.member.firstName} {s.member.lastName}
+                      {displayName(s.member)}
                     </li>
                   ))}
                 </ul>

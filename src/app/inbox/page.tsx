@@ -15,6 +15,7 @@ import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { completeTask, markAllRead, markRead, startTask } from './actions';
 import { SortControl } from './sort-control';
+import { displayName } from '@/lib/name';
 
 type InboxMessage = {
   id: number;
@@ -124,7 +125,7 @@ export default async function InboxPage({
                     {message.isTask && message.completedAt ? (
                       <Badge variant="secondary">
                         {message.completedBy
-                          ? `Done by ${message.completedBy.firstName} ${message.completedBy.lastName}`
+                          ? `Done by ${displayName(message.completedBy)}`
                           : 'Done'}
                       </Badge>
                     ) : null}

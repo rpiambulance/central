@@ -17,6 +17,7 @@ import {
   updateProfile,
   updateTimeFormat,
 } from './actions';
+import { displayName } from '@/lib/name';
 
 type Me = {
   firstName: string;
@@ -90,7 +91,7 @@ export default async function ProfilePage({
             </CardTitle>
             <CardDescription>
               {review.requestedBy
-                ? `${review.requestedBy.firstName} ${review.requestedBy.lastName} asked everyone to confirm their contact details are current.`
+                ? `${displayName(review.requestedBy)} asked everyone to confirm their contact details are current.`
                 : 'You have been asked to confirm your contact details are current.'}
               {review.note ? ` ${review.note}` : ''}
             </CardDescription>

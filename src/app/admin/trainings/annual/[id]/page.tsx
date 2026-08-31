@@ -20,6 +20,7 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { markComplete, unmarkComplete } from './actions';
+import { surnameFirst } from '@/lib/name';
 
 type AnnualRequirement = {
   id: number;
@@ -103,7 +104,7 @@ export default async function AnnualCompletionsPage({
             {completions.map((row) => (
               <TableRow key={row.member.id}>
                 <TableCell className="font-medium whitespace-nowrap">
-                  {row.member.lastName}, {row.member.firstName}
+                  {surnameFirst(row.member)}
                 </TableCell>
                 <TableCell>
                   {row.completedAt ? (

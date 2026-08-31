@@ -22,6 +22,7 @@ import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { setPollStatus } from '../actions';
 import { AddPollMembers, type Candidate } from '../add-members';
+import { surnameFirst } from '@/lib/name';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -166,7 +167,7 @@ export default async function AdminAvailabilityPollPage({
               poll.members.map(({ member, responded, days }) => (
                 <TableRow key={member.id}>
                   <TableCell className="font-medium whitespace-nowrap">
-                    {member.lastName}, {member.firstName}
+                    {surnameFirst(member)}
                     {!responded ? (
                       <span className="ml-2 text-xs text-muted-foreground">
                         no response

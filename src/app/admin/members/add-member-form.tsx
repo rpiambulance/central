@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useActionState } from 'react';
 import { Button } from '@/components/ui/button';
 import { createMember, type CreateState } from './actions';
+import { displayName } from '@/lib/name';
 
 const FIELD = 'h-8 rounded-md border border-input bg-background px-2 text-sm';
 
@@ -76,7 +77,7 @@ export function AddMemberForm() {
                   href={`/admin/members/${member.id}`}
                   className="underline underline-offset-2"
                 >
-                  {member.firstName} {member.lastName}
+                  {displayName(member)}
                 </Link>
                 {member.email ? ` — ${member.email}` : ''}
                 {member.active === false ? ' (inactive)' : ''}

@@ -26,6 +26,7 @@ import {
   type InviteMember,
 } from './invite-picker';
 import { createPoll } from './actions';
+import { displayName } from '@/lib/name';
 
 type Poll = {
   id: number;
@@ -128,7 +129,7 @@ export default async function AdminAvailabilityPage({
                     </TableCell>
                     <TableCell>{poll._count.invites}</TableCell>
                     <TableCell>
-                      {poll.createdBy.firstName} {poll.createdBy.lastName}
+                      {displayName(poll.createdBy)}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       {formatDate(poll.createdAt)}

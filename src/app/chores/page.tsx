@@ -15,6 +15,7 @@ import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { completeChore, reopenChore } from './actions';
 import { AssignNight, type MemberOption } from './assign-night';
+import { displayName } from '@/lib/name';
 
 type Occurrence = {
   id: number;
@@ -138,23 +139,21 @@ export default async function ChoresPage({
                           arrangement is the whole point of setting one. */}
                       {occurrence.assignee ? (
                         <p className="text-xs text-muted-foreground">
-                          {occurrence.assignee.firstName}{' '}
-                          {occurrence.assignee.lastName} has this one
+                          {displayName(occurrence.assignee)} has this one
                           {occurrence.chore.assignee
-                            ? `, instead of ${occurrence.chore.assignee.firstName} ${occurrence.chore.assignee.lastName}`
+                            ? `, instead of ${displayName(occurrence.chore.assignee)}`
                             : ''}
                         </p>
                       ) : occurrence.chore.assignee ? (
                         <p className="text-xs text-muted-foreground">
-                          Assigned to {occurrence.chore.assignee.firstName}{' '}
-                          {occurrence.chore.assignee.lastName}
+                          Assigned to {displayName(occurrence.chore.assignee)}
                         </p>
                       ) : null}
                       {occurrence.completedAt ? (
                         <p className="text-xs text-muted-foreground">
                           Done by{' '}
                           {occurrence.completedBy
-                            ? `${occurrence.completedBy.firstName} ${occurrence.completedBy.lastName}`
+                            ? displayName(occurrence.completedBy)
                             : 'someone in Slack'}{' '}
                           · {formatDateTime(occurrence.completedAt, hour12)}
                           {occurrence.note ? ` — ${occurrence.note}` : ''}

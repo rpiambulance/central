@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { ProgressBar } from '../progress-bar';
 import { startChecklist } from '../actions';
 import { signersLabel, type ChecklistSummary } from '../types';
+import { surnameFirst } from '@/lib/name';
 
 type Row = {
   member: { id: number; firstName: string; lastName: string };
@@ -107,7 +108,7 @@ export default async function ChecklistSubjectsPage({
                       href={`/checklists/${id}/${row.member.id}`}
                       className="underline underline-offset-2"
                     >
-                      {row.member.lastName}, {row.member.firstName}
+                      {surnameFirst(row.member)}
                     </Link>
                   </TableCell>
                   <TableCell>
@@ -188,7 +189,7 @@ export default async function ChecklistSubjectsPage({
                 >
                   {notStarted.map((member) => (
                     <option key={member.id} value={member.id}>
-                      {member.lastName}, {member.firstName}
+                      {surnameFirst(member)}
                     </option>
                   ))}
                 </select>

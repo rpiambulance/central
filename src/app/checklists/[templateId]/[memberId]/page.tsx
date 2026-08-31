@@ -18,6 +18,7 @@ import { PageHeader } from '@/components/page-header';
 import { ProgressBar } from '../../progress-bar';
 import { revokeSignoff, signItem } from '../../actions';
 import { signersLabel, type ChecklistItem, type Progress } from '../../types';
+import { displayName } from '@/lib/name';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,7 +82,7 @@ function Line({
           <p className="text-sm font-medium">{item.prompt}</p>
           {signed ? (
             <p className="text-xs text-muted-foreground">
-              Signed by {signed.signedBy.firstName} {signed.signedBy.lastName} ·{' '}
+              Signed by {displayName(signed.signedBy)} ·{' '}
               {formatDateTime(signed.signedAt, hour12)}
             </p>
           ) : (
@@ -194,7 +195,7 @@ export default async function ChecklistProgressPage({
         description={
           ownChecklist
             ? 'Your progress. Trainers sign each line as they see it done.'
-            : `${progress.member.firstName} ${progress.member.lastName}`
+            : displayName(progress.member)
         }
       />
       <ErrorBanner message={error} />

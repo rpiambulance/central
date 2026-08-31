@@ -31,6 +31,7 @@ import {
   CertSubmitForm,
   type SubmittableCertType,
 } from './cert-submit-form';
+import { displayName } from '@/lib/name';
 
 type Certification = {
   id: number;
@@ -459,10 +460,10 @@ export default async function TrainingPage({
                         {ev.template.name}
                       </TableCell>
                       <TableCell>
-                        {ev.evaluator.firstName} {ev.evaluator.lastName}
+                        {displayName(ev.evaluator)}
                       </TableCell>
                       <TableCell>
-                        {ev.subject.firstName} {ev.subject.lastName}
+                        {displayName(ev.subject)}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
                         {ev.evalDate ? formatDateOnly(ev.evalDate) : formatDate(ev.createdAt)}

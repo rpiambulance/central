@@ -22,6 +22,7 @@ import {
   type ChoreDefinition,
   type MemberOption,
 } from './chore-form';
+import { displayName } from '@/lib/name';
 
 export const dynamic = 'force-dynamic';
 
@@ -118,7 +119,7 @@ export default async function AdminChoresPage({
                   <Badge variant="secondary">{cadenceLabel(chore)}</Badge>
                   {chore.assignee ? (
                     <Badge>
-                      {chore.assignee.firstName} {chore.assignee.lastName}
+                      {displayName(chore.assignee)}
                     </Badge>
                   ) : (
                     <Badge variant="outline">Anyone</Badge>

@@ -20,6 +20,7 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { addFuelEntry } from './actions';
+import { displayName } from '@/lib/name';
 
 type FuelEntry = {
   id: number;
@@ -137,7 +138,7 @@ export default async function FuelLogPage({
                   <TableCell>{entry.amount}</TableCell>
                   <TableCell>{entry.mileage.toLocaleString()}</TableCell>
                   <TableCell className="whitespace-nowrap">
-                    {entry.member.firstName} {entry.member.lastName}
+                    {displayName(entry.member)}
                   </TableCell>
                 </TableRow>
               ))}

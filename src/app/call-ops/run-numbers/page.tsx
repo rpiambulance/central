@@ -21,6 +21,7 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { issueRunNumber, reopenChangeover, saveLocation } from './actions';
+import { displayName } from '@/lib/name';
 
 type Location = {
   id: number;
@@ -204,7 +205,7 @@ export default async function RunNumbersPage({
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       {run.issuedBy
-                        ? `${run.issuedBy.firstName} ${run.issuedBy.lastName}`
+                        ? displayName(run.issuedBy)
                         : '—'}
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-muted-foreground">

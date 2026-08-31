@@ -3,10 +3,12 @@
 import { useMemo, useState } from 'react';
 import { formatCredKey } from '@/lib/format';
 import { buildSatisfiedBy, type LadderType } from '@/lib/credentials';
+import { surnameFirst } from '@/lib/name';
 
 export type InviteMember = {
   id: number;
   firstName: string;
+  preferredFirstName?: string | null;
   lastName: string;
   credentials?: Array<{ type: { key: string; name: string } }>;
 };
@@ -138,7 +140,7 @@ export function InvitePicker({
               checked={selected.has(member.id)}
               onChange={() => toggle(member.id)}
             />
-            {member.lastName}, {member.firstName}
+            {surnameFirst(member)}
           </label>
         ))}
       </div>

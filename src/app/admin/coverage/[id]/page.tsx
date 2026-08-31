@@ -22,6 +22,7 @@ import {
   messageRequester,
   reopenRequest,
 } from './actions';
+import { displayName } from '@/lib/name';
 
 type CoverageRequestDetail = {
   id: number;
@@ -222,7 +223,7 @@ export default async function AdminCoverageDetailPage({
                           {fromRequester
                             ? request.requesterName
                             : message.author
-                              ? `${message.author.firstName} ${message.author.lastName}`
+                              ? displayName(message.author)
                               : 'RPI Ambulance'}{' '}
                           · {formatDateTime(message.createdAt, hour12)}
                         </p>

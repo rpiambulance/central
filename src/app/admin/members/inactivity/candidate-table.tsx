@@ -11,10 +11,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { formatDate, formatPlainDate } from '@/lib/format';
+import { displayName, surnameFirst } from '@/lib/name';
 
 export type Candidate = {
   id: number;
   firstName: string;
+  preferredFirstName?: string | null;
   lastName: string;
   email: string;
   createdAt: string;
@@ -101,12 +103,12 @@ export function CandidateTable({ candidates }: { candidates: Candidate[] }) {
                     value={candidate.id}
                     checked={selected.has(candidate.id)}
                     onChange={() => toggle(candidate.id)}
-                    aria-label={`Deactivate ${candidate.firstName} ${candidate.lastName}`}
+                    aria-label={`Deactivate ${displayName(candidate)}`}
                     className="size-4"
                   />
                 </TableCell>
                 <TableCell className="font-medium whitespace-nowrap">
-                  {candidate.lastName}, {candidate.firstName}
+                  {surnameFirst(candidate)}
                   {candidate.joinedAfterCutoff ? (
                     <Badge variant="outline" className="ml-2 text-muted-foreground">
                       joined after cutoff

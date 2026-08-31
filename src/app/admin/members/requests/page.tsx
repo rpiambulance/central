@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
-import { formatDateTime } from '@/lib/format';
+import { formatDate, formatDateTime } from '@/lib/format';
 import { prefers12Hour } from '@/lib/me';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,6 +13,7 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { decideAccountRequest, decideProfileChange } from './actions';
+import { displayName } from '@/lib/name';
 
 type ProfileChange = {
   id: number;
@@ -27,9 +28,15 @@ type ProfileChange = {
 type AccountRequest = {
   id: number;
   firstName: string;
+  preferredFirstName?: string | null;
   lastName: string;
   email: string;
-  phone: string | null;
+  personalEmail: string | null;
+  cellPhone: string | null;
+  homePhone: string | null;
+  localAddress: string | null;
+  homeAddress: string | null;
+  dob: string | null;
   note: string | null;
   createdAt: string;
   invite: { code: string; label: string | null } | null;
@@ -107,7 +114,7 @@ export default async function RequestsPage({
                   href={`/admin/members/${change.member.id}`}
                   className="font-medium underline underline-offset-2"
                 >
-                  {change.member.firstName} {change.member.lastName}
+                  {displayName(change.member)}
                 </Link>{' '}
                 asked to change their{' '}
                 {FIELD_LABEL[change.field] ?? change.field} from{' '}
@@ -170,10 +177,40 @@ export default async function RequestsPage({
           {accounts.map((request) => (
             <div key={request.id} className="space-y-2 rounded-md border p-3">
               <div className="text-sm font-medium">
-                {request.firstName} {request.lastName} — {request.email}
+                {displayName(request)} — {request.email}
+                {/* Both names matter here: the record is created under the
+                    legal one, and they are greeted by the other. */}
+                {request.preferredFirstName?.trim() &&
+                request.preferredFirstName.trim() !== request.firstName ? (
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                    legally {request.firstName}
+                  </span>
+                ) : null}
               </div>
+              {/* What they filled in, so the record can be created from this
+                  page rather than from a follow-up email. Blank fields are
+                  left out rather than shown empty — a list of dashes reads
+                  as though something failed. */}
+              <dl className="grid gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+                {(
+                  [
+                    ['Cell', request.cellPhone],
+                    ['Home phone', request.homePhone],
+                    ['Personal email', request.personalEmail],
+                    ['Date of birth', request.dob ? formatDate(request.dob) : null],
+                    ['Local address', request.localAddress],
+                    ['Home address', request.homeAddress],
+                  ] as const
+                )
+                  .filter(([, value]) => value)
+                  .map(([label, value]) => (
+                    <div key={label} className="flex gap-1">
+                      <dt className="text-muted-foreground">{label}:</dt>
+                      <dd>{value}</dd>
+                    </div>
+                  ))}
+              </dl>
               <p className="text-xs text-muted-foreground">
-                {request.phone ? `${request.phone} · ` : ''}
                 asked {formatDateTime(request.createdAt, hour12)}
                 {request.invite
                   ? ` · via ${request.invite.label ?? request.invite.code}`

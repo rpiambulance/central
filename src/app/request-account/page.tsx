@@ -90,14 +90,16 @@ export default async function RequestAccountPage({
           <CardHeader>
             <CardTitle>About you</CardTitle>
             <CardDescription>
-              We only need enough to get back to you.
+              Only the first four are needed to get back to you. The rest is
+              what your profile holds once you are in — filling it now saves
+              being asked later, and any of it can be changed afterwards.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form action={requestAccount} className="grid gap-4">
               <input type="hidden" name="inviteCode" value={code} />
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="First name">
+                <Field label="Legal first name">
                   <input name="firstName" required maxLength={100} className={FIELD} />
                 </Field>
                 <Field label="Last name">
@@ -106,9 +108,56 @@ export default async function RequestAccountPage({
                 <Field label="Email">
                   <input type="email" name="email" required className={FIELD} />
                 </Field>
-                <Field label="Phone (optional)">
-                  <input type="tel" name="phone" maxLength={40} className={FIELD} />
+                {/* Asked here rather than left until they are in, because
+                    the first thing the portal does with a new member is
+                    address them by name. */}
+                <Field label="Preferred first name (optional)">
+                  <input
+                    name="preferredFirstName"
+                    maxLength={100}
+                    placeholder="If you go by something else"
+                    className={FIELD}
+                  />
                 </Field>
+              </div>
+
+              <div className="border-t pt-4">
+                <p className="mb-3 text-sm font-medium">
+                  Contact details{' '}
+                  <span className="font-normal text-muted-foreground">
+                    — optional, and all editable later
+                  </span>
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Cell phone">
+                    <input type="tel" name="cellPhone" maxLength={40} className={FIELD} />
+                  </Field>
+                  <Field label="Home phone">
+                    <input type="tel" name="homePhone" maxLength={40} className={FIELD} />
+                  </Field>
+                  <Field label="Personal email">
+                    <input type="email" name="personalEmail" className={FIELD} />
+                  </Field>
+                  {/* Needed to create the member record, so asking now is one
+                      fewer email later — but never a reason to refuse a
+                      request, hence optional like the rest. */}
+                  <Field label="Date of birth">
+                    <input type="date" name="dob" className={FIELD} />
+                  </Field>
+                </div>
+                <div className="mt-4 grid gap-4">
+                  <Field label="Local address">
+                    <input
+                      name="localAddress"
+                      maxLength={200}
+                      placeholder="Where you live during the semester"
+                      className={FIELD}
+                    />
+                  </Field>
+                  <Field label="Home address">
+                    <input name="homeAddress" maxLength={200} className={FIELD} />
+                  </Field>
+                </div>
               </div>
               <Field label="Anything we should know (optional)">
                 <textarea
