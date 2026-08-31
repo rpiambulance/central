@@ -54,7 +54,9 @@ export default async function InboxPage({
       '/v1/inbox/sort',
     ),
   ]);
-  const unread = messages.filter((m) => !m.readAt).length;
+  // The same rule the badge counts by: a task somebody else finished is a
+  // receipt, not unread work.
+  const unread = messages.filter((m) => !m.readAt && !m.completedAt).length;
 
   return (
     <div className="space-y-6">
