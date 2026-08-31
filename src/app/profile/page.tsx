@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/card';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
+import { RequestChange, type PendingChange } from './request-change';
 import {
   confirmProfile,
   updateNavLayout,
@@ -19,6 +20,7 @@ import {
 
 type Me = {
   firstName: string;
+  preferredFirstName: string | null;
   slackId: string | null;
   lastName: string;
   email: string;
@@ -50,9 +52,12 @@ export default async function ProfilePage({
   }>;
 }) {
   const { error, confirmed, saved } = await searchParams;
-  const [me, review] = await Promise.all([
+  const [me, review, pendingChanges] = await Promise.all([
     api<Me>('/v1/members/me'),
     api<ProfileReview>('/v1/members/me/profile-review'),
+    api<PendingChange[]>('/v1/requests/profile/mine').catch(
+      () => [] as PendingChange[],
+    ),
   ]);
 
   return (
@@ -67,7 +72,9 @@ export default async function ProfilePage({
           how people end up pressing Save three times. */}
       {saved ? (
         <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-900 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
-          {saved === 'layout'
+          {saved === 'requested'
+            ? 'Sent — an officer will look at it and you will hear back here.'
+            : saved === 'layout'
             ? 'Navigation layout saved.'
             : saved === 'timeFormat'
               ? 'Time format saved.'
@@ -120,7 +127,7 @@ export default async function ProfilePage({
             <div className="mb-3 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <label className="block text-sm">
-                  First name
+                  Legal first name
                   <input
                     value={me.firstName}
                     readOnly
@@ -148,15 +155,31 @@ export default async function ProfilePage({
                 />
               </label>
               <p className="text-xs text-muted-foreground">
-                Only an officer can change your name or portal email — ask one
-                if either is wrong.
+                Only an officer can change your legal name or portal email —
+                your login is matched on that address. What you go by is
+                yours to set, below.
               </p>
+              <RequestChange pending={pendingChanges} />
             </div>
             <form
-              key={JSON.stringify([me.personalEmail, me.cellPhone, me.homePhone, me.localAddress, me.homeAddress])}
+              key={JSON.stringify([me.preferredFirstName, me.personalEmail, me.cellPhone, me.homePhone, me.localAddress, me.homeAddress])}
               action={updateProfile}
               className="space-y-3"
             >
+              <label className="block text-sm">
+                Preferred first name
+                <input
+                  name="preferredFirstName"
+                  defaultValue={me.preferredFirstName ?? ''}
+                  placeholder={me.firstName}
+                  maxLength={100}
+                  className={FIELD}
+                />
+                <span className="text-xs text-muted-foreground">
+                  What the portal calls you. Leave it blank to go by{' '}
+                  {me.firstName}.
+                </span>
+              </label>
               <label className="block text-sm">
                 Personal email
                 <input

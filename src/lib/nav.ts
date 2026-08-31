@@ -134,6 +134,16 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Unlinked Logins',
         permissions: ['members:write'],
       },
+      {
+        href: '/admin/members/requests',
+        label: 'Requests',
+        permissions: ['members:write'],
+      },
+      {
+        href: '/admin/members/invites',
+        label: 'Invite Codes',
+        permissions: ['members:write'],
+      },
       // "Form Templates", because "Evaluations + Checklists" read as a member
       // page and is not one.
       {

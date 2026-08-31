@@ -417,9 +417,16 @@ export default async function AdminMemberDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; adjustType?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    adjustType?: string;
+    asked?: string;
+  }>;
 }) {
-  const [{ id }, { error, adjustType }] = await Promise.all([params, searchParams]);
+  const [{ id }, { error, adjustType, asked }] = await Promise.all([
+    params,
+    searchParams,
+  ]);
   const memberId = Number(id);
 
   let member: MemberDetail;
@@ -455,6 +462,11 @@ export default async function AdminMemberDetailPage({
         </Link>
       </div>
       <ErrorBanner message={error} />
+      {asked ? (
+        <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-900 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
+          Asked them to check their details — it is in their inbox now.
+        </p>
+      ) : null}
 
       <Card>
         <CardHeader>

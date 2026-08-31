@@ -8,6 +8,9 @@ import { apiErrorMessage } from '@/lib/errors';
 export async function updateProfile(formData: FormData) {
   const body: Record<string, string> = {};
   for (const field of [
+    // Theirs to set: being called the right thing is not a matter for an
+    // officer. The legal first name beside it is, and is requested instead.
+    'preferredFirstName',
     'personalEmail',
     'cellPhone',
     'homePhone',
@@ -85,4 +88,31 @@ export async function confirmProfile() {
   }
   revalidatePath('/profile');
   redirect('/profile?confirmed=1');
+}
+
+/**
+ * Asking an officer to change a field members cannot edit.
+ *
+ * Name and portal email are identity — the email is what a login is matched
+ * on — so they are read-only here. That is not the same as unchangeable, and
+ * "email an officer" is a worse process than one that leaves a record.
+ */
+export async function requestProfileChange(formData: FormData) {
+  const field = String(formData.get('field') ?? '');
+  const requestedValue = String(formData.get('requestedValue') ?? '').trim();
+  const reason = String(formData.get('reason') ?? '').trim();
+  try {
+    await api('/v1/requests/profile', {
+      method: 'POST',
+      body: JSON.stringify({
+        field,
+        requestedValue,
+        ...(reason ? { reason } : {}),
+      }),
+    });
+  } catch (error) {
+    redirect(`/profile?error=${encodeURIComponent(apiErrorMessage(error))}`);
+  }
+  revalidatePath('/profile');
+  redirect('/profile?saved=requested');
 }

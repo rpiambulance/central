@@ -288,4 +288,7 @@ export async function requestProfileReview(memberId: number) {
     );
   }
   revalidatePath(`/admin/members/${memberId}`);
+  // Sending quietly reads as "did that go?", which is how somebody sends it
+  // three times and the member gets three tasks.
+  redirect(`/admin/members/${memberId}?asked=1`);
 }

@@ -16,10 +16,11 @@ export default auth((request) => {
 
 export const config = {
   // Everything is members-only except auth routes, static assets, and the
-  // public coverage pages under /request-coverage — the request form and the
+  // two public request paths: /request-coverage — the form and the
   // per-request status links, neither of which their requesters have an
-  // account for.
+  // account for — and /request-account, which is how somebody without an
+  // account asks for one and so cannot require having one.
   matcher: [
-    '/((?!api/auth|request-coverage|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api/auth|request-coverage|request-account|_next/static|_next/image|favicon.ico).*)',
   ],
 };
