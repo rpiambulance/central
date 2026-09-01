@@ -62,9 +62,14 @@ export default async function PromotionsPage({
   ]);
 
   // The review queue requires promotions:review; hide it otherwise.
+  // `raw` is what lets that happen: without it a 403 redirects to the
+  // dashboard before the catch can see it, and this page is in the nav for
+  // every member — so everyone without the permission was bounced off it.
   let requests: PromotionRequest[] | null = null;
   try {
-    requests = await api<PromotionRequest[]>('/v1/promotions/requests');
+    requests = await api<PromotionRequest[]>('/v1/promotions/requests', {
+      raw: true,
+    });
   } catch (err) {
     if (err instanceof ApiError && err.status === 403) {
       requests = null;

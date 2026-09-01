@@ -132,11 +132,18 @@ export default async function EventDetailPage({
     event.workflowStatus === 'PENDING_APPROVAL';
 
   // Respondents are staff-only; a 403 just hides the section.
+  //
+  // `raw` is what makes that true. Without it api() redirects on 403 before
+  // throwing, and redirect() signals by throwing something that is not an
+  // ApiError — so the catch below rethrew it and bounced the member to their
+  // dashboard. Any approved event carrying a tier reaches here, which is
+  // every event that came through the coverage workflow.
   let availability: AvailabilityResponse[] | null = null;
   if (showWorkflow) {
     try {
       availability = await api<AvailabilityResponse[]>(
         `/v1/events/${eventId}/availability`,
+        { raw: true },
       );
     } catch (e) {
       if (!(e instanceof ApiError)) throw e;

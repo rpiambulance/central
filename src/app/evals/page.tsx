@@ -103,9 +103,11 @@ export default async function EvalsPage({
   }
 
   // Regular members may not be able to list the roster; hide the form then.
+  // `raw` is what lets that happen: without it a 403 redirects to the
+  // dashboard before the catch can see it, taking the whole page with it.
   let members: Member[] | null = null;
   try {
-    members = await api<Member[]>('/v1/members');
+    members = await api<Member[]>('/v1/members', { raw: true });
   } catch (err) {
     if (err instanceof ApiError && err.status === 403) {
       members = null;

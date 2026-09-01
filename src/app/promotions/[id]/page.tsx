@@ -122,9 +122,12 @@ export default async function PromotionReviewPage({
     throw err;
   }
 
+  // Optional: the proxy control needs the roster, and not everyone who can
+  // review a promotion can list members. `raw` keeps a 403 here from
+  // redirecting the whole page away.
   let members: MemberRef[] | null = null;
   try {
-    members = await api<MemberRef[]>('/v1/members');
+    members = await api<MemberRef[]>('/v1/members', { raw: true });
   } catch (err) {
     if (err instanceof ApiError && err.status === 403) {
       members = null;
