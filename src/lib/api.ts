@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import { auth } from '@/auth';
 
 const API_URL = process.env.RAMPART_API_URL ?? 'http://localhost:3001';
@@ -19,6 +20,33 @@ export interface ApiInit extends RequestInit {
    * by the nav shell, which renders for members the API will not talk to.
    */
   raw?: boolean;
+}
+
+/**
+ * Who this call is really being made for.
+ *
+ * These requests leave this server, not the member's browser, so without
+ * saying so every row in the API's log is attributed to the portal — which
+ * is true, and useless. The member's own address is named in a header of the
+ * API's choosing rather than folded into X-Forwarded-For, whose entries are
+ * counted from the right and would land on the wrong one for this leg.
+ *
+ * Absent outside a request — a scheduled render, a build — and then nothing
+ * is claimed rather than something invented.
+ */
+async function callerHeaders(): Promise<Record<string, string>> {
+  try {
+    const incoming = await headers();
+    const forwarded = incoming.get('x-forwarded-for');
+    const caller = forwarded?.split(',')[0]?.trim();
+    const agent = incoming.get('user-agent');
+    return {
+      ...(caller ? { 'x-rampart-client-ip': caller } : {}),
+      ...(agent ? { 'user-agent': agent } : {}),
+    };
+  } catch {
+    return {};
+  }
 }
 
 /**
@@ -43,6 +71,7 @@ export async function api<T>(
       ...(session?.accessToken
         ? { Authorization: `Bearer ${session.accessToken}` }
         : {}),
+      ...(await callerHeaders()),
       ...requestInit.headers,
     },
     cache: 'no-store',
@@ -67,9 +96,14 @@ export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
   const session = await auth();
   const res = await fetch(`${API_URL}${path}`, {
     method: 'POST',
-    headers: session?.accessToken
-      ? { Authorization: `Bearer ${session.accessToken}` }
-      : {},
+    headers: {
+      ...(session?.accessToken
+        ? { Authorization: `Bearer ${session.accessToken}` }
+        : {}),
+      // Named like any other call, so an upload is attributable to whoever
+      // made it rather than to this server.
+      ...(await callerHeaders()),
+    },
     body: form,
     cache: 'no-store',
   });
