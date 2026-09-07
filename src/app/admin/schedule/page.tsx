@@ -25,6 +25,7 @@ import { UndoButton } from './undo-button';
 import { UndoProvider } from './undo-context';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { surnameFirst } from '@/lib/name';
+import { DefaultServiceToggle } from './default-service-toggle';
 
 const POSITIONS = ['CC', 'DRIVER', 'ATTENDANT', 'OBSERVER', 'DUTY_SUP'] as const;
 type Position = (typeof POSITIONS)[number];
@@ -97,6 +98,12 @@ type CrewsResponse = {
   weekStart: string;
   currentWeek: Day[];
   nextWeek: Day[];
+};
+
+/** A weekday the agency does not run a crew on, as a standing arrangement. */
+type ClosedRow = {
+  weekday: number;
+  reason: string | null;
 };
 
 type DefaultRow = {
@@ -233,14 +240,16 @@ export default async function AdminSchedulePage({
   let crews: CrewsResponse;
   let members: Member[];
   let defaults: DefaultRow[];
+  let closed: ClosedRow[];
   let settings: Record<string, unknown>;
   try {
-    [crews, members, defaults, settings] = await Promise.all([
+    [crews, members, defaults, closed, settings] = await Promise.all([
       api<CrewsResponse>(
         `/v1/crews${viewDate ? `?viewDate=${viewDate}` : ''}`,
       ),
       api<Member[]>('/v1/crews/assignable-members'),
       api<DefaultRow[]>('/v1/crews/defaults'),
+      api<ClosedRow[]>('/v1/crews/defaults/out-of-service'),
       api<Record<string, unknown>>('/v1/crews/settings'),
     ]);
   } catch (err) {
@@ -250,6 +259,8 @@ export default async function AdminSchedulePage({
 
   const defaultFor = (weekday: number, position: Position) =>
     defaults.find((d) => d.weekday === weekday && d.position === position);
+  const closedFor = (weekday: number) =>
+    closed.find((row) => row.weekday === weekday) ?? null;
 
   const weekStart = crews.weekStart;
   const notYetPublic = daysBetween(todayNY(), weekStart) >= 14;
@@ -355,13 +366,17 @@ export default async function AdminSchedulePage({
           </Link>
         </div>
         <p className="text-sm text-muted-foreground">
-          Applied when new crew nights are generated.
+          Applied when new crew nights are generated. Marking a weekday out of
+          service leaves the duty supervisor seat — somebody still carries the
+          phone — and stops the rest being filled. Weeks already on the
+          schedule are left as they are.
         </p>
         <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-32">Weekday</TableHead>
+                <TableHead className="w-40">In service</TableHead>
                 {POSITIONS.map((position) => (
                   <TableHead key={position}>
                     {COLUMN_LABELS[position]}
@@ -375,8 +390,28 @@ export default async function AdminSchedulePage({
                   <TableCell className="align-top font-medium">
                     {weekdayName}
                   </TableCell>
+                  <TableCell className="align-top">
+                    <DefaultServiceToggle
+                      weekday={weekday}
+                      weekdayName={weekdayName}
+                      closed={closedFor(weekday)}
+                    />
+                  </TableCell>
                   {POSITIONS.map((position) => {
                     const row = defaultFor(weekday, position);
+                    // A night the agency does not run has one seat that
+                    // still matters. Offering the rest invites somebody to
+                    // fill a crew that is not going out.
+                    if (closedFor(weekday) && position !== 'DUTY_SUP') {
+                      return (
+                        <TableCell
+                          key={position}
+                          className="align-top text-sm text-muted-foreground"
+                        >
+                          —
+                        </TableCell>
+                      );
+                    }
                     return (
                       <TableCell key={position} className="align-top">
                         <SlotSelect

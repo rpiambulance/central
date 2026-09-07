@@ -139,3 +139,33 @@ export async function setOutOfService(
   }
   revalidatePath('/admin/schedule');
 }
+
+/**
+ * Marking a weekday out of service as a standing arrangement.
+ *
+ * Only changes nights generated from here on. A week already on the schedule
+ * keeps whatever it has — somebody may have signed up for it, and emptying a
+ * crew nobody was warned about is not what changing a default should mean.
+ */
+export async function setDefaultOutOfService(
+  weekday: number,
+  outOfService: boolean,
+  formData?: FormData,
+) {
+  const reason = String(formData?.get('reason') ?? '').trim();
+  try {
+    await api('/v1/crews/defaults/out-of-service', {
+      method: 'PUT',
+      body: JSON.stringify({
+        weekday,
+        outOfService,
+        ...(reason ? { reason } : {}),
+      }),
+    });
+  } catch (error) {
+    redirect(
+      `/admin/schedule?error=${encodeURIComponent(apiErrorMessage(error))}`,
+    );
+  }
+  revalidatePath('/admin/schedule');
+}
