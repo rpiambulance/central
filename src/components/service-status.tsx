@@ -12,7 +12,7 @@ export type ServiceStatus = {
  * Whether the agency is running, on every page.
  *
  * In service is the ordinary state, so it is stated quietly; out of service
- * is not, and says so in a colour that carries across a room — somebody
+ * is not, and says so in a color that carries across a room — somebody
  * glancing at a phone in the bay should be able to tell without reading.
  */
 export function ServiceStatusBadge({

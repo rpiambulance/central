@@ -849,7 +849,7 @@ export default async function AdminMemberDetailPage({
               Expires (optional)
               <input name="expiresAt" type="date" className={inputCls} />
             </label>
-            {/* Several at once: a licence is often a card front and back. */}
+            {/* Several at once: a license is often a card front and back. */}
             <label className="grid gap-1 text-xs text-muted-foreground">
               Files (optional)
               <input

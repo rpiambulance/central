@@ -35,7 +35,7 @@ type CoverageRequestRow = {
   } | null;
 };
 
-/** Approved, declined or cancelled — nothing further to do. */
+/** Approved, declined or canceled — nothing further to do. */
 const SETTLED = ['APPROVED', 'DENIED', 'CANCELLED'];
 
 const PAGE_SIZES = [10, 25, 50, 100];
@@ -306,7 +306,7 @@ export default async function AdminCoveragePage({
 
       <RequestTable
         title="Completed"
-        description="Approved, declined or cancelled. Most recent first."
+        description="Approved, declined or canceled. Most recent first."
         rows={settled.rows}
         total={settled.total}
         page={settled.page}

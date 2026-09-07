@@ -24,7 +24,7 @@ const FIELD =
  * Asking for one of the locked fields to be changed.
  *
  * Folded away until wanted, because most people never need it and a form
- * sitting open under three greyed-out boxes reads as though they were meant
+ * sitting open under three grayed-out boxes reads as though they were meant
  * to fill it in. A request already waiting is shown instead of the form —
  * asking twice for the same thing makes two tasks and one confused officer.
  */

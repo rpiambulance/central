@@ -28,7 +28,7 @@ function kindOf(fileName: string): 'pdf' | 'image' | 'other' {
 /**
  * Certification documents, read without leaving the page.
  *
- * A panel rather than a centred modal: verifying is a two-handed job — read
+ * A panel rather than a centered modal: verifying is a two-handed job — read
  * the card, then approve or reject — and a panel leaves the record it belongs
  * to on screen beside it. PDFs go in an iframe and images in an img tag,
  * which is the browser's own viewer in both cases; embedding a JavaScript PDF

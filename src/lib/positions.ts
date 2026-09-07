@@ -4,7 +4,7 @@
  * building an event. Display them properly rather than showing the raw key.
  *
  * Abbreviations stay in capitals (EES, FR-CC); everything else is title case.
- * Anything unrecognised is title-cased word by word, so a position invented
+ * Anything unrecognized is title-cased word by word, so a position invented
  * next season still reads sensibly.
  */
 const LABELS: Record<string, string> = {

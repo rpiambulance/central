@@ -217,7 +217,7 @@
 }
 
 /* Nobody is watching the screen when this appears — they are being woken by
-   it — so the motion is what draws the eye. Honoured all the same: a flashing
+   it — so the motion is what draws the eye. Honored all the same: a flashing
    background is exactly what this setting exists to turn off. */
 @media (prefers-reduced-motion: reduce) {
   .dispatch {

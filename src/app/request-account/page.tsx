@@ -92,7 +92,7 @@ export default async function RequestAccountPage({
             <CardDescription>
               Only the first four are needed to get back to you. The rest is
               what your profile holds once you are in — filling it now saves
-              being asked later, and any of it can be changed afterwards.
+              being asked later, and any of it can be changed afterward.
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -38,7 +38,7 @@ function allItems(template: RequestTemplate): Item[] {
  * The form's questions change with the template, so it is picked first and
  * the trainee's own fields appear beneath. Only the items marked for trainee
  * input are shown: the rest are the trainer's to answer, and showing them
- * greyed out would only invite the question of why they cannot be filled.
+ * grayed out would only invite the question of why they cannot be filled.
  */
 export function RequestForm({
   templates,

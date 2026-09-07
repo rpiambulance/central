@@ -69,11 +69,11 @@ export function Turnstile({ siteKey }: { siteKey: string }) {
 
   useEffect(() => {
     let widgetId: string | undefined;
-    let cancelled = false;
+    let canceled = false;
 
     loadScript()
       .then(() => {
-        if (cancelled || !container.current || !window.turnstile) return;
+        if (canceled || !container.current || !window.turnstile) return;
         widgetId = window.turnstile.render(container.current, {
           sitekey: siteKey,
           theme: 'auto',
@@ -88,7 +88,7 @@ export function Turnstile({ siteKey }: { siteKey: string }) {
       .catch(() => setFailed(true));
 
     return () => {
-      cancelled = true;
+      canceled = true;
       if (widgetId) window.turnstile?.remove(widgetId);
     };
   }, [siteKey]);
