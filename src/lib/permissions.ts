@@ -42,6 +42,8 @@ export const PERMISSION_INFO: Record<string, string> = {
     'Hand out and revoke the links that open a Headsup display, and start its counters again',
   'service:status': 'Put the agency in or out of service',
   'dispatches:read': 'View the dispatch log',
+  'dispatches:write':
+    'Add a dispatch by hand, for a call the Herald feed never delivered',
   'tokens:manage': 'Create and revoke API tokens',
   'audit:read': 'Read the audit log',
   'integrations:manage': 'Manage external integrations',

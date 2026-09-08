@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
-import { prefers12Hour } from '@/lib/me';
+import { myPermissions, prefers12Hour } from '@/lib/me';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -18,10 +18,20 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { PageHeader } from '@/components/page-header';
+import { ErrorBanner } from '@/components/error-banner';
+import { displayName } from '@/lib/name';
+
+import { AddDispatch } from './add-dispatch';
 
 type Dispatch = {
   id: number;
   receivedAt: string;
+  /** Set when somebody typed it in rather than Herald sending it. */
+  enteredBy: {
+    firstName: string;
+    preferredFirstName?: string | null;
+    lastName: string;
+  } | null;
   determinant: string | null;
   complaint: string | null;
   location: string | null;
@@ -56,9 +66,14 @@ function NoAccess() {
 export default async function DispatchesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; from?: string; to?: string }>;
+  searchParams: Promise<{ q?: string; from?: string; to?: string
+    error?: string;
+    added?: string;
+  }>;
 }) {
-  const { q, from, to } = await searchParams;
+  const { q, from, to, error, added } = await searchParams;
+  // Only offered to whoever could actually do it; the API enforces it too.
+  const mayWrite = (await myPermissions()).has('dispatches:write');
   const query = new URLSearchParams();
   if (q?.trim()) query.set('q', q.trim());
   if (/^\d{4}-\d{2}-\d{2}$/.test(from ?? '')) query.set('from', from!);
@@ -81,6 +96,13 @@ export default async function DispatchesPage({
         title="Dispatch Log"
         description="Text-message dispatches ingested from Herald, newest first."
       />
+      <ErrorBanner message={error} />
+      {added ? (
+        <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-900 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
+          Added to the log, and counted on the board.
+        </p>
+      ) : null}
+      {mayWrite ? <AddDispatch /> : null}
 
       <form
         method="get"
@@ -149,6 +171,14 @@ export default async function DispatchesPage({
                 <TableRow key={d.id}>
                   <TableCell className="whitespace-nowrap">
                     {formatDateTime(d.receivedAt, hour12)}
+                    {/* Said plainly: a hand-written entry is somebody's
+                        recollection, and a reader comparing the log against
+                        a report should know which is which. */}
+                    {d.enteredBy ? (
+                      <span className="block text-xs text-muted-foreground">
+                        entered by {displayName(d.enteredBy)}
+                      </span>
+                    ) : null}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
