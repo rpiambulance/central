@@ -114,6 +114,9 @@ export const NAV_GROUPS: NavGroup[] = [
       // for, and anybody on duty may. Handing out the display links is the
       // part that needs one, and that lives under Admin.
       { href: '/headsup/notes', label: 'Headsup' },
+      // No permission: anybody working a standby writes up what they did,
+      // and the list is how they reach the one they are on.
+      { href: '/standbys', label: 'Event Standbys' },
       { href: '/admin/radios', label: 'Radios', permissions: ['radios:manage'] },
     ],
   },
@@ -171,6 +174,11 @@ export const NAV_GROUPS: NavGroup[] = [
         href: '/headsup/links',
         label: 'Headsup',
         permissions: ['headsup:manage'],
+      },
+      {
+        href: '/admin/standbys',
+        label: 'Standby Setup',
+        permissions: ['settings:write'],
       },
     ],
   },
