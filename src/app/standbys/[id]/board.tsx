@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { displayName } from '@/lib/name';
 import { send } from '@/lib/offline-queue';
 import { EncounterCard } from './encounter-card';
+import { StandbyActions } from './standby-actions';
 import {
   ROLE_LABEL,
   STATUS_LABEL,
@@ -58,6 +59,17 @@ export function Board({
   const router = useRouter();
   const [standby, setStandby] = useState(initial);
   const [busy, setBusy] = useState(false);
+
+  // The server is authoritative once it has answered. Without this the board
+  // kept whatever it started with, so anything added — an encounter, a unit,
+  // somebody arriving — only appeared after a manual reload. An optimistic
+  // change survives until the refresh it triggered comes back, which is the
+  // point: it is showing what was typed while the round trip happens.
+  const [fromServer, setFromServer] = useState(initial);
+  if (fromServer !== initial) {
+    setFromServer(initial);
+    setStandby(initial);
+  }
   const locations = standby.venue?.locations ?? [];
 
   const write = useCallback(
@@ -354,6 +366,16 @@ export function Board({
           ))}
         </div>
       </section>
+
+      {/* ------------------------------------------------- finishing with it */}
+      {standby.viewer.mayManage ? (
+        <StandbyActions
+          standbyId={standby.id}
+          closed={!!standby.closedAt}
+          encounters={standby.encounters.length}
+          onWrite={write}
+        />
+      ) : null}
 
       {/* -------------------------------------------------------- the totals */}
       <section className="space-y-2">
