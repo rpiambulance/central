@@ -63,8 +63,25 @@ export type Encounter = {
   prid: string | null;
   locationId: number | null;
   locationText: string | null;
+  /** Set when this turned out not to be a patient encounter at all. */
+  voidedAs: 'UNFOUNDED' | 'CREATED_IN_ERROR' | null;
+  voidedAt: string | null;
+  voidNote: string | null;
   unit: { id: number; name: string } | null;
   createdBy: Person | null;
+};
+
+export const VOID_LABEL: Record<'UNFOUNDED' | 'CREATED_IN_ERROR', string> = {
+  UNFOUNDED: 'unfounded',
+  CREATED_IN_ERROR: 'created in error',
+};
+
+/** What each kind of void means, said where somebody is choosing one. */
+export const VOID_BLURB: Record<'UNFOUNDED' | 'CREATED_IN_ERROR', string> = {
+  UNFOUNDED:
+    'A unit went and there was nobody to treat. Kept on the event report, never on the state forms.',
+  CREATED_IN_ERROR:
+    'This row should not exist — a duplicate, or a tap on the wrong button. Kept only in the timeline.',
 };
 
 export type Standby = {

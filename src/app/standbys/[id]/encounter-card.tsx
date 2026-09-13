@@ -8,10 +8,14 @@ import { formatDateTime } from '@/lib/format';
 import {
   CATEGORY_LABEL,
   DISPOSITION_LABEL,
+  VOID_BLURB,
+  VOID_LABEL,
   type Config,
   type Encounter,
   type Unit,
 } from './types';
+
+type VoidAs = NonNullable<Encounter['voidedAs']>;
 
 const FIELD = 'h-8 w-full rounded-md border border-input bg-background px-2 text-sm';
 const LABEL = 'grid gap-1 text-xs text-muted-foreground';
@@ -65,6 +69,8 @@ export function EncounterCard({
   const [draft, setDraft] = useState(encounter);
   const [problems, setProblems] = useState<string[]>([]);
   const [asking, setAsking] = useState(false);
+  const [voiding, setVoiding] = useState(false);
+  const [voidNote, setVoidNote] = useState('');
   const [saving, setSaving] = useState(false);
   const base = `/v1/standbys/${standbyId}/encounters/${encounter.id}`;
   const editable = !readOnly;
@@ -131,6 +137,51 @@ export function EncounterCard({
     }
   };
 
+  // It turned out not to be a patient encounter. Marking it says so and
+  // keeps the fact that it happened; deleting it, below, does not.
+  const setVoid = async (as: VoidAs | null, note?: string) => {
+    setSaving(true);
+    setProblems([]);
+    const was = { voidedAs: draft.voidedAs, voidNote: draft.voidNote };
+    try {
+      setDraft((d) => ({
+        ...d,
+        voidedAs: as,
+        voidNote: as ? (note?.trim() || null) : null,
+        // Voiding finishes it; taking the mark off puts it back in play.
+        closedAt: as ? (d.closedAt ?? new Date().toISOString()) : null,
+        // The patient fields go with it, on the server and here.
+        ...(as
+          ? {
+              patientInitials: null,
+              patientAge: null,
+              chiefComplaint: null,
+              treatment: null,
+              prid: null,
+              died: false,
+              intoxicationSigns: false,
+            }
+          : {}),
+      }));
+      setVoiding(false);
+      const res = await onWrite(
+        'POST',
+        `${base}/void`,
+        { as, note },
+        as ? `#${encounter.sequence} ${VOID_LABEL[as]}` : `#${encounter.sequence} back`,
+      );
+      if (res && !res.ok) {
+        setDraft((d) => ({ ...d, ...was }));
+        const body = (await res.json()) as { message?: string };
+        setProblems([
+          typeof body.message === 'string' ? body.message : 'That did not work.',
+        ]);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // The duplicate, or the one opened on the wrong standby. A mistake in
   // the writing-up is a reopen and an edit, not this.
   const destroy = async () => {
@@ -152,14 +203,16 @@ export function EncounterCard({
     }
   };
 
-  const summary = [
-    draft.patientInitials,
-    CATEGORY_LABEL[draft.category],
-    draft.chiefComplaint,
-    DISPOSITION_LABEL[draft.disposition],
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  const summary = draft.voidedAs
+    ? (draft.voidNote ?? 'No patient.')
+    : [
+        draft.patientInitials,
+        CATEGORY_LABEL[draft.category],
+        draft.chiefComplaint,
+        DISPOSITION_LABEL[draft.disposition],
+      ]
+        .filter(Boolean)
+        .join(' · ');
 
   return (
     <div className="rounded-md border">
@@ -171,11 +224,21 @@ export function EncounterCard({
         <span className="font-medium">
           {draft.runNumber?.number ?? `#${draft.sequence}`}
         </span>
-        <Badge variant="secondary" className={CATEGORY_TONE[draft.category]}>
-          {CATEGORY_LABEL[draft.category]}
-        </Badge>
-        {draft.firstAidOnly ? <Badge variant="outline">first aid only</Badge> : null}
-        {draft.died ? <Badge variant="destructive">death</Badge> : null}
+        {draft.voidedAs ? (
+          <Badge variant="outline" className="text-muted-foreground">
+            {VOID_LABEL[draft.voidedAs]}
+          </Badge>
+        ) : (
+          <>
+            <Badge variant="secondary" className={CATEGORY_TONE[draft.category]}>
+              {CATEGORY_LABEL[draft.category]}
+            </Badge>
+            {draft.firstAidOnly ? (
+              <Badge variant="outline">first aid only</Badge>
+            ) : null}
+            {draft.died ? <Badge variant="destructive">death</Badge> : null}
+          </>
+        )}
         {!draft.closedAt ? <Badge>open</Badge> : null}
         <span className="text-sm text-muted-foreground">{summary}</span>
         <span className="ml-auto text-xs text-muted-foreground">
@@ -196,288 +259,325 @@ export function EncounterCard({
             </ul>
           ) : null}
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <label className={LABEL}>
-              Initials
-              <input
-                value={draft.patientInitials ?? ''}
-                maxLength={4}
-                disabled={!editable}
-                onChange={(e) => set('patientInitials', e.target.value)}
-                onBlur={() => save({ patientInitials: draft.patientInitials })}
-                className={FIELD}
-              />
-              <span className="text-[10px]">No names. Initials and age only.</span>
-            </label>
-            <label className={LABEL}>
-              Age
-              <input
-                type="number"
-                min={0}
-                value={draft.patientAge ?? ''}
-                disabled={!editable}
-                onChange={(e) =>
-                  set('patientAge', e.target.value ? Number(e.target.value) : null)
-                }
-                onBlur={() => save({ patientAge: draft.patientAge })}
-                className={FIELD}
-              />
-            </label>
-            <label className={LABEL}>
-              Unit
-              <select
-                value={draft.unit?.id ?? ''}
-                disabled={!editable}
-                onChange={(e) => {
-                  const id = e.target.value ? Number(e.target.value) : null;
-                  const found = units.find((u) => u.id === id) ?? null;
-                  set('unit', found ? { id: found.id, name: found.name } : null);
-                  void save({ unitId: id } as Partial<Encounter>);
-                }}
-                className={FIELD}
-              >
-                <option value="">—</option>
-                {units.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            <label className={LABEL}>
-              Category
-              <select
-                value={draft.category}
-                disabled={!editable}
-                onChange={(e) => {
-                  const category = e.target.value as Encounter['category'];
-                  set('category', category);
-                  void save({ category });
-                }}
-                className={FIELD}
-              >
-                {(Object.keys(CATEGORY_LABEL) as Encounter['category'][]).map((c) => (
-                  <option key={c} value={c}>
-                    {CATEGORY_LABEL[c]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className={LABEL}>
-              Chief complaint
-              <input
-                value={draft.chiefComplaint ?? ''}
-                disabled={!editable}
-                onChange={(e) => set('chiefComplaint', e.target.value)}
-                onBlur={() => save({ chiefComplaint: draft.chiefComplaint })}
-                className={FIELD}
-              />
-            </label>
-            <label className={LABEL}>
-              Where
-              <select
-                value={draft.locationId ?? ''}
-                disabled={!editable}
-                onChange={(e) => {
-                  const id = e.target.value ? Number(e.target.value) : null;
-                  set('locationId', id);
-                  void save({ locationId: id } as Partial<Encounter>);
-                }}
-                className={FIELD}
-              >
-                <option value="">—</option>
-                {locations.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            <label className={LABEL}>
-              Disposition
-              <select
-                value={draft.disposition}
-                disabled={!editable}
-                onChange={(e) => {
-                  const disposition = e.target.value as Encounter['disposition'];
-                  set('disposition', disposition);
-                  void save({ disposition });
-                }}
-                className={FIELD}
-              >
-                {(Object.keys(DISPOSITION_LABEL) as Encounter['disposition'][]).map((d) => (
-                  <option key={d} value={d}>
-                    {DISPOSITION_LABEL[d]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {draft.disposition === 'TRANSPORTED' ? (
+          {draft.voidedAs ? (
+            // Everything the form asks about is about a patient this
+            // encounter turned out not to have.
+            <div className="space-y-2 rounded-md border border-dashed px-3 py-2 text-sm">
+              <p className="font-medium">
+                Marked {VOID_LABEL[draft.voidedAs]}
+                {draft.voidedAt ? (
+                  <span className="font-normal text-muted-foreground">
+                    {' '}
+                    · {formatDateTime(draft.voidedAt, hour12)}
+                  </span>
+                ) : null}
+              </p>
+              <p className="text-muted-foreground">
+                {VOID_BLURB[draft.voidedAs]}
+              </p>
+              {draft.voidNote ? <p>{draft.voidNote}</p> : null}
+              {editable ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={saving}
+                  onClick={() => void setVoid(null)}
+                >
+                  It was a patient encounter after all
+                </Button>
+              ) : null}
+              <p className="text-xs text-muted-foreground">
+                What was filled in about a patient was cleared when it was
+                marked, and does not come back.
+              </p>
+            </div>
+          ) : (
+            <>
+            <div className="grid gap-3 sm:grid-cols-3">
               <label className={LABEL}>
-                Hospital
+                Initials
+                <input
+                  value={draft.patientInitials ?? ''}
+                  maxLength={4}
+                  disabled={!editable}
+                  onChange={(e) => set('patientInitials', e.target.value)}
+                  onBlur={() => save({ patientInitials: draft.patientInitials })}
+                  className={FIELD}
+                />
+                <span className="text-[10px]">No names. Initials and age only.</span>
+              </label>
+              <label className={LABEL}>
+                Age
+                <input
+                  type="number"
+                  min={0}
+                  value={draft.patientAge ?? ''}
+                  disabled={!editable}
+                  onChange={(e) =>
+                    set('patientAge', e.target.value ? Number(e.target.value) : null)
+                  }
+                  onBlur={() => save({ patientAge: draft.patientAge })}
+                  className={FIELD}
+                />
+              </label>
+              <label className={LABEL}>
+                Unit
                 <select
-                  value={draft.hospitalId ?? ''}
+                  value={draft.unit?.id ?? ''}
                   disabled={!editable}
                   onChange={(e) => {
                     const id = e.target.value ? Number(e.target.value) : null;
-                    set('hospitalId', id);
-                    void save({ hospitalId: id } as Partial<Encounter>);
+                    const found = units.find((u) => u.id === id) ?? null;
+                    set('unit', found ? { id: found.id, name: found.name } : null);
+                    void save({ unitId: id } as Partial<Encounter>);
                   }}
                   className={FIELD}
                 >
                   <option value="">—</option>
-                  {hospitals.map((h) => (
-                    <option key={h.id} value={h.id}>
-                      {h.name}
+                  {units.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}
                     </option>
                   ))}
                 </select>
               </label>
-            ) : null}
-            {draft.disposition === 'TURNOVER' ? (
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
               <label className={LABEL}>
-                Handed to
-                <input
-                  value={draft.turnoverAgency ?? ''}
+                Category
+                <select
+                  value={draft.category}
                   disabled={!editable}
-                  onChange={(e) => set('turnoverAgency', e.target.value)}
-                  onBlur={() => save({ turnoverAgency: draft.turnoverAgency })}
+                  onChange={(e) => {
+                    const category = e.target.value as Encounter['category'];
+                    set('category', category);
+                    void save({ category });
+                  }}
+                  className={FIELD}
+                >
+                  {(Object.keys(CATEGORY_LABEL) as Encounter['category'][]).map((c) => (
+                    <option key={c} value={c}>
+                      {CATEGORY_LABEL[c]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className={LABEL}>
+                Chief complaint
+                <input
+                  value={draft.chiefComplaint ?? ''}
+                  disabled={!editable}
+                  onChange={(e) => set('chiefComplaint', e.target.value)}
+                  onBlur={() => save({ chiefComplaint: draft.chiefComplaint })}
                   className={FIELD}
                 />
               </label>
-            ) : null}
-            <label className={LABEL}>
-              County run number
-              <input
-                value={draft.countyRunNumber ?? ''}
-                disabled={!editable}
-                onChange={(e) => set('countyRunNumber', e.target.value)}
-                onBlur={() => save({ countyRunNumber: draft.countyRunNumber })}
-                className={FIELD}
-              />
-            </label>
-          </div>
+              <label className={LABEL}>
+                Where
+                <select
+                  value={draft.locationId ?? ''}
+                  disabled={!editable}
+                  onChange={(e) => {
+                    const id = e.target.value ? Number(e.target.value) : null;
+                    set('locationId', id);
+                    void save({ locationId: id } as Partial<Encounter>);
+                  }}
+                  className={FIELD}
+                >
+                  <option value="">—</option>
+                  {locations.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={draft.firstAidOnly}
-                disabled={!editable}
-                onChange={(e) => {
-                  set('firstAidOnly', e.target.checked);
-                  void save({ firstAidOnly: e.target.checked });
-                }}
-              />
-              First aid only
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={draft.intoxicationSigns}
-                disabled={!editable}
-                onChange={(e) => {
-                  set('intoxicationSigns', e.target.checked);
-                  void save({ intoxicationSigns: e.target.checked });
-                }}
-              />
-              Signs of intoxication
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={draft.died}
-                disabled={!editable}
-                onChange={(e) => {
-                  set('died', e.target.checked);
-                  void save({ died: e.target.checked });
-                }}
-              />
-              Died
-            </label>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className={LABEL}>
-              Run number
-              <div className="flex gap-2">
-                <input
-                  value={draft.runNumber?.number ?? ''}
-                  readOnly
-                  placeholder="none"
-                  className={`${FIELD} flex-1`}
-                />
-                {editable && !draft.runNumberId ? (
-                  <IssueRunNumber
-                    onIssue={async (locationId) => {
-                      const res = await onWrite(
-                        'POST',
-                        `${base}/run-number`,
-                        { locationId },
-                        `run number for #${encounter.sequence}`,
-                      );
-                      if (res?.ok) {
-                        const issued = (await res.json()) as { id: number; number: string };
-                        set('runNumber', issued);
-                        set('runNumberId', issued.id);
-                      }
+            <div className="grid gap-3 sm:grid-cols-3">
+              <label className={LABEL}>
+                Disposition
+                <select
+                  value={draft.disposition}
+                  disabled={!editable}
+                  onChange={(e) => {
+                    const disposition = e.target.value as Encounter['disposition'];
+                    set('disposition', disposition);
+                    void save({ disposition });
+                  }}
+                  className={FIELD}
+                >
+                  {(Object.keys(DISPOSITION_LABEL) as Encounter['disposition'][]).map((d) => (
+                    <option key={d} value={d}>
+                      {DISPOSITION_LABEL[d]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {draft.disposition === 'TRANSPORTED' ? (
+                <label className={LABEL}>
+                  Hospital
+                  <select
+                    value={draft.hospitalId ?? ''}
+                    disabled={!editable}
+                    onChange={(e) => {
+                      const id = e.target.value ? Number(e.target.value) : null;
+                      set('hospitalId', id);
+                      void save({ hospitalId: id } as Partial<Encounter>);
                     }}
+                    className={FIELD}
+                  >
+                    <option value="">—</option>
+                    {hospitals.map((h) => (
+                      <option key={h.id} value={h.id}>
+                        {h.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              {draft.disposition === 'TURNOVER' ? (
+                <label className={LABEL}>
+                  Handed to
+                  <input
+                    value={draft.turnoverAgency ?? ''}
+                    disabled={!editable}
+                    onChange={(e) => set('turnoverAgency', e.target.value)}
+                    onBlur={() => save({ turnoverAgency: draft.turnoverAgency })}
+                    className={FIELD}
                   />
-                ) : null}
-              </div>
-            </label>
+                </label>
+              ) : null}
+              <label className={LABEL}>
+                County run number
+                <input
+                  value={draft.countyRunNumber ?? ''}
+                  disabled={!editable}
+                  onChange={(e) => set('countyRunNumber', e.target.value)}
+                  onBlur={() => save({ countyRunNumber: draft.countyRunNumber })}
+                  className={FIELD}
+                />
+              </label>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={draft.firstAidOnly}
+                  disabled={!editable}
+                  onChange={(e) => {
+                    set('firstAidOnly', e.target.checked);
+                    void save({ firstAidOnly: e.target.checked });
+                  }}
+                />
+                First aid only
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={draft.intoxicationSigns}
+                  disabled={!editable}
+                  onChange={(e) => {
+                    set('intoxicationSigns', e.target.checked);
+                    void save({ intoxicationSigns: e.target.checked });
+                  }}
+                />
+                Signs of intoxication
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={draft.died}
+                  disabled={!editable}
+                  onChange={(e) => {
+                    set('died', e.target.checked);
+                    void save({ died: e.target.checked });
+                  }}
+                />
+                Died
+              </label>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className={LABEL}>
+                Run number
+                <div className="flex gap-2">
+                  <input
+                    value={draft.runNumber?.number ?? ''}
+                    readOnly
+                    placeholder="none"
+                    className={`${FIELD} flex-1`}
+                  />
+                  {editable && !draft.runNumberId ? (
+                    <IssueRunNumber
+                      onIssue={async (locationId) => {
+                        const res = await onWrite(
+                          'POST',
+                          `${base}/run-number`,
+                          { locationId },
+                          `run number for #${encounter.sequence}`,
+                        );
+                        if (res?.ok) {
+                          const issued = (await res.json()) as { id: number; number: string };
+                          set('runNumber', issued);
+                          set('runNumberId', issued.id);
+                        }
+                      }}
+                    />
+                  ) : null}
+                </div>
+              </label>
+              <label className={LABEL}>
+                PRID
+                <input
+                  value={draft.prid ?? ''}
+                  disabled={!editable}
+                  onChange={(e) => set('prid', e.target.value)}
+                  onBlur={() => save({ prid: draft.prid })}
+                  placeholder="From the patient care report"
+                  className={FIELD}
+                />
+              </label>
+            </div>
+
             <label className={LABEL}>
-              PRID
-              <input
-                value={draft.prid ?? ''}
+              Treatment
+              <textarea
+                value={draft.treatment ?? ''}
                 disabled={!editable}
-                onChange={(e) => set('prid', e.target.value)}
-                onBlur={() => save({ prid: draft.prid })}
-                placeholder="From the patient care report"
-                className={FIELD}
+                rows={2}
+                onChange={(e) => set('treatment', e.target.value)}
+                onBlur={() => save({ treatment: draft.treatment })}
+                className="rounded-md border border-input bg-background p-2 text-sm"
               />
             </label>
-          </div>
+            <label className={LABEL}>
+              Narrative
+              <textarea
+                value={draft.narrative ?? ''}
+                disabled={!editable}
+                rows={3}
+                onChange={(e) => set('narrative', e.target.value)}
+                onBlur={() => save({ narrative: draft.narrative })}
+                className="rounded-md border border-input bg-background p-2 text-sm"
+              />
+              <span className="text-[10px]">
+                No names, addresses or dates of birth — this is not the patient care report.
+              </span>
+            </label>
+            </>
+          )}
 
-          <label className={LABEL}>
-            Treatment
-            <textarea
-              value={draft.treatment ?? ''}
-              disabled={!editable}
-              rows={2}
-              onChange={(e) => set('treatment', e.target.value)}
-              onBlur={() => save({ treatment: draft.treatment })}
-              className="rounded-md border border-input bg-background p-2 text-sm"
-            />
-          </label>
-          <label className={LABEL}>
-            Narrative
-            <textarea
-              value={draft.narrative ?? ''}
-              disabled={!editable}
-              rows={3}
-              onChange={(e) => set('narrative', e.target.value)}
-              onBlur={() => save({ narrative: draft.narrative })}
-              className="rounded-md border border-input bg-background p-2 text-sm"
-            />
-            <span className="text-[10px]">
-              No names, addresses or dates of birth — this is not the patient care report.
-            </span>
-          </label>
 
           <div className="flex flex-wrap items-center gap-2">
-            {editable && !draft.closedAt ? (
+            {editable && !draft.voidedAs && !draft.closedAt ? (
               <Button size="sm" disabled={saving} onClick={() => void close()}>
                 {saving ? 'Saving…' : 'Close encounter'}
               </Button>
             ) : null}
-            {editable && draft.closedAt ? (
+            {editable && !draft.voidedAs && draft.closedAt ? (
               <Button
                 size="sm"
                 variant="outline"
@@ -500,6 +600,15 @@ export function EncounterCard({
                 Written up by {displayName(draft.createdBy)}
               </span>
             ) : null}
+            {editable && !draft.voidedAs && !voiding ? (
+              <button
+                type="button"
+                onClick={() => setVoiding(true)}
+                className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+              >
+                Not a patient encounter?
+              </button>
+            ) : null}
             {mayDelete && !asking ? (
               <button
                 type="button"
@@ -510,6 +619,48 @@ export function EncounterCard({
               </button>
             ) : null}
           </div>
+
+          {voiding ? (
+            <div className="space-y-2 rounded-md border px-3 py-2 text-xs">
+              <p className="font-medium">What was it, then?</p>
+              <label className="grid gap-1">
+                What happened (optional)
+                <input
+                  type="text"
+                  value={voidNote}
+                  maxLength={300}
+                  onChange={(e) => setVoidNote(e.target.value)}
+                  placeholder="Searched the north lawn, nobody there"
+                  className={FIELD}
+                />
+              </label>
+              <div className="flex flex-wrap items-start gap-2">
+                {(['UNFOUNDED', 'CREATED_IN_ERROR'] as const).map((as) => (
+                  <Button
+                    key={as}
+                    size="sm"
+                    variant="outline"
+                    className="h-auto max-w-[15rem] flex-col items-start gap-0.5 py-1.5 text-left text-xs whitespace-normal"
+                    disabled={saving}
+                    onClick={() => void setVoid(as, voidNote)}
+                  >
+                    <span className="font-medium">{VOID_LABEL[as]}</span>
+                    <span className="font-normal text-muted-foreground">
+                      {VOID_BLURB[as]}
+                    </span>
+                  </Button>
+                ))}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs"
+                  onClick={() => setVoiding(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : null}
 
           {asking ? (
             <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
