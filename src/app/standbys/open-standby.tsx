@@ -140,7 +140,7 @@ export function OpenStandby({
         ) : (
           <p className="text-sm text-muted-foreground">
             No upcoming events without a standby. Open one from the event
-            itself, or add an event that is not on the calendar.
+            itself, or record something that is not on the calendar.
           </p>
         )
       ) : (
@@ -203,11 +203,12 @@ export function OpenStandby({
                 })
               }
             >
-              {busy ? 'Opening…' : 'Add the event and open'}
+              {busy ? 'Opening…' : 'Open the standby'}
             </Button>
             <p className="ml-3 text-xs text-muted-foreground">
-              It goes on the calendar too — an event that happened should be
-              on it.
+              It stays off the calendar. Nobody was asked to sign up for this
+              one and it is already under way; the record is for the standby,
+              not for anybody&apos;s schedule.
             </p>
           </div>
         </div>
