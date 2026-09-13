@@ -137,3 +137,17 @@ export const DISPOSITION_LABEL: Record<Encounter['disposition'], string> = {
   NO_PATIENT_FOUND: 'No patient found',
   DECEASED: 'Deceased',
 };
+
+/**
+ * One line in the record of what happened.
+ *
+ * `text` is written by the API so the board and the event report cannot
+ * describe the same thing two different ways.
+ */
+export type TimelineEntry = {
+  id: string;
+  at: string;
+  kind: string;
+  text: string;
+  actor: Person | null;
+};

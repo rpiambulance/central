@@ -99,6 +99,33 @@ export function EncounterCard({
     }
   };
 
+  // Something was missed, or something was wrong. The alternative to
+  // reopening is a second encounter for one patient, which is worse for the
+  // record than a correction is.
+  const reopen = async () => {
+    setSaving(true);
+    setProblems([]);
+    try {
+      setDraft((d) => ({ ...d, closedAt: null }));
+      setOpen(true);
+      const res = await onWrite(
+        'POST',
+        `${base}/reopen`,
+        undefined,
+        `reopen #${encounter.sequence}`,
+      );
+      if (res && !res.ok) {
+        setDraft((d) => ({ ...d, closedAt: encounter.closedAt }));
+        const body = (await res.json()) as { message?: string };
+        setProblems([
+          typeof body.message === 'string' ? body.message : 'Could not reopen it.',
+        ]);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const summary = [
     draft.patientInitials,
     CATEGORY_LABEL[draft.category],
@@ -422,6 +449,16 @@ export function EncounterCard({
             {editable && !draft.closedAt ? (
               <Button size="sm" disabled={saving} onClick={() => void close()}>
                 {saving ? 'Saving…' : 'Close encounter'}
+              </Button>
+            ) : null}
+            {editable && draft.closedAt ? (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={saving}
+                onClick={() => void reopen()}
+              >
+                {saving ? 'Saving…' : 'Reopen encounter'}
               </Button>
             ) : null}
             <a

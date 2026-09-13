@@ -4,7 +4,7 @@ import { prefers12Hour } from '@/lib/me';
 import { PageHeader } from '@/components/page-header';
 import { QueueStatus } from '../queue-status';
 import { Board } from './board';
-import type { Config, Standby } from './types';
+import type { Config, Standby, TimelineEntry } from './types';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,12 +30,17 @@ export default async function StandbyPage({
     if (err instanceof ApiError && err.status === 404) notFound();
     throw err;
   }
-  const [config, hour12] = await Promise.all([
+  const [config, timeline, hour12] = await Promise.all([
     api<Config>('/v1/standbys/config/all', { raw: true }).catch(() => ({
       venues: [],
       designators: [],
       hospitals: [],
     })),
+    // The board is worth showing without it; a standby with no record of
+    // what happened is still a standby being worked.
+    api<TimelineEntry[]>(`/v1/standbys/${standbyId}/timeline`, {
+      raw: true,
+    }).catch(() => []),
     prefers12Hour(),
   ]);
 
@@ -50,7 +55,12 @@ export default async function StandbyPage({
             : 'Running now.'
         }
       />
-      <Board initial={standby} config={config} hour12={hour12} />
+      <Board
+        initial={standby}
+        config={config}
+        timeline={timeline}
+        hour12={hour12}
+      />
     </div>
   );
 }

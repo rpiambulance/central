@@ -8,12 +8,14 @@ import { displayName } from '@/lib/name';
 import { send } from '@/lib/offline-queue';
 import { EncounterCard } from './encounter-card';
 import { StandbyActions } from './standby-actions';
+import { Timeline } from './timeline';
 import {
   ROLE_LABEL,
   STATUS_LABEL,
   type Config,
   type Personnel,
   type Standby,
+  type TimelineEntry,
   type Unit,
 } from './types';
 
@@ -50,10 +52,12 @@ const FIELD = 'h-8 rounded-md border border-input bg-background px-2 text-sm';
 export function Board({
   initial,
   config,
+  timeline,
   hour12,
 }: {
   initial: Standby;
   config: Config;
+  timeline: TimelineEntry[];
   hour12: boolean;
 }) {
   const router = useRouter();
@@ -366,6 +370,9 @@ export function Board({
           ))}
         </div>
       </section>
+
+      {/* ------------------------------------------------ what has happened */}
+      <Timeline entries={timeline} hour12={hour12} />
 
       {/* ------------------------------------------------- finishing with it */}
       {standby.viewer.mayManage ? (
