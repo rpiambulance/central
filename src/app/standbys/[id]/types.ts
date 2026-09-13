@@ -79,7 +79,7 @@ export type Standby = {
   peakEstimated: boolean;
   unusualOccurrences: string | null;
   event: { id: number; title: string; startsAt: string; endsAt: string };
-  venue: { id: number; name: string; locations: Array<{ id: number; name: string; kind: string | null }> } | null;
+  venue: { id: number; name: string; locations: Array<{ id: number; name: string }> } | null;
   personnel: Personnel[];
   units: Unit[];
   encounters: Encounter[];

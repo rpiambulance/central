@@ -30,11 +30,7 @@ export async function addVenue(formData: FormData) {
 export async function addLocation(venueId: number, formData: FormData) {
   const name = String(formData.get('name') ?? '').trim();
   if (!name) redirect(`${PAGE}?error=${encodeURIComponent('A location needs a name.')}`);
-  await post(
-    `/v1/standbys/config/venues/${venueId}/locations`,
-    { name, kind: String(formData.get('kind') ?? '').trim() || undefined },
-    'location',
-  );
+  await post(`/v1/standbys/config/venues/${venueId}/locations`, { name }, 'location');
 }
 
 export async function retireLocation(locationId: number) {

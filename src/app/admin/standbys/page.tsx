@@ -22,7 +22,7 @@ type Config = {
     id: number;
     name: string;
     address: string | null;
-    locations: Array<{ id: number; name: string; kind: string | null }>;
+    locations: Array<{ id: number; name: string }>;
   }>;
   designators: Array<{ id: number; name: string; kind: string | null }>;
   hospitals: Array<{ id: number; name: string }>;
@@ -80,8 +80,9 @@ export default async function StandbySetupPage({
         <CardHeader>
           <CardTitle className="text-base">Venues</CardTitle>
           <CardDescription>
-            Somewhere an event happens, with the places inside it named — gates,
-            stands, aid rooms. A supervisor can still invent one on the day.
+            Somewhere an event happens, with the places inside it named — Gate
+            1, North Stand, the aid room. One name each; a supervisor can still
+            invent a place on the day.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -112,9 +113,6 @@ export default async function StandbySetupPage({
                     className="flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs"
                   >
                     {location.name}
-                    {location.kind ? (
-                      <span className="text-muted-foreground">· {location.kind}</span>
-                    ) : null}
                     <form action={retireLocation.bind(null, location.id)}>
                       <button
                         type="submit"
@@ -140,12 +138,7 @@ export default async function StandbySetupPage({
                   name="name"
                   required
                   placeholder="Gate 1"
-                  className={`${FIELD} w-40`}
-                />
-                <input
-                  name="kind"
-                  placeholder="Gate, Stand, Aid station"
-                  className={`${FIELD} w-48`}
+                  className={`${FIELD} w-56`}
                 />
                 <Button type="submit" size="sm" variant="outline">
                   Add location
