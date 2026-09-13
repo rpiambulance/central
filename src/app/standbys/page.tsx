@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { PageHeader } from '@/components/page-header';
-import { OpenStandby } from './open-standby';
+import { OpenStandby, type OpenableEvent } from './open-standby';
 
 type Row = {
   id: number;
@@ -20,7 +20,7 @@ type Row = {
   _count: { encounters: number; personnel: number; units: number };
 };
 
-type EventRow = { id: number; title: string; startsAt: string };
+type EventKind = { id: number; name: string };
 
 export const dynamic = 'force-dynamic';
 
@@ -53,14 +53,15 @@ export default async function StandbysPage() {
     throw err;
   }
 
-  // Events that could have one opened against them, for the button below.
-  const openable = mayManage
-    ? await api<EventRow[]>('/v1/events?upcoming=1', { raw: true })
-        .then((events) =>
-          events.filter((e) => !rows.some((r) => r.event.id === e.id)).slice(0, 25),
-        )
-        .catch(() => [])
-    : [];
+  // Asked of the API rather than worked out here: "future, and without a
+  // standby already" is a question the database can answer exactly, and the
+  // list above is capped.
+  const [openable, kinds] = mayManage
+    ? await Promise.all([
+        api<OpenableEvent[]>('/v1/standbys/openable', { raw: true }).catch(() => []),
+        api<EventKind[]>('/v1/events/kinds', { raw: true }).catch(() => []),
+      ])
+    : [[], []];
 
   const open = rows.filter((r) => !r.closedAt);
   const closed = rows.filter((r) => r.closedAt);
@@ -95,7 +96,13 @@ export default async function StandbysPage() {
         description="What happened at an event medical standby: who worked it, what ran, and who was treated."
       />
 
-      {mayManage ? <OpenStandby events={openable} /> : null}
+      {mayManage ? (
+        <OpenStandby
+          events={openable}
+          kinds={kinds}
+          mayCreateEvents={permissions.has('events:create')}
+        />
+      ) : null}
 
       {open.length ? (
         <section className="space-y-2">

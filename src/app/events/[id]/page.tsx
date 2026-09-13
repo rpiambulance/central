@@ -28,6 +28,7 @@ import {
   setEventLocked,
 } from './actions';
 import { displayName, surnameFirst } from '@/lib/name';
+import { StandbyLink } from './standby-link';
 
 type EventDetail = {
   id: number;
@@ -99,6 +100,7 @@ export default async function EventDetailPage({
   const permissions = await myPermissions();
   const mayAssign = permissions.has('events:assign-others');
   const mayEdit = permissions.has('events:create');
+  const mayRunStandbys = permissions.has('standbys:manage');
   const mayLock = permissions.has('events:lock');
   const mayApprove = permissions.has('events:approve');
   // Approving implies declining, so anyone who can approve can decline.
@@ -121,6 +123,15 @@ export default async function EventDetailPage({
         '/v1/members',
       )
     : [];
+
+  // Only asked for by somebody who could act on the answer.
+  const standbyId = mayRunStandbys
+    ? await api<{ id: number } | null>(`/v1/standbys/for-event/${eventId}`, {
+        raw: true,
+      })
+        .then((found) => found?.id ?? null)
+        .catch(() => null)
+    : null;
 
   const signedUp = event.myPosition !== undefined;
   const attendees = event.signups.filter((s) => !s.position);
@@ -342,8 +353,11 @@ export default async function EventDetailPage({
         </Card>
       ) : null}
 
-      {mayEdit || mayLock ? (
+      {mayEdit || mayLock || mayRunStandbys ? (
         <div className="flex flex-wrap items-center gap-3">
+          {mayRunStandbys ? (
+            <StandbyLink eventId={eventId} standbyId={standbyId} />
+          ) : null}
           {mayEdit ? (
             <Button
               render={<Link href={`/events/${eventId}/edit`} />}
