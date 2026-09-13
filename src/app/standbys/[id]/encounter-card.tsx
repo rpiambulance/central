@@ -46,7 +46,9 @@ export function EncounterCard({
   hospitals,
   hour12,
   readOnly,
+  mayDelete,
   onWrite,
+  onDeleted,
 }: {
   encounter: Encounter;
   standbyId: number;
@@ -55,11 +57,14 @@ export function EncounterCard({
   hospitals: Config['hospitals'];
   hour12: boolean;
   readOnly: boolean;
+  mayDelete: boolean;
   onWrite: Write;
+  onDeleted: () => void;
 }) {
   const [open, setOpen] = useState(!encounter.closedAt);
   const [draft, setDraft] = useState(encounter);
   const [problems, setProblems] = useState<string[]>([]);
+  const [asking, setAsking] = useState(false);
   const [saving, setSaving] = useState(false);
   const base = `/v1/standbys/${standbyId}/encounters/${encounter.id}`;
   const editable = !readOnly;
@@ -123,6 +128,27 @@ export function EncounterCard({
       }
     } finally {
       setSaving(false);
+    }
+  };
+
+  // The duplicate, or the one opened on the wrong standby. A mistake in
+  // the writing-up is a reopen and an edit, not this.
+  const destroy = async () => {
+    setSaving(true);
+    setProblems([]);
+    try {
+      const res = await onWrite('DELETE', base, undefined, `delete #${encounter.sequence}`);
+      if (res && !res.ok) {
+        const body = (await res.json()) as { message?: string };
+        setProblems([
+          typeof body.message === 'string' ? body.message : 'Could not delete it.',
+        ]);
+        return;
+      }
+      onDeleted();
+    } finally {
+      setSaving(false);
+      setAsking(false);
     }
   };
 
@@ -474,7 +500,50 @@ export function EncounterCard({
                 Written up by {displayName(draft.createdBy)}
               </span>
             ) : null}
+            {mayDelete && !asking ? (
+              <button
+                type="button"
+                onClick={() => setAsking(true)}
+                className="ml-auto text-xs text-muted-foreground underline-offset-2 hover:underline"
+              >
+                Delete this encounter
+              </button>
+            ) : null}
           </div>
+
+          {asking ? (
+            <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+              <p className="font-medium">
+                Throw encounter #{draft.sequence} away?
+              </p>
+              <p className="mt-1">
+                It comes off the standby and off both DOH forms, and it is not
+                recoverable from here — only from the audit log.
+                {draft.runNumber
+                  ? ` Run number ${draft.runNumber.number} stays issued; it is the county's sequence, not ours to reuse.`
+                  : ''}
+              </p>
+              <div className="mt-2 flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-7 text-xs"
+                  disabled={saving}
+                  onClick={() => void destroy()}
+                >
+                  Yes, delete it
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs"
+                  onClick={() => setAsking(false)}
+                >
+                  Keep it
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

@@ -308,7 +308,14 @@ export function Board({
                 hospitals={config.hospitals}
                 hour12={hour12}
                 readOnly={!!standby.closedAt}
+                mayDelete={standby.viewer.mayDelete}
                 onWrite={write}
+                onDeleted={() =>
+                  setStandby((s) => ({
+                    ...s,
+                    encounters: s.encounters.filter((e) => e.id !== encounter.id),
+                  }))
+                }
               />
             ))}
           </div>
