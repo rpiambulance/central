@@ -20,7 +20,9 @@ export type OpenableEvent = {
  * calendar and the signups on it are what seed the personnel list. Sometimes
  * something happens that nobody planned, and then the event is made here —
  * a standby cannot float free of one, since run numbers tag to an event and
- * both exports read its title and kind.
+ * both exports read its title and kind. That one is hidden: it is a place
+ * to hang the record on, not something to put in anybody's calendar, and
+ * running the standby is the whole permission it takes.
  *
  * The list is future events without a standby already. Anything further back
  * is reached from the event itself, which is where somebody looking at an
@@ -29,11 +31,9 @@ export type OpenableEvent = {
 export function OpenStandby({
   events,
   kinds,
-  mayCreateEvents,
 }: {
   events: OpenableEvent[];
   kinds: Array<{ id: number; name: string }>;
-  mayCreateEvents: boolean;
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<'calendar' | 'adhoc'>('calendar');
@@ -87,13 +87,7 @@ export function OpenStandby({
             <button
               key={key}
               type="button"
-              disabled={key === 'adhoc' && !mayCreateEvents}
               onClick={() => setMode(key)}
-              title={
-                key === 'adhoc' && !mayCreateEvents
-                  ? 'Making an event needs events:create'
-                  : undefined
-              }
               className={`rounded-md border px-2 py-0.5 text-xs disabled:opacity-50 ${
                 mode === key ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
               }`}

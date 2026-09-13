@@ -97,11 +97,7 @@ export default async function StandbysPage() {
       />
 
       {mayManage ? (
-        <OpenStandby
-          events={openable}
-          kinds={kinds}
-          mayCreateEvents={permissions.has('events:create')}
-        />
+        <OpenStandby events={openable} kinds={kinds} />
       ) : null}
 
       {open.length ? (
