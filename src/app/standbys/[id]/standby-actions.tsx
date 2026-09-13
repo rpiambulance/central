@@ -19,18 +19,22 @@ type Write = (
  * reopening is one press and needs no ceremony.
  *
  * Discarding is for a standby opened against the wrong event, or an ad-hoc
- * event created by mistake. It asks first, and the API refuses outright once
- * there are encounters on it.
+ * event created by mistake. It asks first, the API refuses outright once
+ * there are encounters on it, and it is offered only to whoever holds
+ * standbys:delete — running a standby and destroying one are not the same
+ * job, and the supervisor working the event holds the first for the day.
  */
 export function StandbyActions({
   standbyId,
   closed,
   encounters,
+  mayDelete,
   onWrite,
 }: {
   standbyId: number;
   closed: boolean;
   encounters: number;
+  mayDelete: boolean;
   onWrite: Write;
 }) {
   const router = useRouter();
@@ -91,7 +95,7 @@ export function StandbyActions({
         {/* Only offered while there is nothing to lose. Once encounters
             exist the API refuses, and a button that always says no is worse
             than no button. */}
-        {!encounters && !asking ? (
+        {mayDelete && !encounters && !asking ? (
           <button
             type="button"
             onClick={() => setAsking(true)}

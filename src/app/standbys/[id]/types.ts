@@ -98,6 +98,8 @@ export type Standby = {
     role: string | null;
     mayReadAll: boolean;
     mayManage: boolean;
+    /** Throwing the standby away is its own permission. */
+    mayDelete: boolean;
   };
 };
 

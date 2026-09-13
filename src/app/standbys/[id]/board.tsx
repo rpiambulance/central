@@ -380,6 +380,7 @@ export function Board({
           standbyId={standby.id}
           closed={!!standby.closedAt}
           encounters={standby.encounters.length}
+          mayDelete={standby.viewer.mayDelete}
           onWrite={write}
         />
       ) : null}
