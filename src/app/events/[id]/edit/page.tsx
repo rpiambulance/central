@@ -13,6 +13,7 @@ import {
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
 import { deleteEvent, updateEvent } from './actions';
+import { myPermissions } from '@/lib/me';
 
 const FIELD = 'h-9 rounded-md border border-input bg-background px-2 text-sm';
 
@@ -64,13 +65,26 @@ export default async function EditEventPage({
 }) {
   const { id } = await params;
   const eventId = Number(id);
-  const [{ error }, event, kinds, tiers, credentialTypes] = await Promise.all([
-    searchParams,
-    api<EventDetail>(`/v1/events/${eventId}`),
-    api<Array<{ id: number; name: string }>>('/v1/events/kinds'),
-    api<Array<{ id: number; name: string }>>('/v1/events/tiers'),
-    api<Array<{ id: number; key: string; name: string }>>('/v1/credentials/types'),
-  ]);
+  const [{ error }, event, kinds, tiers, credentialTypes, permissions] =
+    await Promise.all([
+      searchParams,
+      api<EventDetail>(`/v1/events/${eventId}`),
+      api<Array<{ id: number; name: string }>>('/v1/events/kinds'),
+      api<Array<{ id: number; name: string }>>('/v1/events/tiers'),
+      api<Array<{ id: number; key: string; name: string }>>(
+        '/v1/credentials/types',
+      ),
+      myPermissions(),
+    ]);
+  // Deleting is held apart from editing, so the section is not offered to
+  // somebody who cannot carry it out.
+  const mayDelete = permissions.has('events:delete');
+  // Only worth asking about when there is a delete button to warn beside.
+  const standby = mayDelete
+    ? await api<{ id: number } | null>(`/v1/standbys/for-event/${eventId}`, {
+        raw: true,
+      }).catch(() => null)
+    : null;
 
   // Five rows, prefilled with what the event already has.
   const rows = [0, 1, 2, 3, 4].map((i) => event.positions[i]);
@@ -262,12 +276,16 @@ export default async function EditEventPage({
         </CardContent>
       </Card>
 
+      {mayDelete ? (
       <Card className="border-destructive/40">
         <CardHeader>
           <CardTitle className="text-base">Delete this event</CardTitle>
           <CardDescription>
             Removes the event and everyone&apos;s signups. This cannot be
             undone — hide it instead if you only want it out of sight.
+            {standby
+              ? ' This event has a standby: its units and personnel go with it, and it cannot be deleted at all once there are patient encounters on it.'
+              : ''}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -284,6 +302,7 @@ export default async function EditEventPage({
           </details>
         </CardContent>
       </Card>
+      ) : null}
     </div>
   );
 }
