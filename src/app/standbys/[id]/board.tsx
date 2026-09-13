@@ -122,9 +122,6 @@ export function Board({
               <div key={unit.id} className="rounded-md border p-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-base font-semibold">{unit.name}</span>
-                  {unit.kind ? (
-                    <span className="text-xs text-muted-foreground">{unit.kind}</span>
-                  ) : null}
                   <Badge className={`ml-auto ${STATUS_TONE[unit.status]}`} variant="secondary">
                     {STATUS_LABEL[unit.status]}
                   </Badge>

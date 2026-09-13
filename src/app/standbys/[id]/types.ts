@@ -19,7 +19,6 @@ export type Personnel = {
 export type Unit = {
   id: number;
   name: string;
-  kind: string | null;
   status: 'AVAILABLE' | 'ASSIGNED' | 'AT_PATIENT' | 'TRANSPORTING' | 'OUT_OF_SERVICE';
   retiredAt: string | null;
   currentLocation: { id: number; name: string } | null;
@@ -104,7 +103,7 @@ export type Standby = {
 
 export type Config = {
   venues: Array<{ id: number; name: string; locations: Array<{ id: number; name: string }> }>;
-  designators: Array<{ id: number; name: string; kind: string | null }>;
+  designators: Array<{ id: number; name: string }>;
   hospitals: Array<{ id: number; name: string }>;
 };
 

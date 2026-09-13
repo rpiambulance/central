@@ -46,11 +46,7 @@ export async function retireLocation(locationId: number) {
 export async function addDesignator(formData: FormData) {
   const name = String(formData.get('name') ?? '').trim();
   if (!name) redirect(`${PAGE}?error=${encodeURIComponent('A unit needs a designator.')}`);
-  await post(
-    '/v1/standbys/config/designators',
-    { name, kind: String(formData.get('kind') ?? '').trim() || undefined },
-    'designator',
-  );
+  await post('/v1/standbys/config/designators', { name }, 'designator');
 }
 
 export async function addHospital(formData: FormData) {

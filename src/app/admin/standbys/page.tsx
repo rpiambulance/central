@@ -24,7 +24,7 @@ type Config = {
     address: string | null;
     locations: Array<{ id: number; name: string }>;
   }>;
-  designators: Array<{ id: number; name: string; kind: string | null }>;
+  designators: Array<{ id: number; name: string }>;
   hospitals: Array<{ id: number; name: string }>;
 };
 
@@ -155,13 +155,18 @@ export default async function StandbySetupPage({
             <CardTitle className="text-base">Unit designators</CardTitle>
             <CardDescription>
               The usual ones, so they read the same from one event to the next.
-              Anything else can be invented at the event.
+              The designator is the name — M-1, Gator 1, Bike 1. Anything else
+              can be invented at the event.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <form action={addDesignator} className="flex flex-wrap items-end gap-2">
-              <input name="name" required placeholder="M-1" className={`${FIELD} w-28`} />
-              <input name="kind" placeholder="Ambulance" className={`${FIELD} w-40`} />
+              <input
+                name="name"
+                required
+                placeholder="M-1"
+                className={`${FIELD} w-40`}
+              />
               <Button type="submit" size="sm">
                 Add
               </Button>
@@ -170,9 +175,6 @@ export default async function StandbySetupPage({
               {config.designators.map((d) => (
                 <li key={d.id} className="rounded-md border px-2 py-0.5 text-sm">
                   {d.name}
-                  {d.kind ? (
-                    <span className="text-xs text-muted-foreground"> · {d.kind}</span>
-                  ) : null}
                 </li>
               ))}
             </ul>
