@@ -76,9 +76,10 @@ export default async function EditEventPage({
       ),
       myPermissions(),
     ]);
-  // Deleting is held apart from editing, so the section is not offered to
-  // somebody who cannot carry it out.
-  const mayDelete = permissions.has('events:delete');
+  // Deleting an event is part of keeping the calendar, so it goes with
+  // making one. Nothing on a standby can be lost this way: an event with a
+  // standby opened against it refuses to be deleted at all.
+  const mayDelete = permissions.has('events:create');
   // Only worth asking about when there is a delete button to warn beside.
   const standby = mayDelete
     ? await api<{ id: number } | null>(`/v1/standbys/for-event/${eventId}`, {
@@ -284,7 +285,7 @@ export default async function EditEventPage({
             Removes the event and everyone&apos;s signups. This cannot be
             undone — hide it instead if you only want it out of sight.
             {standby
-              ? ' This event has a standby: its units and personnel go with it, and it cannot be deleted at all once there are patient encounters on it.'
+              ? ' This event has a standby opened against it, so it cannot be deleted: discard the standby first, which is a separate permission.'
               : ''}
           </CardDescription>
         </CardHeader>
@@ -295,7 +296,12 @@ export default async function EditEventPage({
               I want to delete this event
             </summary>
             <form action={deleteEvent.bind(null, eventId)} className="mt-3">
-              <Button type="submit" size="sm" variant="destructive">
+              <Button
+                type="submit"
+                size="sm"
+                variant="destructive"
+                disabled={!!standby}
+              >
                 Delete {event.title}
               </Button>
             </form>
