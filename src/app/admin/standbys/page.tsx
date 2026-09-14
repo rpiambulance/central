@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,24 +10,9 @@ import {
 } from '@/components/ui/card';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
-import {
-  addDesignator,
-  addHospital,
-  addPlace,
-  addSpot,
-  retireLocation,
-} from './actions';
+import { addDesignator, addHospital } from './actions';
 
 type Config = {
-  places: Array<{
-    id: number;
-    name: string;
-    address: string | null;
-    abbr: string | null;
-    nextRun: number;
-    parentId: number | null;
-    spots: Array<{ id: number; name: string }>;
-  }>;
   designators: Array<{ id: number; name: string }>;
   hospitals: Array<{ id: number; name: string }>;
 };
@@ -70,7 +56,7 @@ export default async function StandbySetupPage({
     <div className="space-y-6">
       <PageHeader
         title="Standby setup"
-        description="The places the agency goes and what the insides of them are called, unit designators, and where patients can be taken."
+        description="Unit designators, and where patients can be taken."
       />
       <ErrorBanner message={error} />
       {done ? (
@@ -79,126 +65,15 @@ export default async function StandbySetupPage({
         </p>
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Places</CardTitle>
-          <CardDescription>
-            One list, three jobs: where an event is, where a standby is
-            worked, and where the run numbers count. A place with a letter is
-            a counter — the letter is inside every number it issues, so the
-            county reads it — and a place without one files its numbering
-            under a place that has it. Name the spots inside a place — Gate
-            1, North Stand, the aid room — and a supervisor can still invent
-            one on the day.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <form action={addPlace} className="flex flex-wrap items-end gap-2">
-            <label className="grid gap-1 text-xs text-muted-foreground">
-              Place
-              <input name="name" required className={`${FIELD} w-56`} />
-            </label>
-            <label className="grid gap-1 text-xs text-muted-foreground">
-              Address (optional)
-              <input name="address" className={`${FIELD} w-56`} />
-            </label>
-            <label className="grid gap-1 text-xs text-muted-foreground">
-              Letter (optional)
-              <input
-                name="abbr"
-                maxLength={8}
-                placeholder="T"
-                className={`${FIELD} w-20 uppercase`}
-              />
-            </label>
-            <label className="grid gap-1 text-xs text-muted-foreground">
-              Or files under
-              <select name="parentId" defaultValue="" className={`${FIELD} w-48`}>
-                <option value="">—</option>
-                {config.places
-                  .filter((counter) => counter.abbr)
-                  .map((counter) => (
-                    <option key={counter.id} value={counter.id}>
-                      {counter.abbr} — {counter.name}
-                    </option>
-                  ))}
-              </select>
-            </label>
-            <Button type="submit" size="sm">
-              Add place
-            </Button>
-          </form>
+      <p className="text-sm text-muted-foreground">
+        The places themselves — and the spots inside them — are edited on{' '}
+        <Link href="/admin/locations" className="underline underline-offset-2">
+          Places
+        </Link>
+        , because they serve events and run numbers as well as standbys.
+      </p>
 
-          {config.places.map((place) => {
-            const filesUnder = config.places.find(
-              (counter) => counter.id === place.parentId,
-            );
-            return (
-            <div key={place.id} className="rounded-md border p-3">
-              <p className="font-medium">
-                {place.name}
-                {place.abbr ? (
-                  <span className="ml-2 rounded-md border px-1.5 py-0.5 text-xs font-normal">
-                    {place.abbr} · next {place.nextRun}
-                  </span>
-                ) : filesUnder ? (
-                  <span className="ml-2 text-xs font-normal text-muted-foreground">
-                    numbers count under {filesUnder.name}
-                  </span>
-                ) : (
-                  <span className="ml-2 text-xs font-normal text-amber-700 dark:text-amber-500">
-                    no run numbers here
-                  </span>
-                )}
-              </p>
-              {place.address ? (
-                <p className="text-xs text-muted-foreground">{place.address}</p>
-              ) : null}
-              <ul className="mt-2 flex flex-wrap gap-2">
-                {place.spots.map((location) => (
-                  <li
-                    key={location.id}
-                    className="flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs"
-                  >
-                    {location.name}
-                    <form action={retireLocation.bind(null, location.id)}>
-                      <button
-                        type="submit"
-                        className="text-muted-foreground hover:text-destructive"
-                        aria-label={`Retire ${location.name}`}
-                      >
-                        ×
-                      </button>
-                    </form>
-                  </li>
-                ))}
-                {!place.spots.length ? (
-                  <li className="text-xs text-muted-foreground">
-                    Nothing inside it named yet.
-                  </li>
-                ) : null}
-              </ul>
-              <form
-                action={addSpot.bind(null, place.id)}
-                className="mt-2 flex flex-wrap items-end gap-2"
-              >
-                <input
-                  name="name"
-                  required
-                  placeholder="Gate 1"
-                  className={`${FIELD} w-56`}
-                />
-                <Button type="submit" size="sm" variant="outline">
-                  Add spot
-                </Button>
-              </form>
-            </div>
-            );
-          })}
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Unit designators</CardTitle>

@@ -20,7 +20,8 @@ import {
 } from '@/components/ui/table';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
-import { issueRunNumber, reopenChangeover, saveLocation } from './actions';
+import Link from 'next/link';
+import { issueRunNumber, reopenChangeover } from './actions';
 import { displayName } from '@/lib/name';
 
 /**
@@ -232,90 +233,39 @@ export default async function RunNumbersPage({
       {canManage ? (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Locations</CardTitle>
+            <CardTitle className="text-base">Counters</CardTitle>
             <CardDescription>
-              The abbreviation is the first part of every number issued there,
-              so changing it changes what future numbers look like. Winding a
-              counter back can produce a number that has already been used —
-              the save is refused if it has.
+              A letter and the number that follows it. Both are edited with
+              the rest of a place, on{' '}
+              <Link href="/admin/locations" className="underline underline-offset-2">
+                Places
+              </Link>
+              , because a place is more than its counter — it is also where
+              events are and where standbys are worked.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {locations.map((location) => (
-              <form
-                key={location.id}
-                action={saveLocation}
-                className="flex flex-wrap items-end gap-2 border-b pb-3 last:border-b-0"
-              >
-                <input type="hidden" name="id" value={location.id} />
-                <label className="grid gap-1 text-xs text-muted-foreground">
-                  Name
-                  <input
-                    name="name"
-                    defaultValue={location.name}
-                    required
-                    className={`${FIELD} w-56`}
-                  />
-                </label>
-                <label className="grid gap-1 text-xs text-muted-foreground">
-                  Abbreviation
-                  <input
-                    name="abbr"
-                    defaultValue={location.abbr ?? ''}
-                    required
-                    className={`${FIELD} w-28 uppercase`}
-                  />
-                </label>
-                <label className="grid gap-1 text-xs text-muted-foreground">
-                  Next run
-                  <input
-                    name="nextRun"
-                    type="number"
-                    min={1}
-                    defaultValue={location.nextRun}
-                    className={`${FIELD} w-24`}
-                  />
-                </label>
-                <label className="flex h-9 items-center gap-1.5 text-xs text-muted-foreground">
-                  <input
-                    type="checkbox"
-                    name="active"
-                    defaultChecked={location.active}
-                    className="size-3.5"
-                  />
-                  In use
-                </label>
-                <Button type="submit" size="sm" variant="outline">
-                  Save
-                </Button>
-                {location.active ? null : <Badge variant="secondary">Retired</Badge>}
-              </form>
-            ))}
-
-            <form action={saveLocation} className="flex flex-wrap items-end gap-2">
-              <label className="grid gap-1 text-xs text-muted-foreground">
-                New location
-                <input
-                  name="name"
-                  required
-                  placeholder="Houston Field House"
-                  className={`${FIELD} w-56`}
-                />
-              </label>
-              <label className="grid gap-1 text-xs text-muted-foreground">
-                Abbreviation
-                <input
-                  name="abbr"
-                  required
-                  placeholder="HFH"
-                  className={`${FIELD} w-28 uppercase`}
-                />
-              </label>
-              <input type="hidden" name="active" value="on" />
-              <Button type="submit" size="sm">
-                Add
-              </Button>
-            </form>
+          <CardContent>
+            <ul className="flex flex-wrap gap-2">
+              {locations
+                .filter((location) => location.abbr)
+                .map((location) => (
+                  <li
+                    key={location.id}
+                    className="rounded-md border px-2 py-1 text-sm"
+                  >
+                    <span className="font-medium">{location.abbr}</span>{' '}
+                    {location.name}
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      next {location.nextRun}
+                    </span>
+                    {location.active ? null : (
+                      <Badge variant="secondary" className="ml-2">
+                        Retired
+                      </Badge>
+                    )}
+                  </li>
+                ))}
+            </ul>
           </CardContent>
         </Card>
       ) : null}

@@ -176,6 +176,11 @@ export const NAV_GROUPS: NavGroup[] = [
         permissions: ['headsup:manage'],
       },
       {
+        href: '/admin/locations',
+        label: 'Places',
+        permissions: ['settings:write'],
+      },
+      {
         href: '/admin/standbys',
         label: 'Standby Setup',
         permissions: ['settings:write'],
