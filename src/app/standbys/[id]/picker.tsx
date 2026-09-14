@@ -5,6 +5,8 @@ import { Option, SearchSelect } from '@/components/search-select';
 export interface Choice {
   id: number;
   label: string;
+  /** Other spellings a search should match — a legal name, usually. */
+  aliases?: string[];
 }
 
 /**
@@ -55,6 +57,7 @@ export function Picker({
       choices={choices.map((choice) => ({
         value: String(choice.id),
         label: choice.label,
+        aliases: choice.aliases,
       }))}
       selected={choices.find((choice) => choice.label === chosen)?.id?.toString()}
       standing={

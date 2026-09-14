@@ -17,7 +17,7 @@ import {
   summarizeCredentials,
   type LadderType,
 } from '@/lib/credentials';
-import { displayName, firstNameOf, surnameFirst } from '@/lib/name';
+import { firstNameOf, searchableNames, surnameFirst } from '@/lib/name';
 
 export type MemberRow = {
   id: number;
@@ -110,11 +110,8 @@ function SortableHead({
 function matches(member: MemberRow, needle: string): boolean {
   if (!needle) return true;
   const haystack = [
-    member.firstName,
-    member.preferredFirstName ?? '',
-    member.lastName,
-    surnameFirst(member),
-    displayName(member),
+    // Either name finds them, spelled either way round.
+    ...searchableNames(member),
     member.email,
     member.cellPhone ?? '',
     member.nineHundredNumber ?? '',

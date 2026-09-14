@@ -6,7 +6,7 @@ import { setDefaultSlotValue, setSlotValue, type SlotValue } from './actions';
 import { useUndo } from './undo-context';
 import { cn } from '@/lib/utils';
 import { Option, SearchSelect } from '@/components/search-select';
-import { displayName, surnameFirst } from '@/lib/name';
+import { searchableNames, surnameFirst } from '@/lib/name';
 
 export interface SlotSelectProps {
   kind: 'slot' | 'default';
@@ -115,9 +115,10 @@ export function SlotSelect({
         choices={members.map((m) => ({
           value: String(m.id),
           label: surnameFirst(m),
-          // Both name forms, because an officer looking for "Casey" should
-          // not have to know the list is filed by surname.
-          aliases: [displayName(m)],
+          // Every name they have: the list is filed by surname and shows
+          // what they go by, and an officer may be reading either off a
+          // certification card or off the radio.
+          aliases: searchableNames(m),
         }))}
         selected={current}
         emptyText="Nobody by that name."

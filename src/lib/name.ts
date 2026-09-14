@@ -33,3 +33,20 @@ export function surnameFirst(person: Named): string {
     ? `${person.lastName}, ${firstNameOf(person)}`
     : firstNameOf(person);
 }
+
+/**
+ * Every spelling a search should match.
+ *
+ * Somebody looking for a member types whichever name they know: the one on
+ * the certification card, or the one everybody uses on the radio. Both find
+ * them, and neither has to be guessed at.
+ */
+export function searchableNames(person: Named): string[] {
+  return [
+    displayName(person),
+    surnameFirst(person),
+    person.firstName,
+    person.preferredFirstName ?? '',
+    person.lastName ?? '',
+  ].filter(Boolean);
+}

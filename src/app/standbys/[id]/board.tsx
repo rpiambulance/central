@@ -5,7 +5,7 @@ import { ExternalLink } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { displayName } from '@/lib/name';
+import { displayName, searchableNames } from '@/lib/name';
 import { send } from '@/lib/offline-queue';
 import { EncounterCard } from './encounter-card';
 import { Picker } from './picker';
@@ -536,7 +536,11 @@ function AddPerson({
   const here = new Set(already);
   const choices = roster
     .filter((member) => !here.has(member.id))
-    .map((member) => ({ id: member.id, label: displayName(member) }));
+    .map((member) => ({
+      id: member.id,
+      label: displayName(member),
+      aliases: searchableNames(member),
+    }));
 
   return (
     <div className="flex flex-wrap gap-1">
@@ -729,10 +733,18 @@ function AssignCrew({
   const choices = [
     ...people
       .filter((p) => !alreadyOn.has(p.id))
-      .map((p) => ({ id: p.id, label: displayName(p.member) })),
+      .map((p) => ({
+        id: p.id,
+        label: displayName(p.member),
+        aliases: searchableNames(p.member),
+      })),
     ...roster
       .filter((member) => !onStandby.has(member.id))
-      .map((member) => ({ id: -member.id, label: displayName(member) })),
+      .map((member) => ({
+        id: -member.id,
+        label: displayName(member),
+        aliases: searchableNames(member),
+      })),
   ];
 
   const put = async () => {

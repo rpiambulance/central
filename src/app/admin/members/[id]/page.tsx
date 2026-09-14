@@ -96,12 +96,14 @@ function TextField({
   defaultValue,
   type = 'text',
   required = false,
+  placeholder,
 }: {
   label: string;
   name: string;
   defaultValue: string;
   type?: string;
   required?: boolean;
+  placeholder?: string;
 }) {
   return (
     <label className="grid gap-1 text-xs text-muted-foreground">
@@ -109,6 +111,7 @@ function TextField({
       <input
         type={type}
         name={name}
+        placeholder={placeholder}
         defaultValue={defaultValue}
         required={required}
         className={`${inputCls} w-56`}
@@ -509,7 +512,7 @@ export default async function AdminMemberDetailPage({
         </CardHeader>
         <CardContent>
           <form
-            key={JSON.stringify([member.firstName, member.lastName, member.email, member.dob, member.personalEmail, member.cellPhone, member.localAddress, member.homeAddress, member.rcsId, member.rin, member.nineHundredNumber, member.slackId])}
+            key={JSON.stringify([member.firstName, member.preferredFirstName, member.lastName, member.email, member.dob, member.personalEmail, member.cellPhone, member.localAddress, member.homeAddress, member.rcsId, member.rin, member.nineHundredNumber, member.slackId])}
             action={updateMember.bind(null, memberId)}
             className="space-y-4"
           >
@@ -519,6 +522,12 @@ export default async function AdminMemberDetailPage({
                 name="firstName"
                 defaultValue={member.firstName}
                 required
+              />
+              <TextField
+                label="Goes by"
+                name="preferredFirstName"
+                defaultValue={member.preferredFirstName ?? ''}
+                placeholder={member.firstName}
               />
               <TextField
                 label="Last name"

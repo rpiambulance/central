@@ -22,6 +22,11 @@ export async function updateMember(memberId: number, formData: FormData) {
       method: 'PATCH',
       body: JSON.stringify({
         firstName: String(formData.get('firstName') ?? '').trim(),
+        // Sent even when empty, unlike the optional fields: clearing it is
+        // how a preferred name that was wrong gets taken off.
+        preferredFirstName: String(
+          formData.get('preferredFirstName') ?? '',
+        ).trim(),
         lastName: String(formData.get('lastName') ?? '').trim(),
         email: String(formData.get('email') ?? '').trim(),
         ...optional('dob'),
