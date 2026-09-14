@@ -44,6 +44,12 @@ type Dispatch = {
   callout: {
     id: number;
     asked: boolean;
+    audio: Array<{
+      id: number;
+      receivedAt: string;
+      bytes: number;
+      slackPermalink: string | null;
+    }>;
     responses: Array<{
       at: string;
       slackName: string | null;
@@ -81,31 +87,55 @@ function Responded({
   hour12: boolean;
 }) {
   if (!callout) return <span className="text-muted-foreground">—</span>;
+  const audio = callout.audio ?? [];
+  const player = audio.length ? (
+    <div className="space-y-1 pt-1">
+      {audio.map((recording) => (
+        // Native controls on purpose: this is a twenty-second recording
+        // somebody wants to hear once, not a media library.
+        <audio
+          key={recording.id}
+          controls
+          preload="none"
+          className="h-8 w-full max-w-[16rem]"
+          src={`/call-ops/dispatches/audio/${recording.id}`}
+        />
+      ))}
+    </div>
+  ) : null;
+
   if (!callout.asked) {
     return (
-      <span className="text-xs text-muted-foreground">
-        crew on, nobody asked
-      </span>
+      <div>
+        <span className="text-xs text-muted-foreground">
+          crew on, nobody asked
+        </span>
+        {player}
+      </div>
     );
   }
-  if (!callout.responses.length) {
-    return <span className="text-xs text-muted-foreground">no answers</span>;
-  }
   return (
-    <ul className="space-y-0.5">
-      {callout.responses.map((response, index) => (
-        <li key={index} className="flex flex-wrap items-baseline gap-1">
-          <span>
-            {response.member
-              ? displayName(response.member)
-              : (response.slackName ?? 'Somebody')}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {formatTime(response.at, hour12)}
-          </span>
-        </li>
-      ))}
-    </ul>
+    <div>
+      {callout.responses.length ? (
+        <ul className="space-y-0.5">
+          {callout.responses.map((response, index) => (
+            <li key={index} className="flex flex-wrap items-baseline gap-1">
+              <span>
+                {response.member
+                  ? displayName(response.member)
+                  : (response.slackName ?? 'Somebody')}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {formatTime(response.at, hour12)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <span className="text-xs text-muted-foreground">no answers</span>
+      )}
+      {player}
+    </div>
   );
 }
 
