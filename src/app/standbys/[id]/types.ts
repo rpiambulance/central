@@ -59,6 +59,8 @@ export type Encounter = {
   firstAidOnly: boolean;
   runNumberId: number | null;
   runNumber: { id: number; number: string } | null;
+  /** A number that did not come from our pool — the county's, usually. */
+  runNumberText: string | null;
   countyRunNumber: string | null;
   prid: string | null;
   locationId: number | null;
@@ -124,6 +126,8 @@ export type Config = {
   venues: Array<{ id: number; name: string; locations: Array<{ id: number; name: string }> }>;
   designators: Array<{ id: number; name: string }>;
   hospitals: Array<{ id: number; name: string }>;
+  /** The active roster, for putting somebody on the standby. */
+  members: Person[];
 };
 
 export const ROLE_LABEL: Record<Personnel['role'], string> = {

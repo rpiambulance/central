@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { displayName } from '@/lib/name';
+import { Picker } from './picker';
 import { formatDateTime } from '@/lib/format';
 import {
   CATEGORY_LABEL,
@@ -375,23 +376,28 @@ export function EncounterCard({
               </label>
               <label className={LABEL}>
                 Where
-                <select
-                  value={draft.locationId ?? ''}
+                {/* Typable, because a patient is wherever they are: the
+                    venue's own list is a shortcut, not the set of places
+                    something can happen. */}
+                <Picker
+                  choices={locations.map((l) => ({ id: l.id, label: l.name }))}
+                  value={
+                    locations.find((l) => l.id === draft.locationId)?.name ??
+                    draft.locationText ??
+                    ''
+                  }
                   disabled={!editable}
-                  onChange={(e) => {
-                    const id = e.target.value ? Number(e.target.value) : null;
+                  allowFreeText
+                  placeholder="Anywhere on site"
+                  onPick={({ id, text }) => {
                     set('locationId', id);
-                    void save({ locationId: id } as Partial<Encounter>);
+                    set('locationText', id ? null : text || null);
+                    void save({
+                      locationId: id,
+                      locationText: id ? null : text || null,
+                    } as Partial<Encounter>);
                   }}
-                  className={FIELD}
-                >
-                  <option value="">—</option>
-                  {locations.map((l) => (
-                    <option key={l.id} value={l.id}>
-                      {l.name}
-                    </option>
-                  ))}
-                </select>
+                />
               </label>
             </div>
 
@@ -504,13 +510,20 @@ export function EncounterCard({
               <label className={LABEL}>
                 Run number
                 <div className="flex gap-2">
+                  {/* Always typable. A transport often carries the county's
+                      number and nothing of ours, and a number given over the
+                      radio has to be able to go in the box it belongs in.
+                      Issuing is for taking the next one from our own pool,
+                      which is the only part a person cannot do by hand. */}
                   <input
-                    value={draft.runNumber?.number ?? ''}
-                    readOnly
-                    placeholder="none"
+                    value={draft.runNumber?.number ?? draft.runNumberText ?? ''}
+                    disabled={!editable || !!draft.runNumberId}
+                    onChange={(e) => set('runNumberText', e.target.value)}
+                    onBlur={() => save({ runNumberText: draft.runNumberText })}
+                    placeholder="Ours, the county's, or another agency's"
                     className={`${FIELD} flex-1`}
                   />
-                  {editable && !draft.runNumberId ? (
+                  {editable && !draft.runNumberId && !draft.runNumberText?.trim() ? (
                     <IssueRunNumber
                       onIssue={async (locationId) => {
                         const res = await onWrite(
@@ -526,6 +539,24 @@ export function EncounterCard({
                         }
                       }}
                     />
+                  ) : null}
+                  {editable && draft.runNumberId ? (
+                    // Issued from our pool, so it is not a box to retype —
+                    // but it must be possible to take it off an encounter it
+                    // was put on by mistake. The number stays issued.
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs"
+                      disabled={saving}
+                      onClick={() => {
+                        set('runNumber', null);
+                        set('runNumberId', null);
+                        void save({ runNumberId: null });
+                      }}
+                    >
+                      Detach
+                    </Button>
                   ) : null}
                 </div>
               </label>
@@ -716,9 +747,11 @@ function fieldsOf(e: Encounter) {
     hospitalId: e.hospitalId,
     turnoverAgency: e.turnoverAgency,
     firstAidOnly: e.firstAidOnly,
+    runNumberText: e.runNumberText,
     countyRunNumber: e.countyRunNumber,
     prid: e.prid,
     locationId: e.locationId,
+    locationText: e.locationText,
   };
 }
 

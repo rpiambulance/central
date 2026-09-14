@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { displayName } from '@/lib/name';
 import { send } from '@/lib/offline-queue';
 import { EncounterCard } from './encounter-card';
+import { Picker } from './picker';
 import { StandbyActions } from './standby-actions';
 import { Timeline } from './timeline';
 import {
@@ -14,6 +15,7 @@ import {
   STATUS_LABEL,
   type Config,
   type Personnel,
+  type Person,
   type Standby,
   type TimelineEntry,
   type Unit,
@@ -74,7 +76,18 @@ export function Board({
     setFromServer(initial);
     setStandby(initial);
   }
-  const locations = standby.venue?.locations ?? [];
+  // The standby's own venue when it has one. A standby opened for an
+  // ad-hoc event has none, and then anywhere the agency knows about is a
+  // better offer than an empty list — and anything typed is accepted
+  // regardless, because a place nobody set up is still a place.
+  const locations = standby.venue?.locations?.length
+    ? standby.venue.locations
+    : config.venues.flatMap((venue) =>
+        venue.locations.map((location) => ({
+          ...location,
+          name: `${venue.name} — ${location.name}`,
+        })),
+      );
 
   const write = useCallback(
     async (
@@ -215,30 +228,47 @@ export function Board({
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <select
-                        className={`${FIELD} flex-1`}
-                        value={unit.currentLocation?.id ?? ''}
-                        onChange={(e) => {
-                          const id = e.target.value ? Number(e.target.value) : null;
+                      <Picker
+                        className="flex-1"
+                        placeholder="Where is it…"
+                        allowFreeText
+                        choices={locations.map((l) => ({
+                          id: l.id,
+                          label: l.name,
+                        }))}
+                        value={
+                          unit.currentLocation?.name ??
+                          unit.currentLocationText ??
+                          ''
+                        }
+                        onPick={({ id, text }) => {
                           const found = locations.find((l) => l.id === id) ?? null;
-                          setUnit(unit, { currentLocation: found, currentLocationText: null });
+                          setUnit(unit, {
+                            currentLocation: found,
+                            currentLocationText: found ? null : text || null,
+                          });
                           void write(
                             'PATCH',
                             `${base}/units/${unit.id}`,
-                            { currentLocationId: id, currentLocationText: null },
-                            `${unit.name} to ${found?.name ?? 'nowhere'}`,
+                            {
+                              currentLocationId: id,
+                              currentLocationText: found ? null : text || null,
+                            },
+                            `${unit.name} to ${found?.name ?? (text || 'nowhere')}`,
                           );
                         }}
-                      >
-                        <option value="">Where is it…</option>
-                        {locations.map((l) => (
-                          <option key={l.id} value={l.id}>
-                            {l.name}
-                          </option>
-                        ))}
-                      </select>
+                      />
                       <AssignCrew
                         people={onDuty}
+                        roster={config.members}
+                        onAdd={(memberId) =>
+                          write(
+                            'POST',
+                            `${base}/personnel`,
+                            { memberId, role: 'CREW' },
+                            'added to the standby',
+                          )
+                        }
                         unit={unit}
                         onAssign={(personnelId, position) => {
                           const person = onDuty.find((p) => p.id === personnelId);
@@ -334,6 +364,22 @@ export function Board({
             {onDuty.length} here{unassigned.length ? `, ${unassigned.length} not on a unit` : ''}
           </span>
         </h2>
+        {/* People turn up who never signed up, and a standby opened for
+            something nobody planned starts empty. */}
+        {standby.viewer.mayManage && !standby.closedAt ? (
+          <AddPerson
+            roster={config.members}
+            already={standby.personnel.map((p) => p.member.id)}
+            onAdd={(memberId, role) =>
+              write(
+                'POST',
+                `${base}/personnel`,
+                { memberId, role },
+                'added to the standby',
+              )
+            }
+          />
+        ) : null}
         <div className="rounded-md border divide-y">
           {standby.personnel.map((person) => (
             <PersonRow
@@ -435,6 +481,56 @@ export function Board({
           </div>
         ) : null}
       </section>
+    </div>
+  );
+}
+
+/** Naming somebody who is here, whether or not they signed up. */
+function AddPerson({
+  roster,
+  already,
+  onAdd,
+}: {
+  roster: Person[];
+  already: number[];
+  onAdd: (memberId: number, role: Personnel['role']) => void;
+}) {
+  const [memberId, setMemberId] = useState<number | null>(null);
+  const [role, setRole] = useState<Personnel['role']>('CREW');
+  const here = new Set(already);
+  const choices = roster
+    .filter((member) => !here.has(member.id))
+    .map((member) => ({ id: member.id, label: displayName(member) }));
+
+  return (
+    <div className="flex flex-wrap gap-1">
+      <Picker
+        className="w-56"
+        placeholder="Who else is here…"
+        choices={choices}
+        onPick={({ id }) => setMemberId(id)}
+      />
+      <select
+        value={role}
+        onChange={(e) => setRole(e.target.value as Personnel['role'])}
+        className={FIELD}
+      >
+        {(['CREW', 'EES', 'EES_IC', 'SUPPORT'] as const).map((option) => (
+          <option key={option} value={option}>
+            {ROLE_LABEL[option]}
+          </option>
+        ))}
+      </select>
+      <Button
+        size="sm"
+        disabled={!memberId}
+        onClick={() => {
+          if (memberId) onAdd(memberId, role);
+          setMemberId(null);
+        }}
+      >
+        Add
+      </Button>
     </div>
   );
 }
@@ -561,54 +657,84 @@ function AddUnit({
   );
 }
 
+/**
+ * Putting somebody on a unit.
+ *
+ * Offers anybody on the roster, not only the people the event's signups
+ * seeded the standby with: the member who turned up unannounced is exactly
+ * who a crew chief is trying to write down, and a standby opened for
+ * something nobody planned starts with nobody on it at all. Picking
+ * somebody not yet on the standby puts them on it first.
+ */
 function AssignCrew({
   people,
+  roster,
   unit,
+  onAdd,
   onAssign,
 }: {
   people: Personnel[];
+  roster: Person[];
   unit: Unit;
+  onAdd: (memberId: number) => Promise<Response | null>;
   onAssign: (personnelId: number, position: string | undefined) => void;
 }) {
   const [personnelId, setPersonnelId] = useState('');
   const [position, setPosition] = useState('');
+  const [busy, setBusy] = useState(false);
   const alreadyOn = new Set(
     unit.assignments.filter((a) => !a.removedAt).map((a) => a.personnel.id),
   );
 
+  // Somebody already on another unit is still offered: a transport driver
+  // is on the ambulance and on their own unit at once. Members not on the
+  // standby are offered too, keyed negatively so the two cannot collide.
+  const onStandby = new Set(people.map((p) => p.member.id));
+  const choices = [
+    ...people
+      .filter((p) => !alreadyOn.has(p.id))
+      .map((p) => ({ id: p.id, label: displayName(p.member) })),
+    ...roster
+      .filter((member) => !onStandby.has(member.id))
+      .map((member) => ({ id: -member.id, label: displayName(member) })),
+  ];
+
+  const put = async () => {
+    const picked = Number(personnelId);
+    setBusy(true);
+    try {
+      if (picked > 0) {
+        onAssign(picked, position.trim() || undefined);
+      } else {
+        // Not on the standby yet. Add them, then put them on the unit with
+        // the id that comes back.
+        const res = await onAdd(-picked);
+        if (!res?.ok) return;
+        const person = (await res.json()) as { id: number };
+        onAssign(person.id, position.trim() || undefined);
+      }
+      setPersonnelId('');
+      setPosition('');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="flex flex-1 gap-1">
-      <select
-        value={personnelId}
-        onChange={(e) => setPersonnelId(e.target.value)}
-        className={`${FIELD} flex-1`}
-      >
-        <option value="">Add crew…</option>
-        {/* Somebody already on another unit is still offered: a transport
-            driver is on the ambulance and their own unit at once. */}
-        {people
-          .filter((p) => !alreadyOn.has(p.id))
-          .map((p) => (
-            <option key={p.id} value={p.id}>
-              {displayName(p.member)}
-            </option>
-          ))}
-      </select>
+      <Picker
+        className="flex-1"
+        placeholder="Add crew…"
+        choices={choices}
+        onPick={({ id }) => setPersonnelId(id === null ? '' : String(id))}
+      />
       <input
         value={position}
         onChange={(e) => setPosition(e.target.value)}
         placeholder="Position"
         className={`${FIELD} w-24`}
       />
-      <Button
-        size="sm"
-        disabled={!personnelId}
-        onClick={() => {
-          onAssign(Number(personnelId), position.trim() || undefined);
-          setPersonnelId('');
-          setPosition('');
-        }}
-      >
+      <Button size="sm" disabled={!personnelId || busy} onClick={() => void put()}>
         On
       </Button>
     </div>
