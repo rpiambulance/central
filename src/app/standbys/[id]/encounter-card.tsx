@@ -525,11 +525,11 @@ export function EncounterCard({
                   />
                   {editable && !draft.runNumberId && !draft.runNumberText?.trim() ? (
                     <IssueRunNumber
-                      onIssue={async (locationId) => {
+                      onIssue={async () => {
                         const res = await onWrite(
                           'POST',
                           `${base}/run-number`,
-                          { locationId },
+                          {},
                           `run number for #${encounter.sequence}`,
                         );
                         if (res?.ok) {
@@ -757,27 +757,18 @@ function fieldsOf(e: Encounter) {
   };
 }
 
-function IssueRunNumber({ onIssue }: { onIssue: (locationId: number) => void }) {
-  const [locations, setLocations] = useState<Array<{ id: number; name: string }> | null>(null);
-
+/**
+ * Takes the next number from the agency's own sequence.
+ *
+ * Nowhere to pick from: the standby is worked at a place, and a place
+ * either carries the run-number letter or files under one that does, so the
+ * counter follows from where the standby is. This used to fetch a list and
+ * silently issue against whichever came first, which was right only while
+ * there was one.
+ */
+function IssueRunNumber({ onIssue }: { onIssue: () => void }) {
   return (
-    <Button
-      type="button"
-      size="sm"
-      variant="outline"
-      onClick={async () => {
-        // Fetched on demand: most encounters never need one.
-        const list =
-          locations ??
-          ((await fetch('/standbys/run-number-locations')
-            .then((r) => (r.ok ? r.json() : []))
-            .catch(() => [])) as Array<{ id: number; name: string }>);
-        setLocations(list);
-        if (list.length === 1) return onIssue(list[0].id);
-        const choice = list[0];
-        if (choice) onIssue(choice.id);
-      }}
-    >
+    <Button type="button" size="sm" variant="outline" onClick={onIssue}>
       Issue
     </Button>
   );

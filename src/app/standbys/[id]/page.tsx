@@ -32,7 +32,7 @@ export default async function StandbyPage({
   }
   const [config, timeline, hour12] = await Promise.all([
     api<Config>('/v1/standbys/config/all', { raw: true }).catch(() => ({
-      venues: [],
+      places: [],
       designators: [],
       hospitals: [],
       members: [],

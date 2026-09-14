@@ -97,7 +97,7 @@ export type Standby = {
   peakEstimated: boolean;
   unusualOccurrences: string | null;
   event: { id: number; title: string; startsAt: string; endsAt: string };
-  venue: { id: number; name: string; locations: Array<{ id: number; name: string }> } | null;
+  place: { id: number; name: string; spots: Array<{ id: number; name: string }> } | null;
   personnel: Personnel[];
   units: Unit[];
   encounters: Encounter[];
@@ -123,7 +123,7 @@ export type Standby = {
 };
 
 export type Config = {
-  venues: Array<{ id: number; name: string; locations: Array<{ id: number; name: string }> }>;
+  places: Array<{ id: number; name: string; abbr: string | null; spots: Array<{ id: number; name: string }> }>;
   designators: Array<{ id: number; name: string }>;
   hospitals: Array<{ id: number; name: string }>;
   /** The active roster, for putting somebody on the standby. */

@@ -16,7 +16,7 @@ type Row = {
   id: number;
   closedAt: string | null;
   event: { id: number; title: string; startsAt: string };
-  venue: { id: number; name: string } | null;
+  place: { id: number; name: string } | null;
   _count: { encounters: number; personnel: number; units: number };
 };
 
@@ -82,7 +82,7 @@ export default async function StandbysPage() {
       </div>
       <p className="text-xs text-muted-foreground">
         {formatDateTime(row.event.startsAt, hour12)}
-        {row.venue ? ` · ${row.venue.name}` : ''}
+        {row.place ? ` · ${row.place.name}` : ''}
         {` · ${row._count.units} units · ${row._count.personnel} on · `}
         {row._count.encounters} encounter{row._count.encounters === 1 ? '' : 's'}
       </p>

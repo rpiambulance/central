@@ -23,10 +23,14 @@ import { PageHeader } from '@/components/page-header';
 import { issueRunNumber, reopenChangeover, saveLocation } from './actions';
 import { displayName } from '@/lib/name';
 
+/**
+ * A place, as this page cares about it: the ones with a letter are the
+ * counters, and they are the only ones a number can be taken from.
+ */
 type Location = {
   id: number;
   name: string;
-  abbr: string;
+  abbr: string | null;
   active: boolean;
   nextRun: number;
 };
@@ -36,7 +40,7 @@ type RunNumber = {
   number: string;
   note: string | null;
   issuedAt: string;
-  location: { abbr: string; name: string };
+  place: { abbr: string | null; name: string };
   issuedBy: { id: number; firstName: string; lastName: string } | null;
   event: { id: number; title: string } | null;
 };
@@ -123,11 +127,13 @@ export default async function RunNumbersPage({
             <label className="grid gap-1 text-xs text-muted-foreground">
               Location
               <select name="locationId" required className={`${FIELD} w-64`}>
-                {data.locations.map((location) => (
-                  <option key={location.id} value={location.id}>
-                    {location.abbr} — {location.name}
-                  </option>
-                ))}
+                {data.locations
+                  .filter((location) => location.abbr)
+                  .map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.abbr} — {location.name}
+                    </option>
+                  ))}
               </select>
             </label>
             {data.term.division ? null : (
@@ -152,9 +158,9 @@ export default async function RunNumbersPage({
             </label>
             <Button type="submit">Take the next number</Button>
           </form>
-          {data.locations.length === 0 ? (
+          {!data.locations.some((location) => location.abbr) ? (
             <p className="mt-3 text-sm text-muted-foreground">
-              No locations are set up yet.
+              No place has a run-number letter yet.
             </p>
           ) : null}
           {/* Settling a changeover is one-way for everyone else, so undoing an
@@ -196,7 +202,7 @@ export default async function RunNumbersPage({
                       {run.number}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
-                      {run.location.name}
+                      {run.place.name}
                     </TableCell>
                     <TableCell>
                       {run.note ?? (
@@ -255,7 +261,7 @@ export default async function RunNumbersPage({
                   Abbreviation
                   <input
                     name="abbr"
-                    defaultValue={location.abbr}
+                    defaultValue={location.abbr ?? ''}
                     required
                     className={`${FIELD} w-28 uppercase`}
                   />

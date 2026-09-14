@@ -76,16 +76,17 @@ export function Board({
     setFromServer(initial);
     setStandby(initial);
   }
-  // The standby's own venue when it has one. A standby opened for an
-  // ad-hoc event has none, and then anywhere the agency knows about is a
-  // better offer than an empty list — and anything typed is accepted
-  // regardless, because a place nobody set up is still a place.
-  const locations = standby.venue?.locations?.length
-    ? standby.venue.locations
-    : config.venues.flatMap((venue) =>
-        venue.locations.map((location) => ({
-          ...location,
-          name: `${venue.name} — ${location.name}`,
+  // The spots inside the standby's own place when it has any. A standby
+  // opened for an ad-hoc event may name no place at all, and then every
+  // spot the agency knows about is a better offer than an empty list —
+  // and anything typed is accepted regardless, because somewhere nobody
+  // set up is still somewhere.
+  const locations = standby.place?.spots?.length
+    ? standby.place.spots
+    : config.places.flatMap((place) =>
+        place.spots.map((spot) => ({
+          ...spot,
+          name: `${place.name} — ${spot.name}`,
         })),
       );
 
