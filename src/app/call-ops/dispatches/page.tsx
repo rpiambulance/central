@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
-import { formatDateTime } from '@/lib/format';
+import { formatDateTime, formatTime } from '@/lib/format';
 import { myPermissions, prefers12Hour } from '@/lib/me';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -40,6 +40,21 @@ type Dispatch = {
   crossStreets: string | null;
   units: string | null;
   responseAreas: string | null;
+  /** AIR: who was asked, and who said they were coming. */
+  callout: {
+    id: number;
+    asked: boolean;
+    responses: Array<{
+      at: string;
+      slackName: string | null;
+      member: {
+        id: number;
+        firstName: string;
+        preferredFirstName?: string | null;
+        lastName: string;
+      } | null;
+    }>;
+  } | null;
 };
 
 const DETERMINANT_STYLE: Record<string, string> = {
@@ -49,6 +64,50 @@ const DETERMINANT_STYLE: Record<string, string> = {
   Delta: 'bg-red-200 text-red-950 dark:bg-red-900 dark:text-red-100',
   Echo: 'bg-red-200 text-red-950 dark:bg-red-900 dark:text-red-100',
 };
+
+/**
+ * Who turned out, from the page that asked them.
+ *
+ * Three different things, and they do not read the same: nobody was asked
+ * because a crew was already on the road; somebody was asked and nobody
+ * answered; or these people said they were coming. The first is not a
+ * failure and should not look like one.
+ */
+function Responded({
+  callout,
+  hour12,
+}: {
+  callout: Dispatch['callout'];
+  hour12: boolean;
+}) {
+  if (!callout) return <span className="text-muted-foreground">—</span>;
+  if (!callout.asked) {
+    return (
+      <span className="text-xs text-muted-foreground">
+        crew on, nobody asked
+      </span>
+    );
+  }
+  if (!callout.responses.length) {
+    return <span className="text-xs text-muted-foreground">no answers</span>;
+  }
+  return (
+    <ul className="space-y-0.5">
+      {callout.responses.map((response, index) => (
+        <li key={index} className="flex flex-wrap items-baseline gap-1">
+          <span>
+            {response.member
+              ? displayName(response.member)
+              : (response.slackName ?? 'Somebody')}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {formatTime(response.at, hour12)}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 function NoAccess() {
   return (
@@ -164,6 +223,7 @@ export default async function DispatchesPage({
                 <TableHead>Location</TableHead>
                 <TableHead>Cross streets</TableHead>
                 <TableHead>Units</TableHead>
+                <TableHead>Responded</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -208,6 +268,9 @@ export default async function DispatchesPage({
                     {d.crossStreets ?? '—'}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">{d.units ?? '—'}</TableCell>
+                  <TableCell className="max-w-xs text-sm">
+                    <Responded callout={d.callout} hour12={hour12} />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

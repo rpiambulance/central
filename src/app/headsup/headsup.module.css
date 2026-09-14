@@ -249,6 +249,17 @@
   padding: 0 40px;
 }
 
+/* Who is coming, under the call. Smaller than the call itself — the point
+   of the screen is the address, and this is the answer filling in beside
+   it. */
+.responders {
+  font-size: 44px;
+  padding: 24px 40px 0;
+  /* Same grey as the time above the call: legible across the bay, and not
+     competing with the address, which is what somebody is running for. */
+  color: #e5e5e5;
+}
+
 .alpha {
   background: #9bda9b;
   color: #000;

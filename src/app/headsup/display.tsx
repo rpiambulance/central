@@ -36,6 +36,16 @@ interface Dispatch {
   receivedAt: string;
 }
 
+/** Who has said they are coming, redrawn as each answer lands. */
+interface Callout {
+  calloutId: number;
+  asked: boolean;
+  headline: string;
+  openedAt: string;
+  closesAt: string;
+  responders: Array<{ name: string; responding: boolean }>;
+}
+
 function subscribeToClock(onTick: () => void) {
   const timer = setInterval(onTick, 1000);
   return () => clearInterval(timer);
@@ -99,8 +109,10 @@ export function Display({
   const tick = useSyncExternalStore(subscribeToClock, secondsNow, () => 0);
   const now = tick ? new Date(tick * 1000) : null;
   const [dispatch, setDispatch] = useState<Dispatch | null>(null);
+  const [callout, setCallout] = useState<Callout | null>(null);
   const [stale, setStale] = useState(false);
   const dispatchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const calloutTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -133,11 +145,20 @@ export function Display({
         DISPATCH_MS,
       );
     });
+    // The page may be the first thing anybody hears, so this holds the
+    // screen on its own when no dispatch has arrived to do it.
+    source.addEventListener('responders', (event) => {
+      const detail = JSON.parse((event as MessageEvent).data) as Callout;
+      setCallout(detail);
+      if (calloutTimer.current) clearTimeout(calloutTimer.current);
+      calloutTimer.current = setTimeout(() => setCallout(null), DISPATCH_MS);
+    });
     source.onerror = () => setStale(true);
     source.onopen = () => setStale(false);
     return () => {
       source.close();
       if (dispatchTimer.current) clearTimeout(dispatchTimer.current);
+      if (calloutTimer.current) clearTimeout(calloutTimer.current);
     };
   }, [token, refresh]);
 
@@ -151,29 +172,43 @@ export function Display({
   const night = now ? isNight(now) : false;
   const shown = now ? clock(now) : null;
 
-  if (dispatch) {
-    const key = (dispatch.determinant ?? '').trim().toLowerCase();
+  if (dispatch || callout) {
+    const key = (dispatch?.determinant ?? '').trim().toLowerCase();
+    const coming = (callout?.responders ?? []).filter((r) => r.responding);
     return (
       <div className={styles.dispatch} role="alert" aria-live="assertive">
         <div className={styles.dispatchTime}>
           Dispatched at{' '}
-          {new Date(dispatch.receivedAt).toLocaleTimeString('en-GB', {
+          {new Date(
+            dispatch?.receivedAt ?? callout?.openedAt ?? '',
+          ).toLocaleTimeString('en-GB', {
             hour12: false,
             timeZone: 'America/New_York',
           })}
         </div>
-        {dispatch.determinant ? (
+        {dispatch?.determinant ? (
           <div
             className={`${styles.determinant} ${DETERMINANT_CLASS[key] ?? ''}`}
           >
             {dispatch.determinant}
           </div>
         ) : null}
-        {dispatch.complaint ? (
-          <div className={styles.complaint}>{dispatch.complaint}</div>
+        {/* Herald's words when it has spoken, and the pager's line until
+            then — the screen should not wait on the better answer. */}
+        {dispatch?.complaint || callout ? (
+          <div className={styles.complaint}>
+            {dispatch?.complaint ?? callout?.headline}
+          </div>
         ) : null}
-        {dispatch.location ? (
+        {dispatch?.location ? (
           <div className={styles.location}>{dispatch.location}</div>
+        ) : null}
+        {callout?.asked ? (
+          <div className={styles.responders}>
+            {coming.length
+              ? `Responding: ${coming.map((r) => r.name).join(', ')}`
+              : 'Nobody has answered yet'}
+          </div>
         ) : null}
       </div>
     );
