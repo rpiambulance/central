@@ -622,6 +622,8 @@ export function EncounterCard({
               href={`/standbys/${standbyId}/export?to=${encodeURIComponent(
                 `/v1/standbys/${standbyId}/encounters/${encounter.id}/export.pdf`,
               )}`}
+              target="_blank"
+              rel="noopener"
               className="rounded-md border px-3 py-1 text-sm hover:bg-muted"
             >
               PDF

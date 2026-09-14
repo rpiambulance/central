@@ -470,9 +470,14 @@ export function Board({
                 ['DOH-2342', `${base}/export/doh-2342.pdf`],
               ] as const
             ).map(([label, href]) => (
+              // A new tab, because the board is being worked: somebody
+              // taking a copy of the forms should come back to the standby
+              // as they left it rather than to a reload of it.
               <a
                 key={label}
                 href={`/standbys/${standby.id}/export?to=${encodeURIComponent(href)}`}
+                target="_blank"
+                rel="noopener"
                 className="rounded-md border px-3 py-1 text-sm hover:bg-muted"
               >
                 {label}
