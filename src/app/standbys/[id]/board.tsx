@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { ExternalLink } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -340,6 +341,16 @@ export function Board({
                 hour12={hour12}
                 readOnly={!!standby.closedAt}
                 mayDelete={standby.viewer.mayDelete}
+                actions={config.actions}
+                // The timeline is the record; the card shows the part of it
+                // that is about this encounter, so a crew chief reads one
+                // thing rather than hunting a shared list for their own.
+                marks={timeline.filter(
+                  (entry) =>
+                    entry.encounterId === encounter.id &&
+                    (entry.kind === 'encounter.note' ||
+                      entry.kind === 'encounter.action'),
+                )}
                 onWrite={write}
                 onDeleted={() =>
                   setStandby((s) => ({
@@ -426,7 +437,15 @@ export function Board({
       </section>
 
       {/* ------------------------------------------------ what has happened */}
-      <Timeline entries={timeline} hour12={hour12} />
+      <Timeline
+        entries={timeline}
+        hour12={hour12}
+        onNote={
+          standby.closedAt
+            ? undefined
+            : (text) => write('POST', `${base}/notes`, { text }, 'note')
+        }
+      />
 
       {/* ------------------------------------------------- finishing with it */}
       {standby.viewer.mayManage ? (
@@ -462,7 +481,14 @@ export function Board({
           ))}
         </div>
         {standby.viewer.mayReadAll ? (
-          <div className="flex flex-wrap gap-2">
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">
+              Take a copy{' '}
+              <span className="font-normal text-muted-foreground">
+                — each opens in a new tab
+              </span>
+            </h3>
+            <div className="flex flex-wrap gap-2">
             {(
               [
                 ['Event report', `${base}/export/event.pdf`],
@@ -473,17 +499,21 @@ export function Board({
             ).map(([label, href]) => (
               // A new tab, because the board is being worked: somebody
               // taking a copy of the forms should come back to the standby
-              // as they left it rather than to a reload of it.
+              // as they left it rather than to a reload of it. Said on the
+              // link as well as in the heading, because a link that moves
+              // the page and one that does not should not look alike.
               <a
                 key={label}
                 href={`/standbys/${standby.id}/export?to=${encodeURIComponent(href)}`}
                 target="_blank"
                 rel="noopener"
-                className="rounded-md border px-3 py-1 text-sm hover:bg-muted"
+                className="flex items-center gap-1.5 rounded-md border px-3 py-1 text-sm hover:bg-muted"
               >
                 {label}
+                <ExternalLink className="size-3.5 text-muted-foreground" aria-hidden />
               </a>
             ))}
+            </div>
           </div>
         ) : null}
       </section>

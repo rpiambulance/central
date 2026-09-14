@@ -35,6 +35,7 @@ export default async function StandbyPage({
       places: [],
       designators: [],
       hospitals: [],
+      actions: [],
       members: [],
     })),
     // The board is worth showing without it; a standby with no record of

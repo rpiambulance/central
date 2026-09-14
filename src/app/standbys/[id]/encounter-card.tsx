@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { displayName } from '@/lib/name';
 import { Picker } from './picker';
-import { formatDateTime } from '@/lib/format';
+import { formatDateTime, formatTime } from '@/lib/format';
 import {
   CATEGORY_LABEL,
   DISPOSITION_LABEL,
@@ -13,6 +13,7 @@ import {
   VOID_LABEL,
   type Config,
   type Encounter,
+  type TimelineEntry,
   type Unit,
 } from './types';
 
@@ -52,6 +53,8 @@ export function EncounterCard({
   hour12,
   readOnly,
   mayDelete,
+  actions,
+  marks,
   onWrite,
   onDeleted,
 }: {
@@ -63,6 +66,10 @@ export function EncounterCard({
   hour12: boolean;
   readOnly: boolean;
   mayDelete: boolean;
+  /** The buttons an officer set up: on scene, moving to FAR. */
+  actions: Config['actions'];
+  /** What has already been marked or noted about this one. */
+  marks: TimelineEntry[];
   onWrite: Write;
   onDeleted: () => void;
 }) {
@@ -70,6 +77,7 @@ export function EncounterCard({
   const [draft, setDraft] = useState(encounter);
   const [problems, setProblems] = useState<string[]>([]);
   const [asking, setAsking] = useState(false);
+  const [note, setNote] = useState('');
   const [voiding, setVoiding] = useState(false);
   const [voidNote, setVoidNote] = useState('');
   const [saving, setSaving] = useState(false);
@@ -201,6 +209,20 @@ export function EncounterCard({
     } finally {
       setSaving(false);
       setAsking(false);
+    }
+  };
+
+  // A line about this one, in the words of whoever was there. It lands on
+  // the card and in the timeline at once rather than being written twice.
+  const addNote = async () => {
+    const said = note.trim();
+    if (!said) return;
+    setSaving(true);
+    try {
+      setNote('');
+      await onWrite('POST', `${base}/notes`, { text: said }, `note on #${encounter.sequence}`);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -601,6 +623,73 @@ export function EncounterCard({
             </>
           )}
 
+
+          {marks.length ? (
+            <ol className="space-y-0.5 rounded-md border px-3 py-2 text-xs">
+              {marks.map((mark) => (
+                <li key={mark.id} className="flex gap-2">
+                  <span className="shrink-0 tabular-nums text-muted-foreground">
+                    {formatTime(mark.at, hour12)}
+                  </span>
+                  {/* The timeline already writes these as sentences; on the
+                      card the encounter is the heading, so its number is
+                      dropped from the front of each line. */}
+                  <span>{mark.text.replace(/^Encounter #\d+( note)? — /, '')}</span>
+                </li>
+              ))}
+            </ol>
+          ) : null}
+
+          {editable && !draft.voidedAs ? (
+            <div className="space-y-2">
+              {actions.length ? (
+                <div className="flex flex-wrap gap-1">
+                  {actions.map((action) => (
+                    <Button
+                      key={action.id}
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      disabled={saving}
+                      onClick={() =>
+                        void onWrite(
+                          'POST',
+                          `${base}/mark`,
+                          { actionId: action.id },
+                          `#${encounter.sequence} ${action.label.toLowerCase()}`,
+                        )
+                      }
+                    >
+                      {action.label}
+                    </Button>
+                  ))}
+                </div>
+              ) : null}
+              <div className="flex gap-2">
+                <input
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      void addNote();
+                    }
+                  }}
+                  maxLength={1000}
+                  placeholder="A note about this one…"
+                  className={FIELD}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!note.trim() || saving}
+                  onClick={() => void addNote()}
+                >
+                  Note
+                </Button>
+              </div>
+            </div>
+          ) : null}
 
           <div className="flex flex-wrap items-center gap-2">
             {editable && !draft.voidedAs && !draft.closedAt ? (

@@ -1,8 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
-
-const FIELD = 'h-8 rounded-md border border-input bg-background px-2 text-sm';
+import { Option, SearchSelect } from '@/components/search-select';
 
 export interface Choice {
   id: number;
@@ -10,16 +8,17 @@ export interface Choice {
 }
 
 /**
- * A box you type into, with what is already known offered as you type.
+ * A box you pick from by typing, for the lists on the board that are too
+ * long to scroll.
  *
- * A select is the wrong control for both of the places this is used. The
- * roster is the whole active membership, which is too long to scroll on a
- * phone at a gate; and a location may well not be one anybody set up — a
- * standby opened against an ad-hoc event has no venue at all, and a select
- * with nothing in it is a dead end rather than a prompt.
+ * The same control the night crew grid uses — a trigger the size of the
+ * field it replaces, opening a search box above the choices — because a
+ * second thing that looked nearly the same would be a second thing to learn.
  *
- * Native datalist on purpose: the keyboard is the phone's own, the list is
- * the browser's, and nothing has to be scrolled inside a scrolling page.
+ * Where it differs is what counts as an answer. The roster is a closed list:
+ * a name nobody knows is a typo. A place is not: a standby opened against an
+ * ad-hoc event has no venue at all, and somewhere nobody set up is still
+ * somewhere, so `allowFreeText` offers what was typed as its own choice.
  */
 export function Picker({
   choices,
@@ -31,73 +30,45 @@ export function Picker({
   onPick,
 }: {
   choices: Choice[];
-  /** What to show when nothing has been typed yet. */
+  /** What the trigger reads when nothing has been picked this time. */
   value?: string;
   placeholder?: string;
   disabled?: boolean;
-  /** Whether something that matches nothing is still an answer. */
   allowFreeText?: boolean;
   className?: string;
   onPick: (picked: { id: number | null; text: string }) => void;
 }) {
-  const listId = useId();
-  const [typed, setTyped] = useState(value ?? '');
-
-  // The server is authoritative once it answers; without this the box keeps
-  // what it started with after somebody else moves the unit.
-  const [fromProps, setFromProps] = useState(value ?? '');
-  if (fromProps !== (value ?? '')) {
-    setFromProps(value ?? '');
-    setTyped(value ?? '');
-  }
-
-  const settle = (text: string) => {
-    const trimmed = text.trim();
-    const match = choices.find(
-      (choice) => choice.label.toLowerCase() === trimmed.toLowerCase(),
-    );
-    if (!trimmed) {
-      onPick({ id: null, text: '' });
-      return;
-    }
-    if (match) {
-      onPick({ id: match.id, text: match.label });
-      setTyped(match.label);
-      return;
-    }
-    if (allowFreeText) {
-      onPick({ id: null, text: trimmed });
-      return;
-    }
-    // Not a name anybody knows, and nothing here accepts one. Put the box
-    // back rather than leaving it looking as though it took.
-    setTyped(fromProps);
-  };
+  const chosen = value?.trim() ?? '';
 
   return (
-    <>
-      <input
-        list={listId}
-        value={typed}
-        disabled={disabled}
-        placeholder={placeholder}
-        onChange={(e) => setTyped(e.target.value)}
-        // A datalist click fires change, not blur, on some browsers; both
-        // settle, and settling twice is the same answer.
-        onBlur={(e) => settle(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            settle((e.target as HTMLInputElement).value);
-          }
-        }}
-        className={`${FIELD} ${className}`}
-      />
-      <datalist id={listId}>
-        {choices.map((choice) => (
-          <option key={choice.id} value={choice.label} />
-        ))}
-      </datalist>
-    </>
+    <SearchSelect
+      label={
+        chosen ? (
+          chosen
+        ) : (
+          <span className="text-muted-foreground">{placeholder ?? 'Choose…'}</span>
+        )
+      }
+      ariaLabel={placeholder}
+      disabled={disabled}
+      triggerClassName={`h-8 px-2 text-sm ${className}`}
+      choices={choices.map((choice) => ({
+        value: String(choice.id),
+        label: choice.label,
+      }))}
+      selected={choices.find((choice) => choice.label === chosen)?.id?.toString()}
+      standing={
+        chosen ? (
+          <Option onPick={() => onPick({ id: null, text: '' })}>— none —</Option>
+        ) : null
+      }
+      onPick={(value) => {
+        const found = choices.find((choice) => String(choice.id) === value);
+        onPick({ id: found?.id ?? null, text: found?.label ?? '' });
+      }}
+      onFreeText={
+        allowFreeText ? (text) => onPick({ id: null, text }) : undefined
+      }
+    />
   );
 }

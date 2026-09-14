@@ -10,11 +10,17 @@ import {
 } from '@/components/ui/card';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
-import { addDesignator, addHospital } from './actions';
+import {
+  addAction,
+  addDesignator,
+  addHospital,
+  retireAction,
+} from './actions';
 
 type Config = {
   designators: Array<{ id: number; name: string }>;
   hospitals: Array<{ id: number; name: string }>;
+  actions: Array<{ id: number; label: string; order: number }>;
 };
 
 const FIELD = 'h-8 rounded-md border border-input bg-background px-2 text-sm';
@@ -56,7 +62,7 @@ export default async function StandbySetupPage({
     <div className="space-y-6">
       <PageHeader
         title="Standby setup"
-        description="Unit designators, and where patients can be taken."
+        description="Unit designators, where patients can be taken, and the buttons an encounter offers."
       />
       <ErrorBanner message={error} />
       {done ? (
@@ -72,6 +78,69 @@ export default async function StandbySetupPage({
         </Link>
         , because they serve events and run numbers as well as standbys.
       </p>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Encounter buttons</CardTitle>
+          <CardDescription>
+            One press marks the time and who pressed it, on the encounter and
+            on the timeline — dispatched, on scene, investigating, moving to
+            FAR. Short words, in the order they usually happen, because the
+            point of them is a thumb rather than a sentence. Retiring one
+            leaves what was already pressed exactly as it read.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <form action={addAction} className="flex flex-wrap items-end gap-2">
+            <label className="grid gap-1 text-xs text-muted-foreground">
+              Words on the button
+              <input
+                name="label"
+                required
+                maxLength={60}
+                placeholder="On scene"
+                className={`${FIELD} w-56`}
+              />
+            </label>
+            <label className="grid gap-1 text-xs text-muted-foreground">
+              Order
+              <input
+                name="order"
+                type="number"
+                defaultValue={config.actions.length}
+                className={`${FIELD} w-20`}
+              />
+            </label>
+            <Button type="submit" size="sm">
+              Add
+            </Button>
+          </form>
+          <ul className="flex flex-wrap gap-2">
+            {config.actions.map((action) => (
+              <li
+                key={action.id}
+                className="flex items-center gap-1 rounded-md border px-2 py-0.5 text-sm"
+              >
+                {action.label}
+                <form action={retireAction.bind(null, action.id)}>
+                  <button
+                    type="submit"
+                    className="text-muted-foreground hover:text-destructive"
+                    aria-label={`Retire ${action.label}`}
+                  >
+                    ×
+                  </button>
+                </form>
+              </li>
+            ))}
+            {!config.actions.length ? (
+              <li className="text-sm text-muted-foreground">
+                No buttons yet, so an encounter offers only its note box.
+              </li>
+            ) : null}
+          </ul>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>

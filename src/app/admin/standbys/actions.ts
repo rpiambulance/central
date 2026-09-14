@@ -17,6 +17,29 @@ async function post(path: string, body: unknown, done: string) {
   redirect(`${PAGE}?done=${done}`);
 }
 
+export async function addAction(formData: FormData) {
+  const label = String(formData.get('label') ?? '').trim();
+  if (!label) {
+    redirect(`${PAGE}?error=${encodeURIComponent('A button needs words on it.')}`);
+  }
+  const order = String(formData.get('order') ?? '').trim();
+  await post(
+    '/v1/standbys/config/actions',
+    { label, ...(order ? { order: Number(order) } : {}) },
+    'action',
+  );
+}
+
+export async function retireAction(id: number) {
+  try {
+    await api(`/v1/standbys/config/actions/${id}`, { method: 'DELETE' });
+  } catch (error) {
+    redirect(`${PAGE}?error=${encodeURIComponent(apiErrorMessage(error))}`);
+  }
+  revalidatePath(PAGE);
+  redirect(`${PAGE}?done=retired`);
+}
+
 export async function addDesignator(formData: FormData) {
   const name = String(formData.get('name') ?? '').trim();
   if (!name) redirect(`${PAGE}?error=${encodeURIComponent('A unit needs a designator.')}`);

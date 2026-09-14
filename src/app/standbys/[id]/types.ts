@@ -126,6 +126,8 @@ export type Config = {
   places: Array<{ id: number; name: string; abbr: string | null; spots: Array<{ id: number; name: string }> }>;
   designators: Array<{ id: number; name: string }>;
   hospitals: Array<{ id: number; name: string }>;
+  /** The buttons an encounter offers, in the order they usually happen. */
+  actions: Array<{ id: number; label: string }>;
   /** The active roster, for putting somebody on the standby. */
   members: Person[];
 };
@@ -172,5 +174,7 @@ export type TimelineEntry = {
   at: string;
   kind: string;
   text: string;
+  /** Set when the line is about one encounter, so a card can show its own. */
+  encounterId: number | null;
   actor: Person | null;
 };

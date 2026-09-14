@@ -19,11 +19,30 @@ const RECENT = 15;
 export function Timeline({
   entries,
   hour12,
+  onNote,
 }: {
   entries: TimelineEntry[];
   hour12: boolean;
+  /** Absent on a closed standby, where nothing more is being written. */
+  onNote?: (text: string) => Promise<unknown>;
 }) {
   const [all, setAll] = useState(false);
+  const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  // Most of a standby is not a patient — the crowd moved, a gate closed —
+  // and the alternative to a box for it is somebody's memory a week later.
+  const write = async () => {
+    const said = note.trim();
+    if (!said || !onNote) return;
+    setSaving(true);
+    try {
+      setNote('');
+      await onNote(said);
+    } finally {
+      setSaving(false);
+    }
+  };
   const newestFirst = [...entries].reverse();
   const shown = all ? newestFirst : newestFirst.slice(0, RECENT);
   const day = (iso: string) => iso.slice(0, 10);
@@ -41,6 +60,31 @@ export function Timeline({
           </Button>
         ) : null}
       </div>
+
+      {onNote ? (
+        <div className="flex gap-2">
+          <input
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                void write();
+              }
+            }}
+            maxLength={1000}
+            placeholder="Something that happened…"
+            className="h-8 flex-1 rounded-md border border-input bg-background px-2 text-sm"
+          />
+          <Button
+            size="sm"
+            disabled={!note.trim() || saving}
+            onClick={() => void write()}
+          >
+            Add a note
+          </Button>
+        </div>
+      ) : null}
 
       {shown.length ? (
         <ol className="divide-y rounded-md border">
