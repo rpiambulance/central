@@ -39,10 +39,11 @@ function NoAccess() {
 /**
  * One line: what it is, who signed it and when, or a way to sign it.
  *
- * Signing is offered to everyone — the API decides whether this trainer holds
- * what the line calls for, and says so plainly if not. Hiding the control
- * from anyone who might not qualify would leave a trainer staring at a line
- * with no explanation of why they cannot sign it.
+ * The form is offered to whoever may actually sign — the API says which
+ * lines those are, having asked the same question the sign route asks.
+ * Everyone else reads what the line needs and who they would have to find,
+ * which is a better answer than a form that turns them down after they have
+ * written a note in it.
  */
 function Line({
   item,
@@ -125,7 +126,7 @@ function Line({
         <p className="mt-2 ml-7 text-xs text-muted-foreground">
           A trainer signs this off once they have seen you do it.
         </p>
-      ) : viewerId ? (
+      ) : viewerId && item.maySign ? (
         <form
           action={signItem.bind(null, templateId, memberId, item.id)}
           className="mt-2 ml-7 flex flex-wrap items-end gap-2"
@@ -142,6 +143,12 @@ function Line({
             Sign off
           </Button>
         </form>
+      ) : viewerId ? (
+        // Said rather than left blank: a line with no control and no
+        // explanation reads as broken.
+        <p className="mt-2 ml-7 text-xs text-muted-foreground">
+          Not yours to sign — this one needs {signersLabel(item.requires)}.
+        </p>
       ) : null}
     </div>
   );

@@ -15,6 +15,12 @@ export type ChecklistItem = {
   signoff: Signoff | null;
   /** Who may sign this line — any one of them. Item override applied. */
   requires: Credential[];
+  /**
+   * Whether this line is the reader's to sign: they hold what it asks for
+   * (or something above it), it is not their own checklist, and it is not
+   * already signed. Answered by the API, which is the thing that decides.
+   */
+  maySign: boolean;
 };
 
 export type ChecklistGroup = {
