@@ -99,6 +99,11 @@ export type Standby = {
   peakAttendance: number | null;
   peakEstimated: boolean;
   unusualOccurrences: string | null;
+  /** The rest of what the state form asks for and nothing else supplies. */
+  sponsorOperator: string | null;
+  completedByName: string | null;
+  completedByTitle: string | null;
+  completedByPhone: string | null;
   event: { id: number; title: string; startsAt: string; endsAt: string };
   place: { id: number; name: string; spots: Array<{ id: number; name: string }> } | null;
   personnel: Personnel[];

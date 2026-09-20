@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { displayName, searchableNames } from '@/lib/name';
 import { send } from '@/lib/offline-queue';
 import { EncounterCard } from './encounter-card';
+import { Paperwork } from './paperwork';
 import { Picker } from './picker';
 import { QuickActionsFab } from './quick-actions-fab';
 import { QuickDialogs, type QuickAction } from './quick-dialogs';
@@ -551,6 +552,16 @@ export function Board({
             </div>
           ))}
         </div>
+        {/* The counts above are worked out from the encounters. These are
+            not knowable from anything on the board, and the state form asks
+            for them, so they are asked for here — before the copies that
+            would otherwise print them blank. */}
+        <Paperwork
+          standby={standby}
+          mayManage={standby.viewer.mayManage}
+          onSave={(patch) => write('PATCH', base, patch, 'the form details')}
+        />
+
         {standby.viewer.mayReadAll ? (
           <div className="space-y-2">
             <h3 className="text-sm font-medium">
