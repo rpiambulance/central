@@ -1,7 +1,11 @@
-'use client';
+"use client";
 
-import { useRef, useState } from 'react';
-import { cn } from '@/lib/utils';
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { cn } from "@/lib/utils";
+
+/** How much of a list to show before it scrolls, near enough, in pixels. */
+const POPOVER_HEIGHT = 260;
 
 export interface SearchChoice {
   /** Carried back to the caller untouched, so ids and free text can share. */
@@ -29,8 +33,8 @@ export function Option({
         aria-selected={selected}
         onClick={onPick}
         className={cn(
-          'w-full truncate rounded px-2 py-1 text-left text-xs hover:bg-accent hover:text-accent-foreground',
-          selected && 'bg-accent/60 font-medium',
+          "w-full truncate rounded px-2 py-1 text-left text-xs hover:bg-accent hover:text-accent-foreground",
+          selected && "bg-accent/60 font-medium",
         )}
       >
         {children}
@@ -61,8 +65,8 @@ export function SearchSelect({
   triggerClassName,
   popoverClassName,
   ariaLabel,
-  searchPlaceholder = 'Search…',
-  emptyText = 'Nothing by that name.',
+  searchPlaceholder = "Search…",
+  emptyText = "Nothing by that name.",
   standing,
   onFreeText,
 }: {
@@ -81,14 +85,57 @@ export function SearchSelect({
   standing?: React.ReactNode;
   /**
    * Given when something that matches nothing is still an answer: a place
-   * nobody has set up is still a place. Offered as the first row so it is
-   * pressed deliberately rather than fallen into.
+   * nobody has set up is still a place, and a slot takes a label as well as
+   * a member. Offered only once the search has run out of real ones — while
+   * a name is still reachable, what was typed is a search.
    */
   onFreeText?: (text: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const [at, setAt] = useState<{ left: number; top: number; up: boolean }>({
+    left: 0,
+    top: 0,
+    up: false,
+  });
+
+  /**
+   * The list is drawn on the body rather than beside the trigger.
+   *
+   * Every table in this app scrolls sideways, which makes the table a
+   * clipping box: a list opened from the last row was cut off at the edge
+   * of it. Anchored to the trigger and flipped above when the room below
+   * has run out.
+   */
+  const place = () => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const below = window.innerHeight - rect.bottom;
+    const up = below < POPOVER_HEIGHT && rect.top > below;
+    setAt({
+      // Kept on screen when the trigger is close to the right-hand edge.
+      left: Math.max(8, Math.min(rect.left, window.innerWidth - 232)),
+      top: up ? rect.top - 4 : rect.bottom + 4,
+      up,
+    });
+  };
+
+  useLayoutEffect(() => {
+    if (open) place();
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    // Capture, so scrolling inside the table moves it too, not only the page.
+    const follow = () => place();
+    window.addEventListener("scroll", follow, true);
+    window.addEventListener("resize", follow);
+    return () => {
+      window.removeEventListener("scroll", follow, true);
+      window.removeEventListener("resize", follow);
+    };
+  }, [open]);
 
   const needle = query.trim().toLowerCase();
   const matches = needle
@@ -101,7 +148,7 @@ export function SearchSelect({
 
   const close = () => {
     setOpen(false);
-    setQuery('');
+    setQuery("");
     setTimeout(() => triggerRef.current?.focus(), 0);
   };
 
@@ -128,60 +175,72 @@ export function SearchSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         className={cn(
-          'truncate rounded-md border border-input bg-background text-left',
-          disabled && 'opacity-60',
+          "truncate rounded-md border border-input bg-background text-left",
+          disabled && "opacity-60",
           triggerClassName,
         )}
       >
         {label}
       </button>
-      {open ? (
-        <>
-          <div className="fixed inset-0 z-40" onClick={close} />
-          <div
-            className={cn(
-              'absolute left-0 top-full z-50 mt-1 w-56 rounded-md border bg-popover p-1 text-popover-foreground shadow-md',
-              popoverClassName,
-            )}
-          >
-            <input
-              autoFocus
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Escape') close();
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  if (matches.length) pick(matches[0].value);
-                  else takeTyped();
-                }
-              }}
-              placeholder={searchPlaceholder}
-              className="mb-1 h-7 w-full rounded-md border border-input bg-background px-2 text-xs"
-            />
-            <ul role="listbox" className="max-h-56 overflow-y-auto">
-              {needle ? null : standing}
-              {onFreeText && needle && !matches.some((m) => m.label.toLowerCase() === needle) ? (
-                <Option onPick={takeTyped}>Use “{query.trim()}”</Option>
-              ) : null}
-              {matches.map((choice) => (
-                <Option
-                  key={choice.value}
-                  onPick={() => pick(choice.value)}
-                  selected={choice.value === selected}
-                >
-                  {choice.label}
-                </Option>
-              ))}
-              {needle && !matches.length && !onFreeText ? (
-                <li className="px-2 py-1 text-xs text-muted-foreground">
-                  {emptyText}
-                </li>
-              ) : null}
-            </ul>
-          </div>
-        </>
-      ) : null}
+      {open
+        ? createPortal(
+            <>
+              <div className="fixed inset-0 z-40" onClick={close} />
+              <div
+                style={{
+                  left: at.left,
+                  top: at.up ? undefined : at.top,
+                  bottom: at.up ? window.innerHeight - at.top : undefined,
+                }}
+                className={cn(
+                  "fixed z-50 w-56 rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
+                  popoverClassName,
+                )}
+              >
+                <input
+                  autoFocus
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") close();
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      if (matches.length) pick(matches[0].value);
+                      else takeTyped();
+                    }
+                  }}
+                  placeholder={searchPlaceholder}
+                  className="mb-1 h-7 w-full rounded-md border border-input bg-background px-2 text-xs"
+                />
+                <ul role="listbox" className="max-h-56 overflow-y-auto">
+                  {needle ? null : standing}
+                  {/* Only when nothing matches. While a real name is
+                      still reachable, what was typed is a search rather
+                      than an answer — offering it first turned "toby"
+                      into a label instead of McDonald, Toby. */}
+                  {onFreeText && needle && !matches.length ? (
+                    <Option onPick={takeTyped}>Use “{query.trim()}”</Option>
+                  ) : null}
+                  {matches.map((choice) => (
+                    <Option
+                      key={choice.value}
+                      onPick={() => pick(choice.value)}
+                      selected={choice.value === selected}
+                    >
+                      {choice.label}
+                    </Option>
+                  ))}
+                  {needle && !matches.length && !onFreeText ? (
+                    <li className="px-2 py-1 text-xs text-muted-foreground">
+                      {emptyText}
+                    </li>
+                  ) : null}
+                </ul>
+              </div>
+            </>,
+            document.body,
+          )
+        : null}
     </span>
   );
 }

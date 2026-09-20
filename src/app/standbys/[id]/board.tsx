@@ -9,7 +9,9 @@ import { displayName, searchableNames } from '@/lib/name';
 import { send } from '@/lib/offline-queue';
 import { EncounterCard } from './encounter-card';
 import { Picker } from './picker';
+import { QuickActionsFab } from './quick-actions-fab';
 import { StandbyActions } from './standby-actions';
+import { StandbyNavbar } from './standby-navbar';
 import { Timeline } from './timeline';
 import {
   ROLE_LABEL,
@@ -156,9 +158,30 @@ export function Board({
   const liveUnits = standby.units.filter((u) => !u.retiredAt);
 
   return (
-    <div className="space-y-6">
-      {/* ------------------------------------------------------- the units */}
-      <section className="space-y-2">
+    <>
+      <StandbyNavbar />
+      <QuickActionsFab
+        onNewEncounter={() => {
+          const el = document.getElementById('encounters');
+          el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }}
+        onAddPerson={() => {
+          const el = document.getElementById('personnel');
+          el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }}
+        onAddUnit={() => {
+          const el = document.getElementById('units');
+          el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }}
+        onAddNote={() => {
+          const el = document.getElementById('timeline');
+          el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }}
+        closedAt={standby.closedAt}
+      />
+      <div className="space-y-6 px-4">
+        {/* ------------------------------------------------------- the units */}
+        <section className="space-y-2" id="units">
         <div className="flex flex-wrap items-baseline gap-3">
           <h2 className="text-lg font-medium tracking-tight">Units</h2>
           {standby.viewer.mayManage && !standby.closedAt ? (
@@ -335,7 +358,7 @@ export function Board({
       </section>
 
       {/* --------------------------------------------------- the encounters */}
-      <section className="space-y-2">
+      <section className="space-y-2" id="encounters">
         <div className="flex flex-wrap items-baseline gap-3">
           <h2 className="text-lg font-medium tracking-tight">Encounters</h2>
           {!standby.closedAt ? (
@@ -396,7 +419,7 @@ export function Board({
       </section>
 
       {/* ---------------------------------------------------- the people */}
-      <section className="space-y-2">
+      <section className="space-y-2" id="personnel">
         <h2 className="text-lg font-medium tracking-tight">
           On the standby{' '}
           <span className="text-sm font-normal text-muted-foreground">
@@ -466,15 +489,17 @@ export function Board({
       </section>
 
       {/* ------------------------------------------------ what has happened */}
-      <Timeline
-        entries={timeline}
-        hour12={hour12}
-        onNote={
-          standby.closedAt
-            ? undefined
-            : (text) => write('POST', `${base}/notes`, { text }, 'note')
-        }
-      />
+      <section id="timeline">
+        <Timeline
+          entries={timeline}
+          hour12={hour12}
+          onNote={
+            standby.closedAt
+              ? undefined
+              : (text) => write('POST', `${base}/notes`, { text }, 'note')
+          }
+        />
+      </section>
 
       {/* ------------------------------------------------- finishing with it */}
       {standby.viewer.mayManage ? (
@@ -488,7 +513,7 @@ export function Board({
       ) : null}
 
       {/* -------------------------------------------------------- the totals */}
-      <section className="space-y-2">
+      <section className="space-y-2" id="forms">
         <h2 className="text-lg font-medium tracking-tight">For the forms</h2>
         <div className="grid grid-cols-2 gap-3 rounded-md border p-3 sm:grid-cols-4">
           {(
@@ -546,7 +571,8 @@ export function Board({
           </div>
         ) : null}
       </section>
-    </div>
+      </div>
+    </>
   );
 }
 

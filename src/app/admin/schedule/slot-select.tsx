@@ -121,7 +121,11 @@ export function SlotSelect({
           aliases: searchableNames(m),
         }))}
         selected={current}
-        emptyText="Nobody by that name."
+        // A slot takes a label as well as a member — CLOSED, or the name of
+        // somebody the roster has never heard of — so a search that matches
+        // nobody offers what was typed, the way the standby board does.
+        // "Label…" stays for editing one that is already there.
+        onFreeText={(text) => save({ placeholder: text })}
         standing={
           <>
             {/* Not search results: clearing a slot is not a name. */}
