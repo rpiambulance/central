@@ -66,6 +66,8 @@ type Day = {
 type CrewsResponse = {
   weekStart: string;
   thisWeek: string;
+  /** The first week members cannot see yet. */
+  publicEnd: string;
   prevViewDate: string;
   /** Null once the member is at the edge of the public window. */
   nextViewDate: string | null;
@@ -306,6 +308,16 @@ export default async function NightCrewsPage({
   ]);
 
   const onCurrentWeek = data.weekStart === data.thisWeek;
+  // Looking back and looking ahead are not the same thing, and only one of
+  // them is read-only. Paging forward is offered to whoever may see beyond
+  // the published window, and used to be met with "this is a past schedule".
+  const looking =
+    data.weekStart < data.thisWeek
+      ? 'back'
+      : data.weekStart > data.thisWeek
+        ? 'ahead'
+        : 'now';
+  const beyondPublic = data.weekStart >= data.publicEnd;
 
   return (
     <div className="space-y-6">
@@ -343,12 +355,18 @@ export default async function NightCrewsPage({
         </span>
       </div>
 
-      {onCurrentWeek ? null : (
+      {looking === 'back' ? (
         <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
           You&apos;re looking at a past schedule. It&apos;s read-only — sign-ups
           and drops are only available from this week onward.
         </div>
-      )}
+      ) : looking === 'ahead' && beyondPublic ? (
+        <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+          You&apos;re looking ahead of the published window. Members
+          can&apos;t see this week yet, and sign-ups open when it comes into
+          the window.
+        </div>
+      ) : null}
 
       <WeekTable
         title={onCurrentWeek ? 'This week' : `Week of ${formatDay(data.weekStart)}`}
