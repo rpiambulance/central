@@ -117,12 +117,15 @@ export async function bulkWeek(
  * Takes a night out of service, or puts it back. The duty supervisor seat is
  * untouched either way — the API keeps it deliberately.
  */
-export async function setOutOfService(
+/**
+ * The same change the form makes, reported rather than redirected — so the
+ * undo stack can drive it, and put back the crew it cleared.
+ */
+export async function setServiceValue(
   date: string,
   outOfService: boolean,
-  formData?: FormData,
-) {
-  const reason = String(formData?.get('reason') ?? '').trim();
+  reason?: string | null,
+): Promise<{ ok: boolean; error?: string }> {
   try {
     await api('/v1/crews/out-of-service', {
       method: 'POST',
@@ -133,20 +136,12 @@ export async function setOutOfService(
       }),
     });
   } catch (error) {
-    redirect(
-      `/admin/schedule?error=${encodeURIComponent(apiErrorMessage(error))}`,
-    );
+    return { ok: false, error: apiErrorMessage(error) };
   }
   revalidatePath('/admin/schedule');
+  return { ok: true };
 }
 
-/**
- * Marking a weekday out of service as a standing arrangement.
- *
- * Only changes nights generated from here on. A week already on the schedule
- * keeps whatever it has — somebody may have signed up for it, and emptying a
- * crew nobody was warned about is not what changing a default should mean.
- */
 export async function setDefaultOutOfService(
   weekday: number,
   outOfService: boolean,

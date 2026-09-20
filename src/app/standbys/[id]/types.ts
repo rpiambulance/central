@@ -12,7 +12,10 @@ export type Personnel = {
   role: 'EES_IC' | 'EES' | 'CREW' | 'SUPPORT';
   fromSignup: boolean;
   removedAt: string | null;
-  member: Person;
+  /** Null for somebody written in by hand — mutual aid, a visiting crew. */
+  member: Person | null;
+  /** What to call them when there is no member record to ask. */
+  name: string | null;
   assignments: Array<{ id: number; unitId: number; position: string | null; removedAt: string | null }>;
 };
 
@@ -29,7 +32,7 @@ export type Unit = {
     id: number;
     position: string | null;
     removedAt: string | null;
-    personnel: { id: number; member: Person };
+    personnel: { id: number; member: Person | null; name: string | null };
   }>;
 };
 
@@ -178,3 +181,21 @@ export type TimelineEntry = {
   encounterId: number | null;
   actor: Person | null;
 };
+
+/**
+ * What to call somebody on a standby: the roster's name for a member, and
+ * whatever was written down for anybody else.
+ */
+export function personnelName(person: {
+  member: Person | null;
+  name: string | null;
+}): string {
+  return person.member
+    ? displayNameOf(person.member)
+    : (person.name?.trim() ?? 'Somebody');
+}
+
+function displayNameOf(person: Person): string {
+  const first = person.preferredFirstName?.trim() || person.firstName;
+  return [first, person.lastName].filter(Boolean).join(' ');
+}

@@ -9,15 +9,37 @@ import {
   useState,
   useTransition,
 } from 'react';
-import { setDefaultSlotValue, setSlotValue, type SlotValue } from './actions';
+import {
+  setDefaultSlotValue,
+  setServiceValue,
+  setSlotValue,
+  type SlotValue,
+} from './actions';
 
-export interface UndoEntry {
+interface SlotUndo {
   kind: 'slot' | 'default';
   target: number; // crewId or weekday
   position: string;
   previous: SlotValue;
   label: string; // e.g. "Thu Jul 16 — Crew Chief"
 }
+
+/**
+ * Taking a night out of service clears everyone but the duty supervisor, so
+ * putting the night back is only half an undo. The crew that was on it is
+ * carried here and restored with it — the server has no memory of who was
+ * cleared, and a half-undo is worse than none.
+ */
+interface ServiceUndo {
+  kind: 'service';
+  date: string;
+  previous: { outOfService: boolean; reason: string | null };
+  /** Who was in which seat before, for the seats that were emptied. */
+  crew: Array<{ crewId: number; position: string; value: SlotValue }>;
+  label: string; // e.g. "Thu Jul 16 — out of service"
+}
+
+export type UndoEntry = SlotUndo | ServiceUndo;
 
 interface UndoContextValue {
   push: (entry: UndoEntry) => void;
@@ -63,10 +85,34 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
     if (!entry) return;
     setStack((prev) => prev.slice(0, -1));
     startTransition(async () => {
-      const result =
-        entry.kind === 'slot'
-          ? await setSlotValue(entry.target, entry.position, entry.previous)
-          : await setDefaultSlotValue(entry.target, entry.position, entry.previous);
+      let result: { ok: boolean; error?: string };
+      if (entry.kind === 'service') {
+        result = await setServiceValue(
+          entry.date,
+          entry.previous.outOfService,
+          entry.previous.reason,
+        );
+        // The service change comes first: putting a night back out of
+        // service would clear these seats again.
+        if (result.ok && !entry.previous.outOfService) {
+          for (const seat of entry.crew) {
+            const put = await setSlotValue(
+              seat.crewId,
+              seat.position,
+              seat.value,
+            );
+            if (!put.ok) result = put;
+          }
+        }
+      } else if (entry.kind === 'slot') {
+        result = await setSlotValue(entry.target, entry.position, entry.previous);
+      } else {
+        result = await setDefaultSlotValue(
+          entry.target,
+          entry.position,
+          entry.previous,
+        );
+      }
       setErrorState(
         result.ok ? undefined : `Undo failed: ${result.error ?? 'unknown error'}`,
       );

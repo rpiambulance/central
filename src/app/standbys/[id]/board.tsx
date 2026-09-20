@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,7 @@ import {
   STATUS_LABEL,
   type Config,
   type Personnel,
+  personnelName,
   type Person,
   type Standby,
   type TimelineEntry,
@@ -119,6 +120,28 @@ export function Board({
 
   const base = `/v1/standbys/${standby.id}`;
 
+  // Everybody else's writes, as they happen. A standby is worked by several
+  // people at once — a crew chief at a gate, a supervisor at the aid
+  // station, somebody at the desk — and each of them used to see only their
+  // own until they reloaded. The event says the standby moved and nothing
+  // more, so the answer is always to ask the server rather than to patch
+  // something in from a payload that could be a version behind.
+  const nudge = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    const source = new EventSource(`/standbys/${standby.id}/stream`);
+    const refresh = () => {
+      // One write is often several events — a unit created, then crewed —
+      // and a reload for each would be three round trips to say one thing.
+      if (nudge.current) clearTimeout(nudge.current);
+      nudge.current = setTimeout(() => router.refresh(), 250);
+    };
+    source.onmessage = refresh;
+    return () => {
+      source.close();
+      if (nudge.current) clearTimeout(nudge.current);
+    };
+  }, [standby.id, router]);
+
   const setUnit = (unit: Unit, patch: Partial<Unit> & Record<string, unknown>) => {
     setStandby((s) => ({
       ...s,
@@ -169,7 +192,7 @@ export function Board({
                   {crew.length ? (
                     crew.map((a) => (
                       <li key={a.id} className="flex items-center gap-2">
-                        <span>{displayName(a.personnel.member)}</span>
+                        <span>{personnelName(a.personnel)}</span>
                         {a.position ? (
                           <span className="text-xs text-muted-foreground">{a.position}</span>
                         ) : null}
@@ -189,7 +212,7 @@ export function Board({
                                 'DELETE',
                                 `${base}/crew/${a.id}`,
                                 undefined,
-                                `take ${displayName(a.personnel.member)} off ${unit.name}`,
+                                `take ${personnelName(a.personnel)} off ${unit.name}`,
                               );
                             }}
                           >
@@ -282,7 +305,11 @@ export function Board({
                                   id: -Date.now(),
                                   position: position ?? null,
                                   removedAt: null,
-                                  personnel: { id: person.id, member: person.member },
+                                  personnel: {
+                                    id: person.id,
+                                    member: person.member,
+                                    name: person.name,
+                                  },
                                 },
                               ],
                             });
@@ -381,12 +408,14 @@ export function Board({
         {standby.viewer.mayManage && !standby.closedAt ? (
           <AddPerson
             roster={config.members}
-            already={standby.personnel.map((p) => p.member.id)}
-            onAdd={(memberId, role) =>
+            already={standby.personnel
+              .map((p) => p.member?.id)
+              .filter((id): id is number => id !== undefined)}
+            onAdd={(who, role) =>
               write(
                 'POST',
                 `${base}/personnel`,
-                { memberId, role },
+                { ...who, role },
                 'added to the standby',
               )
             }
@@ -414,7 +443,7 @@ export function Board({
                   'PATCH',
                   `${base}/personnel/${person.id}`,
                   { role },
-                  `${displayName(person.member)} → ${ROLE_LABEL[role]}`,
+                  `${personnelName(person)} → ${ROLE_LABEL[role]}`,
                 );
               }}
               onRemove={() => {
@@ -428,7 +457,7 @@ export function Board({
                   'DELETE',
                   `${base}/personnel/${person.id}`,
                   undefined,
-                  `${displayName(person.member)} left`,
+                  `${personnelName(person)} left`,
                 );
               }}
             />
@@ -522,6 +551,14 @@ export function Board({
 }
 
 /** Naming somebody who is here, whether or not they signed up. */
+/**
+ * Naming somebody who is here.
+ *
+ * Usually a member, picked from the roster. Sometimes not — mutual aid, a
+ * visiting crew, an EMT who turned up with the fire department — and then
+ * the name typed into the box is the whole of what we know about them, so
+ * the box takes it as an answer rather than putting it back.
+ */
 function AddPerson({
   roster,
   already,
@@ -529,9 +566,13 @@ function AddPerson({
 }: {
   roster: Person[];
   already: number[];
-  onAdd: (memberId: number, role: Personnel['role']) => void;
+  onAdd: (
+    who: { memberId?: number; name?: string },
+    role: Personnel['role'],
+  ) => void;
 }) {
   const [memberId, setMemberId] = useState<number | null>(null);
+  const [written, setWritten] = useState('');
   const [role, setRole] = useState<Personnel['role']>('CREW');
   const here = new Set(already);
   const choices = roster
@@ -548,7 +589,16 @@ function AddPerson({
         className="w-56"
         placeholder="Who else is here…"
         choices={choices}
-        onPick={({ id }) => setMemberId(id)}
+        // What was picked stays in the box: pressing Add against a box that
+        // still reads "Who else is here…" is a guess about what it will do.
+        value={
+          choices.find((choice) => choice.id === memberId)?.label ?? written
+        }
+        allowFreeText
+        onPick={({ id, text }) => {
+          setMemberId(id);
+          setWritten(id ? '' : text);
+        }}
       />
       <select
         value={role}
@@ -563,10 +613,12 @@ function AddPerson({
       </select>
       <Button
         size="sm"
-        disabled={!memberId}
+        disabled={!memberId && !written.trim()}
         onClick={() => {
-          if (memberId) onAdd(memberId, role);
+          if (memberId) onAdd({ memberId }, role);
+          else if (written.trim()) onAdd({ name: written.trim() }, role);
           setMemberId(null);
+          setWritten('');
         }}
       >
         Add
@@ -596,7 +648,7 @@ function PersonRow({
   return (
     <div className="flex flex-wrap items-center gap-2 px-3 py-2 text-sm">
       <span className={person.removedAt ? 'text-muted-foreground line-through' : ''}>
-        {displayName(person.member)}
+        {personnelName(person)}
       </span>
       {on.length ? (
         <span className="text-xs text-muted-foreground">{on.join(', ')}</span>
@@ -729,14 +781,16 @@ function AssignCrew({
   // Somebody already on another unit is still offered: a transport driver
   // is on the ambulance and on their own unit at once. Members not on the
   // standby are offered too, keyed negatively so the two cannot collide.
-  const onStandby = new Set(people.map((p) => p.member.id));
+  const onStandby = new Set(
+    people.map((p) => p.member?.id).filter((id) => id !== undefined),
+  );
   const choices = [
     ...people
       .filter((p) => !alreadyOn.has(p.id))
       .map((p) => ({
         id: p.id,
-        label: displayName(p.member),
-        aliases: searchableNames(p.member),
+        label: personnelName(p),
+        aliases: p.member ? searchableNames(p.member) : [],
       })),
     ...roster
       .filter((member) => !onStandby.has(member.id))
@@ -774,6 +828,10 @@ function AssignCrew({
         className="flex-1"
         placeholder="Add crew…"
         choices={choices}
+        value={
+          choices.find((choice) => String(choice.id) === personnelId)?.label ??
+          ''
+        }
         onPick={({ id }) => setPersonnelId(id === null ? '' : String(id))}
       />
       <input

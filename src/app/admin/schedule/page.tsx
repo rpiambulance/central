@@ -184,8 +184,20 @@ function WeekTable({
                   {formatDay(day.date)}
                   <OutOfServiceToggle
                     date={day.date}
+                    crewId={day.crewId}
                     outOfService={!!day.outOfService}
                     reason={day.outOfServiceReason ?? null}
+                    label={`${formatDay(day.date)} — out of service`}
+                    // The seats as they stand, so undoing can put them back.
+                    crew={POSITIONS.filter(
+                      (position) => position !== 'DUTY_SUP',
+                    ).map((position) => ({
+                      position,
+                      value: {
+                        memberId: day.slots[position]?.member?.id ?? null,
+                        placeholder: day.slots[position]?.placeholder ?? null,
+                      },
+                    }))}
                   />
                 </TableCell>
                 {POSITIONS.map((position) => {
