@@ -48,7 +48,7 @@ export function StandbyNavbar() {
 
   return (
     <div className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <nav className="flex gap-1 overflow-x-auto px-4 py-2 text-sm">
+      <nav className="flex gap-1 overflow-x-auto py-2 text-sm">
         {SECTIONS.map((section) => (
           <button
             key={section.id}

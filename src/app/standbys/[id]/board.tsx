@@ -10,6 +10,7 @@ import { send } from '@/lib/offline-queue';
 import { EncounterCard } from './encounter-card';
 import { Picker } from './picker';
 import { QuickActionsFab } from './quick-actions-fab';
+import { QuickDialogs, type QuickAction } from './quick-dialogs';
 import { StandbyActions } from './standby-actions';
 import { StandbyNavbar } from './standby-navbar';
 import { Timeline } from './timeline';
@@ -69,6 +70,8 @@ export function Board({
   const router = useRouter();
   const [standby, setStandby] = useState(initial);
   const [busy, setBusy] = useState(false);
+  // Which quick action is open over the board, if any.
+  const [quick, setQuick] = useState<QuickAction | null>(null);
 
   // The server is authoritative once it has answered. Without this the board
   // kept whatever it started with, so anything added — an encounter, a unit,
@@ -160,26 +163,40 @@ export function Board({
   return (
     <>
       <StandbyNavbar />
-      <QuickActionsFab
-        onNewEncounter={() => {
-          const el = document.getElementById('encounters');
-          el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }}
-        onAddPerson={() => {
-          const el = document.getElementById('personnel');
-          el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }}
-        onAddUnit={() => {
-          const el = document.getElementById('units');
-          el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }}
-        onAddNote={() => {
-          const el = document.getElementById('timeline');
-          el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }}
-        closedAt={standby.closedAt}
-      />
-      <div className="space-y-6 px-4">
+      {standby.viewer.mayManage ? (
+        <>
+          <QuickActionsFab onPick={setQuick} disabled={!!standby.closedAt} />
+          <QuickDialogs
+            action={quick}
+            onClose={() => setQuick(null)}
+            roster={config.members}
+            already={standby.personnel
+              .map((p) => p.member?.id)
+              .filter((id): id is number => id !== undefined)}
+            designators={config.designators}
+            units={liveUnits}
+            locations={locations}
+            onAddPerson={(who, role) =>
+              void write(
+                'POST',
+                `${base}/personnel`,
+                { ...who, role },
+                'added to the standby',
+              )
+            }
+            onAddUnit={(body) =>
+              void write('POST', `${base}/units`, body, 'new unit')
+            }
+            onOpenEncounter={(body) =>
+              void write('POST', `${base}/encounters`, body, 'new encounter')
+            }
+            onNote={(text) =>
+              void write('POST', `${base}/notes`, { text }, 'note')
+            }
+          />
+        </>
+      ) : null}
+      <div className="space-y-6">
         {/* ------------------------------------------------------- the units */}
         <section className="space-y-2" id="units">
         <div className="flex flex-wrap items-baseline gap-3">

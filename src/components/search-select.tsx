@@ -44,6 +44,127 @@ export function Option({
 }
 
 /**
+ * A search box and the choices under it.
+ *
+ * Pulled out of the popover because a dialog wants the same thing without
+ * one: there is room in a dialog to leave the list open, and a list that
+ * floats over a modal has to win an argument with it about z-index, focus
+ * and what an outside click means. Same matching and same rows either way,
+ * so the two cannot drift.
+ *
+ * Typing filters; Enter takes the first match, which is how three letters
+ * and a return become a choice at speed.
+ */
+export function SearchList({
+  choices,
+  onPick,
+  selected,
+  standing,
+  onFreeText,
+  searchPlaceholder = "Search…",
+  emptyText = "Nothing by that name.",
+  inputClassName,
+  listClassName,
+  autoFocus,
+  onCancel,
+  onDone,
+}: {
+  choices: SearchChoice[];
+  onPick: (value: string) => void;
+  selected?: string;
+  /** Choices that are not search results — "vacant", "label…". */
+  standing?: React.ReactNode;
+  /**
+   * Given when something that matches nothing is still an answer: a place
+   * nobody has set up is still a place, and a slot takes a label as well as
+   * a member. Offered only once the search has run out of real ones — while
+   * a name is still reachable, what was typed is a search.
+   */
+  onFreeText?: (text: string) => void;
+  searchPlaceholder?: string;
+  emptyText?: string;
+  inputClassName?: string;
+  listClassName?: string;
+  autoFocus?: boolean;
+  /** Escape. Left to bubble when nobody wants it, so a dialog can close. */
+  onCancel?: () => void;
+  /** Called just before an answer goes out, for whatever has to shut. */
+  onDone?: () => void;
+}) {
+  const [query, setQuery] = useState("");
+
+  const needle = query.trim().toLowerCase();
+  const matches = needle
+    ? choices.filter((choice) =>
+        [choice.label, ...(choice.aliases ?? [])].some((name) =>
+          name.toLowerCase().includes(needle),
+        ),
+      )
+    : choices;
+
+  const pick = (value: string) => {
+    onDone?.();
+    onPick(value);
+  };
+
+  const takeTyped = () => {
+    const typed = query.trim();
+    if (!typed || !onFreeText) return;
+    onDone?.();
+    onFreeText(typed);
+  };
+
+  return (
+    <>
+      <input
+        autoFocus={autoFocus}
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape" && onCancel) {
+            event.preventDefault();
+            onCancel();
+          }
+          if (event.key === "Enter") {
+            event.preventDefault();
+            if (matches.length) pick(matches[0].value);
+            else takeTyped();
+          }
+        }}
+        placeholder={searchPlaceholder}
+        className={cn(
+          "mb-1 h-7 w-full rounded-md border border-input bg-background px-2 text-xs",
+          inputClassName,
+        )}
+      />
+      <ul role="listbox" className={cn("max-h-56 overflow-y-auto", listClassName)}>
+        {needle ? null : standing}
+        {/* Only when nothing matches. While a real name is still reachable,
+            what was typed is a search rather than an answer — offering it
+            first turned "toby" into a label instead of McDonald, Toby. */}
+        {onFreeText && needle && !matches.length ? (
+          <Option onPick={takeTyped}>Use “{query.trim()}”</Option>
+        ) : null}
+        {matches.map((choice) => (
+          <Option
+            key={choice.value}
+            onPick={() => pick(choice.value)}
+            selected={choice.value === selected}
+          >
+            {choice.label}
+          </Option>
+        ))}
+        {needle && !matches.length && !onFreeText ? (
+          <li className="px-2 py-1 text-xs text-muted-foreground">
+            {emptyText}
+          </li>
+        ) : null}
+      </ul>
+    </>
+  );
+}
+
+/**
  * A trigger the size of the field it replaces, opening a search box above
  * the same choices.
  *
@@ -52,9 +173,7 @@ export function Option({
  * long list — who is on a standby, where a unit is — uses it rather than a
  * second thing that looks nearly the same.
  *
- * Typing filters; Enter takes the first match, which is how three letters
- * and a return become a choice at speed; Escape closes and gives the trigger
- * its focus back.
+ * Escape closes and gives the trigger its focus back.
  */
 export function SearchSelect({
   label,
@@ -65,8 +184,8 @@ export function SearchSelect({
   triggerClassName,
   popoverClassName,
   ariaLabel,
-  searchPlaceholder = "Search…",
-  emptyText = "Nothing by that name.",
+  searchPlaceholder,
+  emptyText,
   standing,
   onFreeText,
 }: {
@@ -81,18 +200,10 @@ export function SearchSelect({
   ariaLabel?: string;
   searchPlaceholder?: string;
   emptyText?: string;
-  /** Choices that are not search results — "vacant", "label…". */
   standing?: React.ReactNode;
-  /**
-   * Given when something that matches nothing is still an answer: a place
-   * nobody has set up is still a place, and a slot takes a label as well as
-   * a member. Offered only once the search has run out of real ones — while
-   * a name is still reachable, what was typed is a search.
-   */
   onFreeText?: (text: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [at, setAt] = useState<{ left: number; top: number; up: boolean }>({
     left: 0,
@@ -137,31 +248,9 @@ export function SearchSelect({
     };
   }, [open]);
 
-  const needle = query.trim().toLowerCase();
-  const matches = needle
-    ? choices.filter((choice) =>
-        [choice.label, ...(choice.aliases ?? [])].some((name) =>
-          name.toLowerCase().includes(needle),
-        ),
-      )
-    : choices;
-
   const close = () => {
     setOpen(false);
-    setQuery("");
     setTimeout(() => triggerRef.current?.focus(), 0);
-  };
-
-  const pick = (value: string) => {
-    close();
-    onPick(value);
-  };
-
-  const takeTyped = () => {
-    const typed = query.trim();
-    if (!typed || !onFreeText) return;
-    close();
-    onFreeText(typed);
   };
 
   return (
@@ -197,45 +286,18 @@ export function SearchSelect({
                   popoverClassName,
                 )}
               >
-                <input
+                <SearchList
+                  choices={choices}
+                  onPick={onPick}
+                  selected={selected}
+                  standing={standing}
+                  onFreeText={onFreeText}
+                  searchPlaceholder={searchPlaceholder}
+                  emptyText={emptyText}
                   autoFocus
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Escape") close();
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      if (matches.length) pick(matches[0].value);
-                      else takeTyped();
-                    }
-                  }}
-                  placeholder={searchPlaceholder}
-                  className="mb-1 h-7 w-full rounded-md border border-input bg-background px-2 text-xs"
+                  onCancel={close}
+                  onDone={close}
                 />
-                <ul role="listbox" className="max-h-56 overflow-y-auto">
-                  {needle ? null : standing}
-                  {/* Only when nothing matches. While a real name is
-                      still reachable, what was typed is a search rather
-                      than an answer — offering it first turned "toby"
-                      into a label instead of McDonald, Toby. */}
-                  {onFreeText && needle && !matches.length ? (
-                    <Option onPick={takeTyped}>Use “{query.trim()}”</Option>
-                  ) : null}
-                  {matches.map((choice) => (
-                    <Option
-                      key={choice.value}
-                      onPick={() => pick(choice.value)}
-                      selected={choice.value === selected}
-                    >
-                      {choice.label}
-                    </Option>
-                  ))}
-                  {needle && !matches.length && !onFreeText ? (
-                    <li className="px-2 py-1 text-xs text-muted-foreground">
-                      {emptyText}
-                    </li>
-                  ) : null}
-                </ul>
               </div>
             </>,
             document.body,
