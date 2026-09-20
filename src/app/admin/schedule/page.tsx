@@ -309,8 +309,9 @@ export default async function AdminSchedulePage({
           <button
             type="submit"
             className="h-8 rounded-md border px-3 text-sm hover:bg-muted"
+            title="Fills empty seats from the weekly template, and closes the nights the template says the agency does not run — which empties their riding seats."
           >
-            Fill vacancies from template
+            Apply the weekly template
           </button>
         </form>
         {/* Two steps: clearing a week is not a one-click action. */}
@@ -366,10 +367,13 @@ export default async function AdminSchedulePage({
           </Link>
         </div>
         <p className="text-sm text-muted-foreground">
-          Applied when new crew nights are generated. Marking a weekday out of
-          service leaves the duty supervisor seat — somebody still carries the
-          phone — and stops the rest being filled. Weeks already on the
-          schedule are left as they are.
+          Applied when new crew nights are generated. Marking a weekday out
+          of service leaves the duty supervisor seat — somebody still carries
+          the phone — and stops the rest being filled. A week already on the
+          schedule does not change by itself: press{' '}
+          <span className="font-medium">Apply the weekly template</span> above
+          that week to fill its empty seats and close the nights this says are
+          closed.
         </p>
         <div className="rounded-md border">
           <Table>
