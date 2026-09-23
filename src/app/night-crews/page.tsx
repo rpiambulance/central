@@ -79,7 +79,6 @@ type MyShift = {
   crewId: number;
   date: string;
   position: Position;
-  isPublic: boolean;
 };
 
 type Absence = {
@@ -390,7 +389,7 @@ export default async function NightCrewsPage({
           <CardHeader>
             <CardTitle>My upcoming shifts</CardTitle>
             <CardDescription>
-              All shifts you hold, including weeks not yet visible to members.
+              As far ahead as the schedule is published.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -411,14 +410,6 @@ export default async function NightCrewsPage({
                     <span className="text-muted-foreground">
                       {COLUMN_LABELS[shift.position]}
                     </span>
-                    {!shift.isPublic ? (
-                      <Badge
-                        variant="secondary"
-                        className="text-muted-foreground"
-                      >
-                        not yet public
-                      </Badge>
-                    ) : null}
                   </li>
                 ))}
               </ul>
