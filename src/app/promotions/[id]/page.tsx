@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { prefers12Hour } from '@/lib/me';
+import { myMemberId, prefers12Hour } from '@/lib/me';
 import { api, ApiError } from '@/lib/api';
 import { formatDate, formatDateOnly, formatDateTime } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +21,12 @@ import {
 } from '@/components/ui/table';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
-import { appointProxy, captainDecision, castVote } from './actions';
+import {
+  appointProxy,
+  captainDecision,
+  castVote,
+  withdrawProxy,
+} from './actions';
 import { displayName, surnameFirst } from '@/lib/name';
 
 type MemberRef = { id: number; firstName: string; lastName: string };
@@ -62,7 +67,6 @@ type Review = {
     proxyFor: MemberRef | null;
   }>;
   proxies: Array<{
-    id: number;
     principal: MemberRef;
     proxy: MemberRef;
   }>;
@@ -110,7 +114,7 @@ export default async function PromotionReviewPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  const hour12 = await prefers12Hour();
+  const [hour12, me] = await Promise.all([prefers12Hour(), myMemberId()]);
   const [{ id }, { error }] = await Promise.all([params, searchParams]);
   const requestId = Number(id);
 
@@ -135,6 +139,11 @@ export default async function PromotionReviewPage({
       throw err;
     }
   }
+
+  const mine =
+    me === null
+      ? undefined
+      : review.proxies.find((proxy) => proxy.principal.id === me);
 
   const badge = STATUS_BADGE[review.status];
 
@@ -272,7 +281,7 @@ export default async function PromotionReviewPage({
         {review.proxies.length ? (
           <ul className="space-y-1 text-sm text-muted-foreground">
             {review.proxies.map((proxy) => (
-              <li key={proxy.id}>
+              <li key={proxy.principal.id}>
                 {memberName(proxy.principal)} appointed{' '}
                 {memberName(proxy.proxy)} as proxy.
               </li>
@@ -323,13 +332,34 @@ export default async function PromotionReviewPage({
                 vote in their place.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
+              {/* What was done, where it was done: somebody who has just
+                  appointed a proxy should not have to read the vote record
+                  to find out whether it took. */}
+              {mine ? (
+                <div className="space-y-2 rounded-md border bg-muted/40 p-3 text-sm">
+                  <p>
+                    You appointed{' '}
+                    <span className="font-medium">
+                      {memberName(mine.proxy)}
+                    </span>
+                    . They have been told, and the request waits on their vote.
+                  </p>
+                  <form action={withdrawProxy.bind(null, review.id)}>
+                    <Button type="submit" size="sm" variant="outline">
+                      Withdraw, and vote it myself
+                    </Button>
+                  </form>
+                </div>
+              ) : null}
               <form
                 action={appointProxy.bind(null, review.id)}
                 className="flex items-end gap-3"
               >
                 <label className="flex flex-col gap-1 text-sm">
-                  <span className="text-muted-foreground">Proxy</span>
+                  <span className="text-muted-foreground">
+                    {mine ? 'Somebody else instead' : 'Proxy'}
+                  </span>
                   <select
                     name="proxyId"
                     required
@@ -343,7 +373,7 @@ export default async function PromotionReviewPage({
                   </select>
                 </label>
                 <Button type="submit" size="sm" variant="outline">
-                  Appoint
+                  {mine ? 'Replace' : 'Appoint'}
                 </Button>
               </form>
             </CardContent>

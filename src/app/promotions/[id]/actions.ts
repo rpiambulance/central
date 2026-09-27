@@ -38,6 +38,17 @@ export async function appointProxy(requestId: number, formData: FormData) {
   revalidatePath(`/promotions/${requestId}`);
 }
 
+export async function withdrawProxy(requestId: number) {
+  try {
+    await api(`/v1/promotions/requests/${requestId}/proxy`, {
+      method: 'DELETE',
+    });
+  } catch (error) {
+    fail(requestId, error);
+  }
+  revalidatePath(`/promotions/${requestId}`);
+}
+
 export async function captainDecision(requestId: number, formData: FormData) {
   const approved = formData.get('approved') === 'true';
   const notes = String(formData.get('notes') ?? '');
