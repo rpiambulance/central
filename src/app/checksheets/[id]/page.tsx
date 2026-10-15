@@ -12,6 +12,7 @@ import {
   CompleteForm,
   type Asset,
   type Item,
+  type Person,
   type SealHistory,
   type Section,
 } from './complete-form';
@@ -56,9 +57,12 @@ export default async function CompleteChecksheetPage({
   }
 
   const kindId = blank.template.assetKind?.id;
-  const assets = kindId
-    ? await api<Asset[]>(`/v1/checksheets/assets?kindId=${kindId}`)
-    : [];
+  const [assets, roster] = await Promise.all([
+    kindId
+      ? api<Asset[]>(`/v1/checksheets/assets?kindId=${kindId}`)
+      : Promise.resolve([] as Asset[]),
+    api<Person[]>('/v1/checksheets/crew-options'),
+  ]);
 
   const carried = Object.fromEntries(
     blank.items.map((item) => [item.itemId, item.lastExpiries]),
@@ -88,6 +92,7 @@ export default async function CompleteChecksheetPage({
             sections={blank.template.sections}
             items={blank.template.items}
             assets={assets}
+            roster={roster}
             assetRequired={!!kindId}
             carried={carried}
             seals={blank.sections}

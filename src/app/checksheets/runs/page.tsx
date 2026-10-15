@@ -20,7 +20,13 @@ type Run = {
   comment: string | null;
   template: { id: number; name: string };
   asset: { id: number; name: string } | null;
-  completedBy: { id: number; firstName: string; lastName: string } | null;
+  completedBy: {
+    id: number;
+    firstName: string;
+    preferredFirstName?: string | null;
+    lastName: string;
+  } | null;
+  crew: Array<{ id: number }>;
 };
 
 export const dynamic = 'force-dynamic';
@@ -63,9 +69,13 @@ export default async function RunsPage() {
                   <TableCell>{run.template.name}</TableCell>
                   <TableCell>{run.asset?.name ?? '—'}</TableCell>
                   <TableCell>
-                    {run.completedBy
-                      ? displayName(run.completedBy)
-                      : '—'}
+                    {run.completedBy ? displayName(run.completedBy) : '—'}
+                    {run.crew.length ? (
+                      <span className="text-muted-foreground">
+                        {' '}
+                        +{run.crew.length}
+                      </span>
+                    ) : null}
                   </TableCell>
                   <TableCell className="max-w-64 truncate text-muted-foreground">
                     {run.comment ?? ''}

@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { SearchSelect } from '@/components/search-select';
 import { cn } from '@/lib/utils';
+import { displayName, searchableNames } from '@/lib/name';
 import { completeChecksheet } from '../actions';
 
 export type Item = {
@@ -39,6 +41,14 @@ type SealAnswer = {
 
 export type Asset = { id: number; name: string };
 
+/** Somebody who can be named as having gone over it too. */
+export type Person = {
+  id: number;
+  firstName: string;
+  preferredFirstName: string | null;
+  lastName: string;
+};
+
 type Answer = {
   present?: boolean;
   countPresent?: string;
@@ -71,12 +81,15 @@ export function CompleteForm({
   assetRequired,
   carried,
   seals,
+  roster,
 }: {
   templateId: number;
   sections: Section[];
   items: Item[];
   assets: Asset[];
   assetRequired: boolean;
+  /** Everybody who could be named alongside whoever is filing. */
+  roster: Person[];
   /** Last time's dates, by item id, so nobody retypes them. */
   carried: Record<number, string[]>;
   /** Last time's seal, by section id. */
@@ -84,6 +97,7 @@ export function CompleteForm({
 }) {
   const [assetId, setAssetId] = useState('');
   const [comment, setComment] = useState('');
+  const [crew, setCrew] = useState<Person[]>([]);
   const sealHistory = new Map(seals.map((seal) => [seal.sectionId, seal]));
   const [sealAnswers, setSealAnswers] = useState<Record<number, SealAnswer>>(
     () =>
@@ -165,6 +179,7 @@ export function CompleteForm({
     templateId,
     ...(assetId ? { assetId: Number(assetId) } : {}),
     comment,
+    crewIds: crew.map((person) => person.id),
     sections: sections
       .filter((section) => section.hasSeal)
       .map((section) => ({ sectionId: section.id, ...sealAnswers[section.id] })),
@@ -432,6 +447,51 @@ export function CompleteForm({
           </div>
         );
       })}
+
+      {/* A truck is gone over by the crew together. Whoever is filing is on
+          it already; this is for the rest of them. */}
+      <div className="grid gap-1 text-sm font-medium">
+        Who else went over it
+        <div className="flex flex-wrap items-center gap-2">
+          {crew.map((person) => (
+            <span
+              key={person.id}
+              className="flex items-center gap-1 rounded-md border bg-muted/40 px-2 py-1 text-sm font-normal"
+            >
+              {displayName(person)}
+              <button
+                type="button"
+                aria-label={`Take ${displayName(person)} off this check`}
+                onClick={() =>
+                  setCrew((was) => was.filter((p) => p.id !== person.id))
+                }
+                className="text-muted-foreground hover:text-foreground"
+              >
+                &times;
+              </button>
+            </span>
+          ))}
+          <SearchSelect
+            label={
+              <span className="text-muted-foreground">Add somebody…</span>
+            }
+            ariaLabel="Add somebody who went over it"
+            triggerClassName="h-8 px-2 text-sm font-normal"
+            choices={roster
+              .filter((person) => !crew.some((p) => p.id === person.id))
+              .map((person) => ({
+                value: String(person.id),
+                label: displayName(person),
+                aliases: searchableNames(person),
+              }))}
+            emptyText="Nobody by that name."
+            onPick={(value) => {
+              const picked = roster.find((p) => String(p.id) === value);
+              if (picked) setCrew((was) => [...was, picked]);
+            }}
+          />
+        </div>
+      </div>
 
       <label className="grid gap-1 text-sm font-medium">
         Comments

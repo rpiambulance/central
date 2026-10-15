@@ -29,7 +29,18 @@ type Run = {
     }>;
   };
   asset: { name: string } | null;
-  completedBy: { firstName: string; lastName: string } | null;
+  completedBy: {
+    firstName: string;
+    preferredFirstName?: string | null;
+    lastName: string;
+  } | null;
+  /** Everybody else who went over it. */
+  crew: Array<{
+    id: number;
+    firstName: string;
+    preferredFirstName?: string | null;
+    lastName: string;
+  }>;
   entries: Array<{
     itemId: number;
     present: boolean | null;
@@ -105,8 +116,11 @@ export default async function RunPage({
       <PageHeader
         title={`${run.template.name}${run.asset ? ` — ${run.asset.name}` : ''}`}
         description={`${formatDateTime(run.completedAt, hour12)}${
-          run.completedBy
-            ? ` · ${displayName(run.completedBy)}`
+          run.completedBy || run.crew.length
+            ? ` · ${[
+                ...(run.completedBy ? [displayName(run.completedBy)] : []),
+                ...run.crew.map(displayName),
+              ].join(', ')}`
             : ''
         }`}
       />
