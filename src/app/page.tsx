@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { summarizeCredentials } from '@/lib/credentials';
 import { dayKey, formatDay } from '@/lib/format';
 import { auth, devLoginEnabled, signIn } from '@/auth';
@@ -97,6 +98,12 @@ export default async function Dashboard({
     if (error instanceof ApiError && error.status === 403) {
       const code = (error.body as { code?: string } | null)?.code;
       refusal = code === 'NO_MEMBER_RECORD' ? 'NO_MEMBER_RECORD' : 'INACTIVE_MEMBER';
+    } else if (error instanceof ApiError && error.status === 401) {
+      // This page asks for raw errors so a 403 cannot redirect it to itself.
+      // A 401 is not that: it means the session is no longer good for
+      // anything, and signing in again is the whole answer. Rethrowing it
+      // showed somebody who had simply been away a while a crash page.
+      redirect('/api/auth/signin');
     } else {
       throw error;
     }

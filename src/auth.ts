@@ -78,6 +78,31 @@ function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.has(pathname);
 }
 
+/**
+ * Whether this request has to go back through sign-in.
+ *
+ * Only for a session that exists and is no good: one whose refresh failed
+ * because the member has been away long enough for Keycloak to forget them,
+ * or a cookie minted before token handling existed. It looks signed-in, and
+ * every page calls the API with it, so it reaches a page and dies there.
+ *
+ * No session at all is left alone. A page with nothing to show a stranger
+ * says so itself — the dashboard offers sign-in, including the dev login —
+ * and bouncing to Keycloak before it renders would take that away.
+ *
+ * Exported because the middleware has to apply this itself. The authorized()
+ * callback below returns the same answer, but next-auth only acts on it when
+ * no middleware function of our own was given — and we give one, to stamp
+ * the path for the access log. Both read this so they cannot drift.
+ */
+export function needsSignIn(
+  pathname: string,
+  session: { accessToken?: string; authError?: string } | null,
+): boolean {
+  if (isPublicPath(pathname) || !session) return false;
+  return !session.accessToken || !!session.authError;
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
   callbacks: {
@@ -153,13 +178,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // session: a television in the bay cannot sign in, and nobody wants it
       // to. The API is what checks that token — this only decides that a
       // missing cookie is not by itself a reason to turn the screen away.
-      if (isPublicPath(request.nextUrl.pathname)) return true;
-      // A session is only useful if it carries a working access token: every
-      // page calls the API with it. A stale cookie minted before token
-      // handling existed, or one whose refresh failed, looks signed-in but
-      // can never call the API — treat it as unauthenticated so the user is
-      // sent back through sign-in instead of hitting a server error.
-      return !!auth && !!auth.accessToken && !auth.authError;
+      //
+      // next-auth ignores this answer whenever a middleware function of our
+      // own is given, which it is, so the middleware applies needsSignIn
+      // directly. This stays correct rather than becoming a second opinion.
+      return !needsSignIn(request.nextUrl.pathname, auth);
     },
   },
 });
