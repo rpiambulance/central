@@ -18,10 +18,12 @@ import { auth, needsSignIn } from '@/auth';
 export default auth((request) => {
   if (needsSignIn(request.nextUrl.pathname, request.auth)) {
     const signIn = request.nextUrl.clone();
-    signIn.pathname = '/api/auth/signin';
-    // Back to where they were going once they are let in. The matcher
-    // excludes /api/auth, so this cannot bounce off itself.
-    signIn.search = `?callbackUrl=${encodeURIComponent(request.nextUrl.href)}`;
+    signIn.pathname = '/signin';
+    // Back to where they were going once they are let in. /signin is a
+    // public path, so this cannot bounce off itself.
+    signIn.search = `?callbackUrl=${encodeURIComponent(
+      `${request.nextUrl.pathname}${request.nextUrl.search}`,
+    )}`;
     return NextResponse.redirect(signIn);
   }
   const requestHeaders = new Headers(request.headers);

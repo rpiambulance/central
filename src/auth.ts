@@ -72,7 +72,13 @@ const providers = [
  * officer handing out the display links. A prefix test here would quietly
  * open both.
  */
-const PUBLIC_PATHS = new Set(['/headsup', '/headsup/stream', '/headsup/data']);
+const PUBLIC_PATHS = new Set([
+  '/headsup',
+  '/headsup/stream',
+  '/headsup/data',
+  // Where the bouncing is done. Bouncing it would be a loop.
+  '/signin',
+]);
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.has(pathname);
@@ -81,14 +87,17 @@ function isPublicPath(pathname: string): boolean {
 /**
  * Whether this request has to go back through sign-in.
  *
- * Only for a session that exists and is no good: one whose refresh failed
- * because the member has been away long enough for Keycloak to forget them,
- * or a cookie minted before token handling existed. It looks signed-in, and
- * every page calls the API with it, so it reaches a page and dies there.
+ * True for no session, and for one that exists and is no good: a session
+ * whose refresh failed because the member has been away long enough for
+ * Keycloak to forget them, or a cookie minted before token handling
+ * existed. The second kind looks signed-in, and every page calls the API
+ * with it, so it reaches a page and dies there.
  *
- * No session at all is left alone. A page with nothing to show a stranger
- * says so itself — the dashboard offers sign-in, including the dev login —
- * and bouncing to Keycloak before it renders would take that away.
+ * With the dev login on, somebody with no session is left where they are:
+ * the dashboard carries the username and password form, and the whole point
+ * of that form is not being sent to Keycloak. A dead session is still sent,
+ * because there is nothing on the dashboard for somebody it thinks is
+ * already signed in.
  *
  * Exported because the middleware has to apply this itself. The authorized()
  * callback below returns the same answer, but next-auth only acts on it when
@@ -99,12 +108,18 @@ export function needsSignIn(
   pathname: string,
   session: { accessToken?: string; authError?: string } | null,
 ): boolean {
-  if (isPublicPath(pathname) || !session) return false;
+  if (isPublicPath(pathname)) return false;
+  if (!session) return !devLoginEnabled;
   return !session.accessToken || !!session.authError;
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
+  pages: {
+    // One provider, so the page offering a choice of one is a click with
+    // only ever one answer. /signin goes straight to Keycloak.
+    signIn: '/signin',
+  },
   callbacks: {
     async jwt({ token, account, user }) {
       if (account?.access_token) {
