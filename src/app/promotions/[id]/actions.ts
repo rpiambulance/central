@@ -66,6 +66,30 @@ export async function rescindVote(
   revalidatePath(`/promotions/${requestId}`);
 }
 
+export async function recordMeetingVote(
+  requestId: number,
+  formData: FormData,
+) {
+  const count = (name: string) => Number(formData.get(name) ?? 0) || 0;
+  const notes = String(formData.get('notes') ?? '').trim();
+  try {
+    await api(`/v1/promotions/requests/${requestId}/in-person-vote`, {
+      method: 'POST',
+      body: JSON.stringify({
+        meetingDate: String(formData.get('meetingDate') ?? ''),
+        approve: count('approve'),
+        deny: count('deny'),
+        abstain: count('abstain'),
+        ...(notes ? { notes } : {}),
+        approveAsCaptain: formData.get('approveAsCaptain') === 'on',
+      }),
+    });
+  } catch (error) {
+    fail(requestId, error);
+  }
+  revalidatePath(`/promotions/${requestId}`);
+}
+
 export async function captainDecision(requestId: number, formData: FormData) {
   const approved = formData.get('approved') === 'true';
   const notes = String(formData.get('notes') ?? '');

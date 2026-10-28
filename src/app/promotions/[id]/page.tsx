@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { myMemberId, prefers12Hour } from '@/lib/me';
+import { myMemberId, myPermissions, prefers12Hour } from '@/lib/me';
+import { todayNY } from '@/lib/calendar';
 import { api, ApiError } from '@/lib/api';
 import { formatDate, formatDateOnly, formatDateTime } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +26,7 @@ import {
   appointProxy,
   captainDecision,
   castVote,
+  recordMeetingVote,
   rescindVote,
   withdrawProxy,
 } from './actions';
@@ -78,6 +80,15 @@ type Review = {
     approved: boolean;
     notes: string | null;
   } | null;
+  /** The committee's vote, when it was taken in person at a meeting. */
+  meetingVote: {
+    meetingDate: string;
+    approve: number;
+    deny: number;
+    abstain: number;
+    notes: string | null;
+    recordedBy: MemberRef;
+  } | null;
   committee: number[];
 };
 
@@ -118,7 +129,11 @@ export default async function PromotionReviewPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  const [hour12, me] = await Promise.all([prefers12Hour(), myMemberId()]);
+  const [hour12, me, permissions] = await Promise.all([
+    prefers12Hour(),
+    myMemberId(),
+    myPermissions(),
+  ]);
   const [{ id }, { error }] = await Promise.all([params, searchParams]);
   const requestId = Number(id);
 
@@ -243,6 +258,31 @@ export default async function PromotionReviewPage({
           {review.committee.length} Training Committee member
           {review.committee.length === 1 ? '' : 's'} must vote unanimously.
         </p>
+        {review.meetingVote ? (
+          <div className="rounded-md border bg-muted/40 p-3 text-sm">
+            <p>
+              <span className="font-medium">
+                Decided in person at the Training Committee meeting on{' '}
+                {formatDateOnly(review.meetingVote.meetingDate)}:
+              </span>{' '}
+              {review.meetingVote.approve} for, {review.meetingVote.deny}{' '}
+              against
+              {review.meetingVote.abstain
+                ? `, ${review.meetingVote.abstain} abstaining`
+                : ''}
+              .
+            </p>
+            {review.meetingVote.notes ? (
+              <p className="mt-1 whitespace-pre-line">
+                {review.meetingVote.notes}
+              </p>
+            ) : null}
+            <p className="mt-1 text-xs text-muted-foreground">
+              Recorded by {memberName(review.meetingVote.recordedBy)}. Any
+              online votes below no longer decide anything.
+            </p>
+          </div>
+        ) : null}
         {review.votes.length ? (
           <div className="rounded-md border">
             <Table>
@@ -435,6 +475,76 @@ export default async function PromotionReviewPage({
                 </label>
                 <Button type="submit" size="sm" variant="outline">
                   {mine ? 'Replace' : 'Appoint'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {review.status === 'IN_VOTE' &&
+        permissions.has('promotions:record-meeting') ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">
+                Record an in-person vote
+              </CardTitle>
+              <CardDescription>
+                The committee voted at a meeting. This stands in for the
+                online vote, and the same rule decides it: a single vote
+                against fails it.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form
+                action={recordMeetingVote.bind(null, review.id)}
+                className="space-y-3"
+              >
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="text-muted-foreground">Meeting date</span>
+                  <input
+                    type="date"
+                    name="meetingDate"
+                    required
+                    defaultValue={todayNY()}
+                    max={todayNY()}
+                    className="h-9 w-44 rounded-md border border-input bg-background px-2 text-sm"
+                  />
+                </label>
+                <div className="flex flex-wrap gap-3 text-sm">
+                  {(
+                    [
+                      ['approve', 'For'],
+                      ['deny', 'Against'],
+                      ['abstain', 'Abstaining'],
+                    ] as const
+                  ).map(([name, label]) => (
+                    <label key={name} className="flex flex-col gap-1">
+                      <span className="text-muted-foreground">{label}</span>
+                      <input
+                        type="number"
+                        name={name}
+                        min={0}
+                        defaultValue={0}
+                        required
+                        className="h-9 w-20 rounded-md border border-input bg-background px-2 text-sm"
+                      />
+                    </label>
+                  ))}
+                </div>
+                <textarea
+                  name="notes"
+                  rows={2}
+                  placeholder="Notes (optional) — who was there, anything said"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                />
+                {permissions.has('promotions:captain-approve') ? (
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" name="approveAsCaptain" />
+                    Give the captain&apos;s approval as well, if it passes
+                  </label>
+                ) : null}
+                <Button type="submit" size="sm">
+                  Record the meeting&apos;s vote
                 </Button>
               </form>
             </CardContent>
