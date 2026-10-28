@@ -49,6 +49,23 @@ export async function withdrawProxy(requestId: number) {
   revalidatePath(`/promotions/${requestId}`);
 }
 
+export async function rescindVote(
+  requestId: number,
+  voteId: number,
+  formData: FormData,
+) {
+  const notes = String(formData.get('notes') ?? '').trim();
+  try {
+    await api(`/v1/promotions/requests/${requestId}/votes/${voteId}/rescind`, {
+      method: 'POST',
+      body: JSON.stringify(notes ? { notes } : {}),
+    });
+  } catch (error) {
+    fail(requestId, error);
+  }
+  revalidatePath(`/promotions/${requestId}`);
+}
+
 export async function captainDecision(requestId: number, formData: FormData) {
   const approved = formData.get('approved') === 'true';
   const notes = String(formData.get('notes') ?? '');

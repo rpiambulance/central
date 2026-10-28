@@ -25,6 +25,7 @@ import {
   appointProxy,
   captainDecision,
   castVote,
+  rescindVote,
   withdrawProxy,
 } from './actions';
 import { displayName, surnameFirst } from '@/lib/name';
@@ -63,6 +64,9 @@ type Review = {
     vote: 'APPROVE' | 'DENY';
     notes: string | null;
     castAt: string;
+    /** Taken back by whoever cast it; the vote stays on the record. */
+    rescindedAt: string | null;
+    rescindNote: string | null;
     voter: MemberRef;
     proxyFor: MemberRef | null;
   }>;
@@ -144,6 +148,14 @@ export default async function PromotionReviewPage({
     me === null
       ? undefined
       : review.proxies.find((proxy) => proxy.principal.id === me);
+
+  // Votes can be taken back until the captain has ruled — including on a
+  // request one denial has already ended, since that is the press most
+  // likely to have been a mistake.
+  const votesStillOpen =
+    review.status === 'IN_VOTE' ||
+    review.status === 'TC_APPROVED' ||
+    (review.status === 'DENIED' && !review.captainApproval);
 
   const badge = STATUS_BADGE[review.status];
 
@@ -244,7 +256,10 @@ export default async function PromotionReviewPage({
               </TableHeader>
               <TableBody>
                 {review.votes.map((vote) => (
-                  <TableRow key={vote.id}>
+                  <TableRow
+                    key={vote.id}
+                    className={vote.rescindedAt ? 'opacity-60' : undefined}
+                  >
                     <TableCell className="font-medium">
                       {memberName(vote.voter)}
                       {vote.proxyFor ? (
@@ -256,8 +271,13 @@ export default async function PromotionReviewPage({
                     <TableCell>
                       <Badge
                         variant={
-                          vote.vote === 'APPROVE' ? 'default' : 'destructive'
+                          vote.rescindedAt
+                            ? 'outline'
+                            : vote.vote === 'APPROVE'
+                              ? 'default'
+                              : 'destructive'
                         }
+                        className={vote.rescindedAt ? 'line-through' : undefined}
                       >
                         {vote.vote === 'APPROVE' ? 'Approve' : 'Deny'}
                       </Badge>
@@ -266,9 +286,50 @@ export default async function PromotionReviewPage({
                       {vote.notes ?? (
                         <span className="text-muted-foreground">&mdash;</span>
                       )}
+                      {vote.rescindedAt && vote.rescindNote ? (
+                        <span className="block text-xs text-muted-foreground">
+                          Taken back: {vote.rescindNote}
+                        </span>
+                      ) : null}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       {formatDateTime(vote.castAt, hour12)}
+                      {vote.rescindedAt ? (
+                        <span className="block text-xs text-muted-foreground">
+                          taken back {formatDateTime(vote.rescindedAt, hour12)}
+                        </span>
+                      ) : null}
+                      {/* Two steps on purpose: the point of this is undoing
+                          a press that was a mistake, and a one-click undo is
+                          another press that can be. */}
+                      {!vote.rescindedAt &&
+                      votesStillOpen &&
+                      me !== null &&
+                      vote.voter.id === me ? (
+                        <details className="mt-1 text-xs">
+                          <summary className="cursor-pointer text-muted-foreground underline underline-offset-2">
+                            Take back my vote
+                          </summary>
+                          <form
+                            action={rescindVote.bind(null, review.id, vote.id)}
+                            className="mt-2 space-y-2 whitespace-normal"
+                          >
+                            <textarea
+                              name="notes"
+                              rows={2}
+                              placeholder="Why (optional)"
+                              className="w-full min-w-48 rounded-md border border-input bg-background px-2 py-1 text-xs"
+                            />
+                            <Button type="submit" size="sm" variant="outline">
+                              Take it back
+                            </Button>
+                            <p className="text-muted-foreground">
+                              It stays on the record as taken back, and you
+                              can vote again.
+                            </p>
+                          </form>
+                        </details>
+                      ) : null}
                     </TableCell>
                   </TableRow>
                 ))}
