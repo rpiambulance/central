@@ -21,7 +21,15 @@ import {
 } from '@/components/ui/table';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
-import { setBlocksScheduling, createAnnualRequirement, createClass, setAlertOnLapse } from './actions';
+import {
+  setBlocksScheduling,
+  createAnnualRequirement,
+  createClass,
+  createSeries,
+  setAlertOnLapse,
+  setClassSeries,
+  setSeriesValidity,
+} from './actions';
 
 type AnnualRequirement = {
   id: number;
@@ -38,7 +46,16 @@ type TrainingClass = {
   description: string | null;
   sessionAt: string | null;
   location: string | null;
+  series?: { id: number; name: string } | null;
   _count?: { attendance: number };
+};
+
+type ClassSeries = {
+  id: number;
+  name: string;
+  validityMonths: number | null;
+  active: boolean;
+  _count?: { classes: number };
 };
 
 const inputCls =
@@ -72,10 +89,12 @@ export default async function AdminTrainingsPage({
 
   let annual: AnnualRequirement[];
   let classes: TrainingClass[];
+  let series: ClassSeries[];
   try {
-    [annual, classes] = await Promise.all([
+    [annual, classes, series] = await Promise.all([
       api<AnnualRequirement[]>('/v1/trainings/annual'),
       api<TrainingClass[]>('/v1/trainings/classes'),
+      api<ClassSeries[]>('/v1/trainings/series'),
     ]);
   } catch (err) {
     if (err instanceof ApiError && err.status === 403) return <NoAccess />;
@@ -232,6 +251,7 @@ export default async function AdminTrainingsPage({
                   <TableHead>Name</TableHead>
                   <TableHead>Session</TableHead>
                   <TableHead>Location</TableHead>
+                  <TableHead>Series</TableHead>
                   <TableHead>Attendance</TableHead>
                 </TableRow>
               </TableHeader>
@@ -250,6 +270,33 @@ export default async function AdminTrainingsPage({
                       {cls.sessionAt ? formatDateTime(cls.sessionAt, hour12) : <Dash />}
                     </TableCell>
                     <TableCell>{cls.location ?? <Dash />}</TableCell>
+                    <TableCell>
+                      <form
+                        action={setClassSeries.bind(null, cls.id)}
+                        className="flex items-center gap-1"
+                      >
+                        <select
+                          name="seriesId"
+                          defaultValue={cls.series?.id ?? ''}
+                          className={inputCls}
+                        >
+                          <option value="">None</option>
+                          {series.map((one) => (
+                            <option key={one.id} value={one.id}>
+                              {one.name}
+                            </option>
+                          ))}
+                        </select>
+                        <Button
+                          type="submit"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs"
+                        >
+                          save
+                        </Button>
+                      </form>
+                    </TableCell>
                     <TableCell>{cls._count?.attendance ?? 0}</TableCell>
                   </TableRow>
                 ))}
@@ -295,8 +342,112 @@ export default async function AdminTrainingsPage({
                 Location (optional)
                 <input type="text" name="location" className={`${inputCls} w-40`} />
               </label>
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Series (optional)
+                <select name="seriesId" defaultValue="" className={inputCls}>
+                  <option value="">None</option>
+                  {series.map((one) => (
+                    <option key={one.id} value={one.id}>
+                      {one.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <Button type="submit" size="sm">
                 Add class
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </section>
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-lg font-medium tracking-tight">Class series</h2>
+          <p className="text-sm text-muted-foreground">
+            The same class run again over time — this year&apos;s safety
+            refresher and next year&apos;s. A credential requirement can name
+            the series, so whichever session somebody went to counts, for as
+            long as the series says a session lasts. Leave the length blank for
+            one that never lapses.
+          </p>
+        </div>
+        {series.length ? (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>A session counts for</TableHead>
+                  <TableHead>Sessions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {series.map((one) => (
+                  <TableRow key={one.id}>
+                    <TableCell className="font-medium whitespace-nowrap">
+                      {one.name}
+                    </TableCell>
+                    <TableCell>
+                      <form
+                        action={setSeriesValidity.bind(null, one.id)}
+                        className="flex items-center gap-1"
+                      >
+                        <input
+                          type="number"
+                          name="validityMonths"
+                          min={1}
+                          defaultValue={one.validityMonths ?? ''}
+                          placeholder="never lapses"
+                          className={`${inputCls} w-28`}
+                        />
+                        <span className="text-xs text-muted-foreground">months</span>
+                        <Button
+                          type="submit"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs"
+                        >
+                          save
+                        </Button>
+                      </form>
+                    </TableCell>
+                    <TableCell>{one._count?.classes ?? 0}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No class series yet.</p>
+        )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Add class series</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form action={createSeries} className="flex flex-wrap items-end gap-2">
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Name
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  placeholder="Annual safety refresher"
+                  className={`${inputCls} w-56`}
+                />
+              </label>
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                A session counts for (months, optional)
+                <input
+                  type="number"
+                  name="validityMonths"
+                  min={1}
+                  className={`${inputCls} w-28`}
+                />
+              </label>
+              <Button type="submit" size="sm">
+                Add series
               </Button>
             </form>
           </CardContent>
