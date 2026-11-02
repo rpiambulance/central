@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import { EventTimes } from '../event-times';
 import { PositionField } from '../position-field';
 import { formatCredKey } from '@/lib/format';
 import { Button } from '@/components/ui/button';
@@ -54,14 +55,10 @@ export default async function NewEventPage({
                 Location
                 <input name="location" className={FIELD} />
               </label>
-              <label className="grid gap-1 text-xs text-muted-foreground">
-                Starts
-                <input name="startsAt" type="datetime-local" required className={FIELD} />
-              </label>
-              <label className="grid gap-1 text-xs text-muted-foreground">
-                Ends
-                <input name="endsAt" type="datetime-local" required className={FIELD} />
-              </label>
+              <EventTimes
+                className={FIELD}
+                labelClassName="grid gap-1 text-xs text-muted-foreground"
+              />
               <label className="grid gap-1 text-xs text-muted-foreground">
                 Kind
                 <select name="kindId" required defaultValue="" className={FIELD}>
