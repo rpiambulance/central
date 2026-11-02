@@ -81,6 +81,11 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Pending Suspensions',
         permissions: ['credentials:grant'],
       },
+      {
+        href: '/admin/credentials/requirements',
+        label: 'Requirement Dates',
+        permissions: ['credentials:requirement-dates'],
+      },
     ],
   },
   {
