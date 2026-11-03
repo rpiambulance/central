@@ -117,8 +117,15 @@ export default async function EventDetailPage({
     throw e;
   }
 
+  // Closed to attendees: the API refuses a plain attendee even from somebody
+  // assigning, so only the named positions are offered — and with none of
+  // those there is nothing to assign anybody to.
+  const closedToAttendees = event.attendeeCap === -1;
+  const canAssign =
+    mayAssign && (!closedToAttendees || event.positions.length > 0);
+
   // Only fetched when there is a control that needs it.
-  const roster = mayAssign
+  const roster = canAssign
     ? await api<Array<{ id: number; firstName: string; lastName: string }>>(
         '/v1/members',
       )
@@ -377,14 +384,17 @@ export default async function EventDetailPage({
         </div>
       ) : null}
 
-      {mayAssign ? (
+      {canAssign ? (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Assign a member</CardTitle>
             <CardDescription>
               Places anyone on this event directly, ignoring credential
               requirements and the signup lock — the assignment is yours to
-              judge. Leave the position blank to add them as an attendee.
+              judge.{' '}
+              {closedToAttendees
+                ? 'The event is closed to attendees, so only its positions can be filled.'
+                : 'Leave the position blank to add them as an attendee.'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -414,10 +424,17 @@ export default async function EventDetailPage({
                 Position
                 <select
                   name="position"
+                  required={closedToAttendees}
                   defaultValue=""
                   className="h-8 rounded-md border border-input bg-background px-2 text-sm"
                 >
-                  <option value="">Attendee (no position)</option>
+                  {closedToAttendees ? (
+                    <option value="" disabled>
+                      Select position…
+                    </option>
+                  ) : (
+                    <option value="">Attendee (no position)</option>
+                  )}
                   {event.positions.map((pos) => (
                     <option key={pos.position} value={pos.position}>
                       {formatPosition(pos.position)}
