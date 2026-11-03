@@ -180,11 +180,6 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Headsup',
         permissions: ['headsup:manage'],
       },
-      {
-        href: '/admin/locations',
-        label: 'Places',
-        permissions: ['settings:write'],
-      },
     ],
   },
 ];

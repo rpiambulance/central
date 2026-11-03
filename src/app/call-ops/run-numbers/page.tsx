@@ -20,7 +20,6 @@ import {
 } from '@/components/ui/table';
 import { ErrorBanner } from '@/components/error-banner';
 import { PageHeader } from '@/components/page-header';
-import Link from 'next/link';
 import { issueRunNumber, reopenChangeover } from './actions';
 import { displayName } from '@/lib/name';
 
@@ -236,12 +235,9 @@ export default async function RunNumbersPage({
             <CardTitle className="text-base">Counters</CardTitle>
             <CardDescription>
               A letter and the number that follows it. Both are edited with
-              the rest of a place, on{' '}
-              <Link href="/admin/locations" className="underline underline-offset-2">
-                Places
-              </Link>
-              , because a place is more than its counter — it is also where
-              events are and where standbys are worked.
+              the rest of a place, on Places in the admin console, because a
+              place is more than its counter — it is also where events are and
+              where standbys are worked.
             </CardDescription>
           </CardHeader>
           <CardContent>
